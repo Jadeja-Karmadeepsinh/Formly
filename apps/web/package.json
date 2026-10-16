@@ -1,8 +1,8 @@
 {
-  "name": "web",
+  "name": "@formly/web",
   "version": "0.1.0",
-  "type": "module",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",
@@ -38,7 +38,7 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@repo/trpc": "workspace:*",
+    "@formly/trpc": "workspace:*",
     "@t3-oss/env-nextjs": "^0.13.10",
     "@tailwindcss/postcss": "^4.1.18",
     "@tanstack/react-query": "^5.90.16",
@@ -66,8 +66,8 @@
     "zod": "^4.3.5"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "@formly/eslint-config": "workspace:*",
+    "@formly/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",

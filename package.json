@@ -1,5 +1,5 @@
 {
-  "name": "trpc-monorepo",
+  "name": "formly",
   "private": true,
   "scripts": {
     "build": "dotenv -- turbo build",

@@ -24,10 +24,10 @@ importers:
 
   apps/api:
     dependencies:
-      '@repo/logger':
+      '@formly/logger':
         specifier: workspace:*
         version: link:../../packages/logger
-      '@repo/trpc':
+      '@formly/trpc':
         specifier: workspace:*
         version: link:../../packages/trpc
       '@scalar/express-api-reference':
@@ -49,10 +49,10 @@ importers:
         specifier: ^4.3.5
         version: 4.3.5
     devDependencies:
-      '@repo/eslint-config':
+      '@formly/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
-      '@repo/typescript-config':
+      '@formly/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       '@swc/core':
@@ -82,6 +82,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@formly/trpc':
+        specifier: workspace:*
+        version: link:../../packages/trpc
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.70.0(react@19.2.0))
@@ -163,9 +166,6 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.2.8
         version: 1.2.8(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      '@repo/trpc':
-        specifier: workspace:*
-        version: link:../../packages/trpc
       '@t3-oss/env-nextjs':
         specifier: ^0.13.10
         version: 0.13.10(typescript@5.9.2)(zod@4.3.5)
@@ -242,10 +242,10 @@ importers:
         specifier: ^4.3.5
         version: 4.3.5
     devDependencies:
-      '@repo/eslint-config':
+      '@formly/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
-      '@repo/typescript-config':
+      '@formly/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       '@types/node':
@@ -285,10 +285,10 @@ importers:
         specifier: ^4.3.5
         version: 4.3.5
     devDependencies:
-      '@repo/eslint-config':
+      '@formly/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@repo/typescript-config':
+      '@formly/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/pg':
@@ -352,10 +352,10 @@ importers:
         specifier: ^4.3.5
         version: 4.3.5
     devDependencies:
-      '@repo/eslint-config':
+      '@formly/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@repo/typescript-config':
+      '@formly/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       typescript:
@@ -364,10 +364,10 @@ importers:
 
   packages/services:
     dependencies:
-      '@repo/database':
+      '@formly/database':
         specifier: workspace:*
         version: link:../database
-      '@repo/logger':
+      '@formly/logger':
         specifier: workspace:*
         version: link:../logger
       google-auth-library:
@@ -377,10 +377,10 @@ importers:
         specifier: ^4.3.5
         version: 4.3.5
     devDependencies:
-      '@repo/eslint-config':
+      '@formly/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@repo/typescript-config':
+      '@formly/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       dotenv-cli:
@@ -392,7 +392,7 @@ importers:
 
   packages/trpc:
     dependencies:
-      '@repo/services':
+      '@formly/services':
         specifier: workspace:*
         version: link:../services
       '@trpc/client':
@@ -408,10 +408,10 @@ importers:
         specifier: ^4.3.5
         version: 4.3.5
     devDependencies:
-      '@repo/eslint-config':
+      '@formly/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@repo/typescript-config':
+      '@formly/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       dotenv-cli:

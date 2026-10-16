@@ -1,18 +1,18 @@
 import express from "express";
-import { logger } from "@repo/logger";
+import { logger } from "@formly/logger";
 import cors from "cors";
 
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { generateOpenApiDocument, createOpenApiExpressMiddleware } from "trpc-to-openapi";
 import { apiReference } from "@scalar/express-api-reference";
 
-import { serverRouter, createContext } from "@repo/trpc/server";
+import { serverRouter, createContext } from "@formly/trpc/server";
 
 import { env } from "./env";
 
 export const app = express();
 const openApiDocument = generateOpenApiDocument(serverRouter, {
-  title: "Streamyst OpenAPI",
+  title: "Formly OpenAPI",
   version: "1.0.0",
   baseUrl: env.BASE_URL.concat("/api"),
 });
@@ -28,11 +28,11 @@ if (env.NODE_ENV !== "prod") {
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  return res.json({ message: "Streamyst is up and running..." });
+  return res.json({ message: "Formly is up and running..." });
 });
 
 app.get("/health", (req, res) => {
-  return res.json({ message: "Streamyst server is healthy", healthy: true });
+  return res.json({ message: "Formly server is healthy", healthy: true });
 });
 
 logger.debug(`openapi.json: ${env.BASE_URL}/openapi.json`);

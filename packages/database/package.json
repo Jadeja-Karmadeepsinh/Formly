@@ -1,14 +1,21 @@
 {
-  "name": "@repo/database",
+  "name": "@formly/database",
   "version": "1.0.0",
+  "type": "module",
+  "main": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./schema": "./schema.ts",
+    "./*": "./*.ts"
+  },
   "scripts": {
-    "db:migrate": "dotenv -- drizzle-kit migrate",
-    "db:generate": "dotenv -- drizzle-kit generate",
-    "dev": "dotenv -- drizzle-kit studio"
+    "db:migrate": "drizzle-kit migrate",
+    "db:generate": "drizzle-kit generate",
+    "dev": "drizzle-kit studio"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "@formly/eslint-config": "workspace:*",
+    "@formly/typescript-config": "workspace:*",
     "@types/pg": "^8.16.0",
     "dotenv-cli": "^11.0.0",
     "drizzle-kit": "^0.31.8",

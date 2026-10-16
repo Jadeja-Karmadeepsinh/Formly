@@ -1,3 +1,3 @@
-import UserService from "@repo/services/user";
+import UserService from "@formly/services/user";
 
 export const userService = new UserService();

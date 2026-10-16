@@ -1,7 +1,8 @@
 {
-  "name": "@repo/api",
+  "name": "@formly/api",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "start": "node dist/index.js",
     "dev": "dotenv -- tsx watch ./src/index.ts",
@@ -9,8 +10,8 @@
     "lint": "eslint src/*"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "@formly/eslint-config": "workspace:*",
+    "@formly/typescript-config": "workspace:*",
     "@swc/core": "^1.15.8",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -21,8 +22,8 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@repo/trpc": "workspace:*",
-    "@repo/logger": "workspace:*",
+    "@formly/trpc": "workspace:*",
+    "@formly/logger": "workspace:*",
     "@scalar/express-api-reference": "^0.8.30",
     "@trpc/server": "^11.8.1",
     "cors": "^2.8.5",

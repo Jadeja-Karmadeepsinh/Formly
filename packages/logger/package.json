@@ -1,10 +1,15 @@
 {
-  "name": "@repo/logger",
+  "name": "@formly/logger",
   "version": "1.0.0",
+  "type": "module",
+  "main": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
   "scripts": {},
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "@formly/eslint-config": "workspace:*",
+    "@formly/typescript-config": "workspace:*",
     "typescript": "^5.9.3"
   },
   "dependencies": {
