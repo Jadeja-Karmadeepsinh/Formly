@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "~/lib/utils";
@@ -61,6 +61,7 @@ export function LoginForm({
   const resetSuccess = searchParams.get("reset") === "success";
 
   const [view, setView] = React.useState<"signin" | "forgot">(initialView);
+  const [showPassword, setShowPassword] = React.useState<boolean>(false);
 
   const {
     signInUserWithEmailAndPasswordAsync,
@@ -260,15 +261,27 @@ export function LoginForm({
                         Forgot password?
                       </button>
                     </div>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="••••••••"
-                      autoComplete="current-password"
-                      disabled={isPending}
-                      aria-invalid={!!errors.password}
-                      {...register("password")}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        autoComplete="current-password"
+                        disabled={isPending}
+                        aria-invalid={!!errors.password}
+                        className="pr-10"
+                        {...register("password")}
+                      />
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
                     {errors.password?.message && (
                       <FieldError>{errors.password.message}</FieldError>
                     )}
