@@ -1,7 +1,7 @@
 import { randomBytes, createHmac} from "node:crypto";
 import { db, eq } from "@formly/database";
 import { usersTable } from "@formly/database/schema";
-import * as JWT from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { env } from "../env";
 
 import {
@@ -25,7 +25,7 @@ class UserService {
   private async generateUserToken(payload:GenerateUserTokenInputSchema) {
     const { id } = await generateUserToken.parseAsync(payload);
 
-    const token = JWT.sign({ id }, env.JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ id }, env.JWT_SECRET, { expiresIn: "1h" });
 
     return { token };
   }
