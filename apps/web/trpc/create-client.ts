@@ -6,11 +6,9 @@ interface CreateTRPCHttpBatchClientClientOpts {
 }
 
 const getBaseUrl = () => {
-  if (typeof window !== "undefined") {
-    return env.NEXT_PUBLIC_API_URL ?? "";
-  }
-  return env.NEXT_PUBLIC_API_URL ?? `http://localhost:${process.env.API_PORT ?? 8000}`;
+  return env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 };
+
 
 export const createTRPCHttpBatchClientClient = (opts?: CreateTRPCHttpBatchClientClientOpts) => {
   const c = opts?.enableStreaming ? httpBatchStreamLink : httpLink;

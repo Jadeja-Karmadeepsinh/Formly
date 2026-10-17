@@ -1,19 +1,37 @@
-import { z, zodUndefinedModel } from "../../schema";
+import { zodUndefinedModel } from "../../schema";
 import { userService } from "../../services";
-import { getAuthenticationMethodOutputSchema } from "@formly/services/user/model";
 import { publicProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
+
+import {
+  createUserWithEmailAndPasswordInputModel,
+  createUserWithEmailAndPasswordOutputModel,
+} from "./model";
 
 const TAGS = ["Authentication"];
 const getPath = generatePath("/authentication");
 
 export const authRouter = router({
-  getSupportedAuthenticationProviders: publicProcedure
-    .meta({ openapi: { method: "GET", path: getPath("/supported-providers"), tags: TAGS } })
-    .input(zodUndefinedModel)
-    .output(z.readonly(z.array(getAuthenticationMethodOutputSchema)))
-    .query(async () => {
-      const supportedMethods = await userService.getAuthenticationMethods();
-      return supportedMethods;
+  createUserWithEmailAndPassword: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/createUserWithEmailAndPassword"),
+        tags: TAGS
+      }
+    })
+    .input(createUserWithEmailAndPasswordInputModel)
+    .output(createUserWithEmailAndPasswordOutputModel)
+    .mutation(async ({ input }) => {
+      const { fullName: inputFullName, email: inputEmail, password: inputPassword } = input;
+
+      const { id, fullName, email, token } = await userService.createUserWithEmailAndPassword({ fullName: inputFullName, email: inputEmail, password: inputPassword });
+
+      return {
+        id,
+        fullName,
+        email,
+        token
+      };
     }),
 });

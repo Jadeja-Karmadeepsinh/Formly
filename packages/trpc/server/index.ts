@@ -1,5 +1,5 @@
-import { router } from "./trpc";
-
+import { publicProcedure, router } from "./trpc";
+import { z } from "zod";
 import { healthRouter } from "./routes/health/route";
 import { authRouter } from "./routes/auth/route";
 

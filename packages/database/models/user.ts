@@ -3,7 +3,6 @@ import {
   uuid,
   varchar,
   timestamp,
-  boolean,
   text,
 } from "drizzle-orm/pg-core";
 
@@ -13,7 +12,9 @@ export const usersTable = pgTable("users", {
   fullName: varchar("full_name", { length: 80 }).notNull(),
 
   email: varchar("email", { length: 255 }).notNull().unique(),
-  emailVerified: boolean("email_verified").default(false),
+
+  password: text("password"),
+  salt: text("salt"),
 
   profileImageUrl: text("profile_image_url"),
 
