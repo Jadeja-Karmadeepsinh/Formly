@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, EyeOff, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "~/lib/utils";
@@ -58,10 +58,24 @@ export function LoginForm({
   ...props
 }: LoginFormProps) {
   const searchParams = useSearchParams();
-  const resetSuccess = searchParams.get("reset") === "success";
 
   const [view, setView] = React.useState<"signin" | "forgot">(initialView);
   const [showPassword, setShowPassword] = React.useState<boolean>(false);
+  const [showResetSuccess, setShowResetSuccess] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (searchParams.get("reset") === "success") {
+      setShowResetSuccess(true);
+      // Clean up URL so page refresh won't show the banner again
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+      const timer = setTimeout(() => {
+        setShowResetSuccess(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   const {
     signInUserWithEmailAndPasswordAsync,
@@ -152,10 +166,10 @@ export function LoginForm({
           <CardContent>
             <div className="flex flex-col gap-5">
               {/* Reset password success banner */}
-              {resetSuccess && (
+              {showResetSuccess && (
                 <div
                   role="status"
-                  className="flex items-start gap-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-emerald-800 dark:text-emerald-400 animate-in fade-in-50 duration-200"
+                  className="relative flex items-start gap-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 pr-8 text-xs text-emerald-800 dark:text-emerald-400 animate-in fade-in-50 duration-200"
                 >
                   <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
                   <div className="space-y-0.5">
@@ -164,6 +178,14 @@ export function LoginForm({
                       Your password has been reset. You can now sign in with your new password.
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowResetSuccess(false)}
+                    className="absolute right-2 top-2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Dismiss message"
+                  >
+                    <X className="size-3.5" />
+                  </button>
                 </div>
               )}
 
