@@ -13,3 +13,10 @@ export const generateUserToken = z.object({
 });
 
 export type GenerateUserTokenInputSchema = z.infer<typeof generateUserToken>;
+
+export const signInUserWithEmailAndPassword = z.object({
+    email: z.email("Invalid email address").describe("email of the user"),
+    password: z.string().min(8, "Password must be at least 8 characters long").describe("password of the user"), 
+});
+
+export type SignInUserWithEmailAndPasswordSchema = z.infer<typeof signInUserWithEmailAndPassword>;
