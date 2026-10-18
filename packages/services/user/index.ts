@@ -20,6 +20,7 @@ import {
   resetPasswordSchema,
   type ResetPasswordSchema,
 } from "./model";
+import { JWT } from "google-auth-library";
 
 const RESET_TOKEN_TTL_MINUTES = 30;
 const MAX_RESET_REQUESTS_PER_HOUR = 3;
@@ -267,6 +268,26 @@ class UserService {
       success: true,
       message: "Password updated successfully",
     };
+  }
+
+  public async getUserInfoById(id: string) {
+      const user = await db.select({
+          id: usersTable.id,
+          fullName: usersTable.fullName,
+          email: usersTable.email,
+      }).from(usersTable).where(eq(usersTable.id, id));
+      if(!user || user.length === 0) {
+          throw new Error("User doesnt exsists");
+      }
+      return user[0]!;
+  }
+  public async verifyAndDecodeUserToken(token: string) {
+      try {
+          const result = jwt.verify(token, env.JWT_SECRET) as GenerateUserTokenInputSchema;
+          return result;
+      } catch (error) {
+          throw new Error("Invalid token");
+      }
   }
 }
 
