@@ -1,14 +1,17 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
-import type { Request, Response } from "express";
 import { getCookie, setCookie, deleteCookie } from "./utils/cookie";
 
 export interface TRPCCtxUser {
   id: string;
 }
 
+export interface TRPCCookieResponse {
+  cookie: (name: string, value: string, options: Record<string, unknown>) => unknown;
+  clearCookie: (name: string, options?: Record<string, unknown>) => unknown;
+}
+
 export interface TRPCContext {
-  req: Request;
-  res: Response;
+  res: TRPCCookieResponse;
   setCookie: (name: string, value: string, options: Record<string, unknown>) => void;
   getCookie: (name: string) => string | undefined;
   deleteCookie: (name: string, options?: Record<string, unknown>) => void;
@@ -26,7 +29,6 @@ export async function createContext({ req, res }: CreateExpressContextOptions): 
   const userAgent = (req.headers["user-agent"] as string) || undefined;
 
   const ctx: TRPCContext = {
-    req,
     res,
     setCookie: (name: string, value: string, options: Record<string, unknown>) =>
       setCookie(res, name, value, options),

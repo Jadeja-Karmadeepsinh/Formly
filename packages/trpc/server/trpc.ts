@@ -65,7 +65,6 @@ export const authenticatedProcedure = tRPCContext.procedure.use(async (options) 
 
   return options.next({
     ctx: {
-      ...ctx,
       user: { id: verification.userId },
     },
   });
