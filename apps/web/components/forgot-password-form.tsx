@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -35,8 +36,9 @@ const forgotPasswordSchema = z.object({
 
 type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
 
-interface ForgotPasswordFormProps {
-  onBackToSignIn: () => void;
+export interface ForgotPasswordFormProps {
+  onBackToSignIn?: () => void;
+  className?: string;
 }
 
 export function ForgotPasswordForm({ onBackToSignIn }: ForgotPasswordFormProps) {
@@ -135,15 +137,27 @@ export function ForgotPasswordForm({ onBackToSignIn }: ForgotPasswordFormProps) 
               )}
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onBackToSignIn}
-              className="w-full flex items-center justify-center gap-2 font-normal"
-            >
-              <ArrowLeft className="size-4" />
-              Back to sign in
-            </Button>
+            {onBackToSignIn ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onBackToSignIn}
+                className="w-full flex items-center justify-center gap-2 font-normal"
+              >
+                <ArrowLeft className="size-4" />
+                Back to sign in
+              </Button>
+            ) : (
+              <Link href="/login" className="w-full block">
+                <Button
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2 font-normal"
+                >
+                  <ArrowLeft className="size-4" />
+                  Back to sign in
+                </Button>
+              </Link>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -197,14 +211,24 @@ export function ForgotPasswordForm({ onBackToSignIn }: ForgotPasswordFormProps) 
                 </Button>
 
                 <FieldDescription className="text-center text-xs mt-3">
-                  <button
-                    type="button"
-                    onClick={onBackToSignIn}
-                    className="inline-flex items-center gap-1.5 font-medium text-foreground underline underline-offset-4 hover:text-foreground/80 transition-colors cursor-pointer"
-                  >
-                    <ArrowLeft className="size-3.5" />
-                    Back to sign in
-                  </button>
+                  {onBackToSignIn ? (
+                    <button
+                      type="button"
+                      onClick={onBackToSignIn}
+                      className="inline-flex items-center gap-1.5 font-medium text-foreground underline underline-offset-4 hover:text-foreground/80 transition-colors cursor-pointer"
+                    >
+                      <ArrowLeft className="size-3.5" />
+                      Back to sign in
+                    </button>
+                  ) : (
+                    <Link
+                      href="/login"
+                      className="inline-flex items-center gap-1.5 font-medium text-foreground underline underline-offset-4 hover:text-foreground/80 transition-colors cursor-pointer"
+                    >
+                      <ArrowLeft className="size-3.5" />
+                      Back to sign in
+                    </Link>
+                  )}
                 </FieldDescription>
               </Field>
             </FieldGroup>
