@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
@@ -23,7 +23,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
+import { PasswordInput } from "~/components/ui/password-input";
 import { Spinner } from "~/components/ui/spinner";
 import { useResetPassword } from "~/hooks/api/auth";
 
@@ -48,8 +48,6 @@ interface ResetPasswordFormProps {
 
 export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const router = useRouter();
-  const [showPassword, setShowPassword] = React.useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState<boolean>(false);
 
   const { resetPasswordAsync, isPending, isError, error } = useResetPassword();
 
@@ -117,62 +115,43 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             {/* New Password */}
             <Field data-invalid={!!errors.newPassword}>
               <FieldLabel htmlFor="newPassword">New Password</FieldLabel>
-              <div className="relative">
-                <Input
-                  id="newPassword"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                  disabled={isPending}
-                  aria-invalid={!!errors.newPassword}
-                  className="pr-10"
-                  {...register("newPassword")}
-                />
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
-              </div>
-              {errors.newPassword?.message && (
-                <FieldError>{errors.newPassword.message}</FieldError>
+              <PasswordInput
+                id="newPassword"
+                placeholder="••••••••"
+                autoComplete="new-password"
+                disabled={isPending}
+                aria-invalid={!!errors.newPassword}
+                aria-describedby={
+                  errors.newPassword ? "reset-new-error" : "reset-new-hint"
+                }
+                {...register("newPassword")}
+              />
+              {errors.newPassword?.message ? (
+                <FieldError id="reset-new-error">{errors.newPassword.message}</FieldError>
+              ) : (
+                <FieldDescription id="reset-new-hint" className="text-xs text-muted-foreground mt-1">
+                  Must be at least 8 characters long.
+                </FieldDescription>
               )}
             </Field>
 
             {/* Confirm Password */}
             <Field data-invalid={!!errors.confirmPassword}>
               <FieldLabel htmlFor="confirmPassword">Confirm Password</FieldLabel>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                  disabled={isPending}
-                  aria-invalid={!!errors.confirmPassword}
-                  className="pr-10"
-                  {...register("confirmPassword")}
-                />
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                >
-                  {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
-              </div>
+              <PasswordInput
+                id="confirmPassword"
+                placeholder="••••••••"
+                autoComplete="new-password"
+                disabled={isPending}
+                aria-invalid={!!errors.confirmPassword}
+                aria-describedby={
+                  errors.confirmPassword ? "reset-confirm-error" : undefined
+                }
+                {...register("confirmPassword")}
+              />
               {errors.confirmPassword?.message && (
-                <FieldError>{errors.confirmPassword.message}</FieldError>
+                <FieldError id="reset-confirm-error">{errors.confirmPassword.message}</FieldError>
               )}
-              <FieldDescription className="text-xs text-muted-foreground mt-1">
-                Must be at least 8 characters long.
-              </FieldDescription>
             </Field>
 
             <Field className="pt-1">

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "~/lib/utils";
@@ -26,6 +26,7 @@ import {
   FieldSeparator,
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
+import { PasswordInput } from "~/components/ui/password-input";
 import { Spinner } from "~/components/ui/spinner";
 import { useSignUp } from "~/hooks/api/auth";
 
@@ -73,9 +74,6 @@ export function SignupForm({
   backgroundElement,
   ...props
 }: SignupFormProps) {
-  const [showPassword, setShowPassword] = React.useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState<boolean>(false);
-
   // Use tRPC auth mutation hook for signup API integration
   const {
     createUserWithEmailAndPasswordAsync,
@@ -279,70 +277,55 @@ export function SignupForm({
                 )}
               </Field>
 
-              {/* Password & Confirm Password Fields */}
-              <Field>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field data-invalid={!!errors.password}>
-                    <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        autoComplete="new-password"
-                        disabled={isPending}
-                        aria-invalid={!!errors.password}
-                        className="pr-10"
-                        {...register("password")}
-                      />
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                      </button>
-                    </div>
-                    {errors.password?.message && (
-                      <FieldError>{errors.password.message}</FieldError>
-                    )}
-                  </Field>
+              {/* Password Field */}
+              <Field data-invalid={!!errors.password}>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
+                <PasswordInput
+                  id="password"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  disabled={isPending}
+                  aria-invalid={!!errors.password}
+                  aria-describedby={
+                    errors.password ? "signup-password-error" : "signup-password-hint"
+                  }
+                  {...register("password")}
+                />
+                {errors.password?.message ? (
+                  <FieldError id="signup-password-error">
+                    {errors.password.message}
+                  </FieldError>
+                ) : (
+                  <FieldDescription
+                    id="signup-password-hint"
+                    className="text-xs text-muted-foreground mt-1"
+                  >
+                    Must be at least 8 characters long.
+                  </FieldDescription>
+                )}
+              </Field>
 
-                  <Field data-invalid={!!errors.confirmPassword}>
-                    <FieldLabel htmlFor="confirmPassword">
-                      Confirm Password
-                    </FieldLabel>
-                    <div className="relative">
-                      <Input
-                        id="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        autoComplete="new-password"
-                        disabled={isPending}
-                        aria-invalid={!!errors.confirmPassword}
-                        className="pr-10"
-                        {...register("confirmPassword")}
-                      />
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        onClick={() => setShowConfirmPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                      >
-                        {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                      </button>
-                    </div>
-                    {errors.confirmPassword?.message && (
-                      <FieldError>{errors.confirmPassword.message}</FieldError>
-                    )}
-                  </Field>
-                </div>
-                <FieldDescription className="text-xs text-muted-foreground mt-1.5">
-                  Must be at least 8 characters long.
-                </FieldDescription>
+              {/* Confirm Password Field */}
+              <Field data-invalid={!!errors.confirmPassword}>
+                <FieldLabel htmlFor="confirmPassword">
+                  Confirm Password
+                </FieldLabel>
+                <PasswordInput
+                  id="confirmPassword"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  disabled={isPending}
+                  aria-invalid={!!errors.confirmPassword}
+                  aria-describedby={
+                    errors.confirmPassword ? "signup-confirm-error" : undefined
+                  }
+                  {...register("confirmPassword")}
+                />
+                {errors.confirmPassword?.message && (
+                  <FieldError id="signup-confirm-error">
+                    {errors.confirmPassword.message}
+                  </FieldError>
+                )}
               </Field>
 
               {/* Submit Button & Sign In Link */}

@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AlertCircle, CheckCircle2, Eye, EyeOff, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "~/lib/utils";
@@ -27,6 +27,7 @@ import {
   FieldSeparator,
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
+import { PasswordInput } from "~/components/ui/password-input";
 import { Spinner } from "~/components/ui/spinner";
 import { useSignIn } from "~/hooks/api/auth";
 import { ForgotPasswordForm } from "./forgot-password-form";
@@ -60,7 +61,6 @@ export function LoginForm({
   const searchParams = useSearchParams();
 
   const [view, setView] = React.useState<"signin" | "forgot">(initialView);
-  const [showPassword, setShowPassword] = React.useState<boolean>(false);
   const [showResetSuccess, setShowResetSuccess] = React.useState<boolean>(false);
 
   React.useEffect(() => {
@@ -265,10 +265,11 @@ export function LoginForm({
                       autoComplete="email"
                       disabled={isPending}
                       aria-invalid={!!errors.email}
+                      aria-describedby={errors.email ? "login-email-error" : undefined}
                       {...register("email")}
                     />
                     {errors.email?.message && (
-                      <FieldError>{errors.email.message}</FieldError>
+                      <FieldError id="login-email-error">{errors.email.message}</FieldError>
                     )}
                   </Field>
 
@@ -278,34 +279,22 @@ export function LoginForm({
                       <button
                         type="button"
                         onClick={() => setView("forgot")}
-                        className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-foreground transition-colors"
+                        className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-foreground transition-colors cursor-pointer"
                       >
                         Forgot password?
                       </button>
                     </div>
-                    <div className="relative">
-                      <Input
-                        id="login-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        autoComplete="current-password"
-                        disabled={isPending}
-                        aria-invalid={!!errors.password}
-                        className="pr-10"
-                        {...register("password")}
-                      />
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                      </button>
-                    </div>
+                    <PasswordInput
+                      id="login-password"
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      disabled={isPending}
+                      aria-invalid={!!errors.password}
+                      aria-describedby={errors.password ? "login-password-error" : undefined}
+                      {...register("password")}
+                    />
                     {errors.password?.message && (
-                      <FieldError>{errors.password.message}</FieldError>
+                      <FieldError id="login-password-error">{errors.password.message}</FieldError>
                     )}
                   </Field>
 

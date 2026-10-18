@@ -3,9 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { GalleryVerticalEnd, AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { FormlyLogo } from "~/components/formly-logo";
 import {
   Card,
   CardContent,
@@ -116,12 +117,10 @@ export default function ResetPasswordPage() {
       <div className="flex w-full max-w-sm flex-col gap-6">
         <Link
           href="/"
-          className="flex items-center gap-2 self-center font-semibold tracking-tight text-foreground transition-opacity hover:opacity-90"
+          className="flex items-center gap-2 self-center transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-md p-1"
+          aria-label="Formly homepage"
         >
-          <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-xs">
-            <GalleryVerticalEnd className="size-3.5" />
-          </div>
-          Formly
+          <FormlyLogo size={24} />
         </Link>
         <React.Suspense
           fallback={

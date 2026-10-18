@@ -119,7 +119,7 @@ export function ForgotPasswordForm({ onBackToSignIn }: ForgotPasswordFormProps) 
               </div>
             </div>
 
-            <div className="text-xs text-muted-foreground text-center">
+            <div className="text-xs text-muted-foreground text-center" aria-live="polite">
               Didn&apos;t receive the email?{" "}
               {cooldown > 0 ? (
                 <span>Resend in {cooldown}s</span>
@@ -128,7 +128,7 @@ export function ForgotPasswordForm({ onBackToSignIn }: ForgotPasswordFormProps) 
                   type="button"
                   onClick={handleResend}
                   disabled={isPending}
-                  className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80 transition-colors"
+                  className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80 transition-colors cursor-pointer"
                 >
                   Click to resend
                 </button>
@@ -172,10 +172,11 @@ export function ForgotPasswordForm({ onBackToSignIn }: ForgotPasswordFormProps) 
                   autoComplete="email"
                   disabled={isPending}
                   aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? "reset-email-error" : undefined}
                   {...register("email")}
                 />
                 {errors.email?.message && (
-                  <FieldError>{errors.email.message}</FieldError>
+                  <FieldError id="reset-email-error">{errors.email.message}</FieldError>
                 )}
               </Field>
 
@@ -191,7 +192,7 @@ export function ForgotPasswordForm({ onBackToSignIn }: ForgotPasswordFormProps) 
                       Sending reset link...
                     </>
                   ) : (
-                    "Send reset link"
+                    "Send Reset Link"
                   )}
                 </Button>
 
@@ -199,7 +200,7 @@ export function ForgotPasswordForm({ onBackToSignIn }: ForgotPasswordFormProps) 
                   <button
                     type="button"
                     onClick={onBackToSignIn}
-                    className="inline-flex items-center gap-1.5 font-medium text-foreground underline underline-offset-4 hover:text-foreground/80 transition-colors"
+                    className="inline-flex items-center gap-1.5 font-medium text-foreground underline underline-offset-4 hover:text-foreground/80 transition-colors cursor-pointer"
                   >
                     <ArrowLeft className="size-3.5" />
                     Back to sign in
