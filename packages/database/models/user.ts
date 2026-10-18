@@ -22,5 +22,14 @@ export const usersTable = pgTable("users", {
   updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
 });
 
+import { relations } from "drizzle-orm";
+import { refreshTokensTable } from "./refresh-token";
+import { passwordResetTokensTable } from "./password-reset-token";
+
+export const usersRelations = relations(usersTable, ({ many }) => ({
+  refreshTokens: many(refreshTokensTable),
+  passwordResetTokens: many(passwordResetTokensTable),
+}));
+
 export type SelectUser = typeof usersTable.$inferSelect;
 export type InsertUser = typeof usersTable.$inferInsert;

@@ -1,7 +1,11 @@
 import { TRPCError } from "@trpc/server";
+import { setAuthCookies, clearAuthCookies, REFRESH_TOKEN_COOKIE_NAME } from "@formly/services/user/cookies";
+import { AUTH_ERROR_CODES } from "@formly/services/user/types";
+import { AuthServiceError } from "@formly/services/user";
 import { userService } from "../../services";
-import { publicProcedure, router } from "../../trpc";
+import { publicProcedure, authenticatedProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
+import { zodUndefinedModel, z } from "../../schema";
 
 import {
   createUserWithEmailAndPasswordInputModel,
@@ -14,10 +18,16 @@ import {
   verifyResetTokenOutputModel,
   resetPasswordInputModel,
   resetPasswordOutputModel,
+  refreshOutputModel,
+  logoutOutputModel,
+  logoutAllOutputModel,
+  meOutputModel,
 } from "./model";
 
 const TAGS = ["Authentication"];
 const getPath = generatePath("/authentication");
+
+const emptyMutationInput = z.object({}).optional().default({});
 
 export const authRouter = router({
   createUserWithEmailAndPassword: publicProcedure
@@ -30,15 +40,26 @@ export const authRouter = router({
     })
     .input(createUserWithEmailAndPasswordInputModel)
     .output(createUserWithEmailAndPasswordOutputModel)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
         const { fullName: inputFullName, email: inputEmail, password: inputPassword } = input;
-        const res = await userService.createUserWithEmailAndPassword({
-          fullName: inputFullName,
-          email: inputEmail,
-          password: inputPassword,
-        });
-        return res;
+        const res = await userService.createUserWithEmailAndPassword(
+          {
+            fullName: inputFullName,
+            email: inputEmail,
+            password: inputPassword,
+          },
+          { userAgent: ctx.userAgent, ipAddress: ctx.clientIp }
+        );
+
+        // Set httpOnly access_token and refresh_token cookies
+        setAuthCookies(ctx.res, res.tokens);
+
+        return {
+          id: res.id,
+          fullName: res.fullName,
+          email: res.email,
+        };
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Registration failed";
         throw new TRPCError({ code: "BAD_REQUEST", message });
@@ -55,17 +76,149 @@ export const authRouter = router({
     })
     .input(signInUserWithEmailAndPasswordInputModel)
     .output(signInUserWithEmailAndPasswordOutputModel)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
         const { email: inputEmail, password: inputPassword } = input;
-        const res = await userService.signInUserWithEmailAndPassword({
-          email: inputEmail,
-          password: inputPassword,
-        });
-        return res;
+        const res = await userService.signInUserWithEmailAndPassword(
+          {
+            email: inputEmail,
+            password: inputPassword,
+          },
+          { userAgent: ctx.userAgent, ipAddress: ctx.clientIp }
+        );
+
+        // Set httpOnly access_token and refresh_token cookies
+        setAuthCookies(ctx.res, res.tokens);
+
+        return {
+          id: res.id,
+          fullName: res.fullName,
+          email: res.email,
+        };
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Sign-in failed";
         throw new TRPCError({ code: "UNAUTHORIZED", message });
+      }
+    }),
+
+  refresh: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/refresh"),
+        tags: TAGS,
+      },
+    })
+    .input(emptyMutationInput)
+    .output(refreshOutputModel)
+    .mutation(async ({ ctx }) => {
+      const refreshToken = ctx.getCookie(REFRESH_TOKEN_COOKIE_NAME);
+
+      if (!refreshToken) {
+        clearAuthCookies(ctx.res);
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: AUTH_ERROR_CODES.REFRESH_TOKEN_MISSING,
+          cause: { appCode: AUTH_ERROR_CODES.REFRESH_TOKEN_MISSING },
+        });
+      }
+
+      try {
+        const tokens = await userService.refreshSession({
+          refreshToken,
+          userAgent: ctx.userAgent,
+          ipAddress: ctx.clientIp,
+        });
+
+        setAuthCookies(ctx.res, tokens);
+        return { success: true };
+      } catch (err: unknown) {
+        if (err instanceof AuthServiceError) {
+          if (err.code === AUTH_ERROR_CODES.REFRESH_RACE) {
+            // Benign race: Do NOT clear cookies; the other concurrent request set new cookies
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: AUTH_ERROR_CODES.REFRESH_RACE,
+              cause: { appCode: AUTH_ERROR_CODES.REFRESH_RACE },
+            });
+          }
+
+          // Revocation / theft / expired / invalid -> Clear cookies
+          clearAuthCookies(ctx.res);
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: err.code,
+            cause: { appCode: err.code },
+          });
+        }
+
+        clearAuthCookies(ctx.res);
+        const message = err instanceof Error ? err.message : "Refresh failed";
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message,
+          cause: { appCode: AUTH_ERROR_CODES.REFRESH_TOKEN_INVALID },
+        });
+      }
+    }),
+
+  logout: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/logout"),
+        tags: TAGS,
+      },
+    })
+    .input(emptyMutationInput)
+    .output(logoutOutputModel)
+    .mutation(async ({ ctx }) => {
+      const refreshToken = ctx.getCookie(REFRESH_TOKEN_COOKIE_NAME);
+      await userService.logoutSession(refreshToken);
+      clearAuthCookies(ctx.res);
+      return { success: true };
+    }),
+
+  logoutAll: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/logoutAll"),
+        tags: TAGS,
+      },
+    })
+    .input(emptyMutationInput)
+    .output(logoutAllOutputModel)
+    .mutation(async ({ ctx }) => {
+      await userService.revokeAllUserRefreshTokens(ctx.user.id);
+      clearAuthCookies(ctx.res);
+      return { success: true };
+    }),
+
+  me: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/me"),
+        tags: TAGS,
+      },
+    })
+    .input(zodUndefinedModel)
+    .output(meOutputModel)
+    .query(async ({ ctx }) => {
+      try {
+        const user = await userService.getUserInfoById(ctx.user.id);
+        return {
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+        };
+      } catch (err: unknown) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "User not found",
+          cause: { appCode: AUTH_ERROR_CODES.NOT_AUTHENTICATED },
+        });
       }
     }),
 

@@ -10,7 +10,6 @@ export const createUserWithEmailAndPasswordOutputModel = z.object({
   id: z.string().describe("id of the user"),
   fullName: z.string().describe("full name of the user"),
   email: z.email().describe("email of the user"),
-  token: z.string().describe("jwt token of the user"),
 });
 
 export const signInUserWithEmailAndPasswordInputModel = z.object({
@@ -22,7 +21,6 @@ export const signInUserWithEmailAndPasswordOutputModel = z.object({
   id: z.string().describe("id of the user"),
   fullName: z.string().describe("full name of the user"),
   email: z.email().describe("email of the user"),
-  token: z.string().describe("jwt token of the user"),
 });
 
 export const requestPasswordResetInputModel = z.object({
@@ -51,4 +49,22 @@ export const resetPasswordInputModel = z.object({
 export const resetPasswordOutputModel = z.object({
   success: z.boolean(),
   message: z.string(),
+});
+
+export const refreshOutputModel = z.object({
+  success: z.boolean(),
+});
+
+export const logoutOutputModel = z.object({
+  success: z.boolean(),
+});
+
+export const logoutAllOutputModel = z.object({
+  success: z.boolean(),
+});
+
+export const meOutputModel = z.object({
+  id: z.string().describe("id of the user"),
+  fullName: z.string().describe("full name of the user"),
+  email: z.string().describe("email of the user"),
 });

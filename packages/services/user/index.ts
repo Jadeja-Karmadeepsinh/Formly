@@ -1,16 +1,13 @@
-import { randomBytes, createHmac, createHash, timingSafeEqual } from "node:crypto";
-import { db, eq, and, isNull, gte, ne } from "@formly/database";
-import { usersTable, passwordResetTokensTable } from "@formly/database/schema";
+import { randomBytes, randomUUID, createHmac, createHash, timingSafeEqual } from "node:crypto";
+import { db, eq, and, or, isNull, isNotNull, gte, lt, ne, asc } from "@formly/database";
+import { usersTable, passwordResetTokensTable, refreshTokensTable } from "@formly/database/schema";
 import { logger } from "@formly/logger";
-import jwt from "jsonwebtoken";
 import { env } from "../env";
 import { sendPasswordResetEmail } from "../email";
 
 import {
   createUserWithEmailAndPassword,
   type CreateUserWithEmailAndPasswordSchema,
-  generateUserToken,
-  type GenerateUserTokenInputSchema,
   signInUserWithEmailAndPassword,
   type SignInUserWithEmailAndPasswordSchema,
   requestPasswordResetSchema,
@@ -20,10 +17,38 @@ import {
   resetPasswordSchema,
   type ResetPasswordSchema,
 } from "./model";
-import { JWT } from "google-auth-library";
+import {
+  signAccessToken,
+  verifyAccessToken,
+  generateRefreshToken,
+  hashToken,
+  REFRESH_TOKEN_TTL,
+  REUSE_GRACE_SECONDS,
+  MAX_SESSION_DAYS,
+} from "./tokens";
+import {
+  AUTH_ERROR_CODES,
+  type AuthErrorCode,
+  type AuthTokens,
+  type AuthUserInfo,
+} from "./types";
 
 const RESET_TOKEN_TTL_MINUTES = 30;
 const MAX_RESET_REQUESTS_PER_HOUR = 3;
+
+export class AuthServiceError extends Error {
+  constructor(public code: AuthErrorCode, message?: string) {
+    super(message || code);
+    this.name = "AuthServiceError";
+  }
+}
+
+export interface ServiceAuthResult {
+  id: string;
+  fullName: string;
+  email: string;
+  tokens: AuthTokens;
+}
 
 class UserService {
   private async getUserByEmail(email: string) {
@@ -39,13 +64,10 @@ class UserService {
     return result[0];
   }
 
-  private async generateUserToken(payload: GenerateUserTokenInputSchema) {
-    const { id } = await generateUserToken.parseAsync(payload);
-    const token = jwt.sign({ id }, env.JWT_SECRET, { expiresIn: "1h" });
-    return { token };
-  }
-
-  public async createUserWithEmailAndPassword(payload: CreateUserWithEmailAndPasswordSchema) {
+  public async createUserWithEmailAndPassword(
+    payload: CreateUserWithEmailAndPasswordSchema,
+    metadata?: { userAgent?: string; ipAddress?: string }
+  ): Promise<ServiceAuthResult> {
     const { fullName, email, password } = await createUserWithEmailAndPassword.parseAsync(payload);
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -71,20 +93,39 @@ class UserService {
       throw new Error("User creation failed");
     }
 
-    const { token } = await this.generateUserToken({ id: result[0].id });
-    if (!token) {
-      throw new Error("Token generation failed");
-    }
+    const userId = result[0].id;
+
+    // Create a new session family for the user
+    const familyId = randomUUID();
+    const { raw: rawRefreshToken, hash: tokenHash } = generateRefreshToken();
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL * 1000);
+
+    await db.insert(refreshTokensTable).values({
+      userId,
+      tokenHash,
+      familyId,
+      expiresAt,
+      userAgent: metadata?.userAgent,
+      ipAddress: metadata?.ipAddress,
+    });
+
+    const accessToken = signAccessToken(userId);
 
     return {
-      id: result[0].id,
+      id: userId,
       fullName,
       email: normalizedEmail,
-      token,
+      tokens: {
+        accessToken,
+        refreshToken: rawRefreshToken,
+      },
     };
   }
 
-  public async signInUserWithEmailAndPassword(payload: SignInUserWithEmailAndPasswordSchema) {
+  public async signInUserWithEmailAndPassword(
+    payload: SignInUserWithEmailAndPasswordSchema,
+    metadata?: { userAgent?: string; ipAddress?: string }
+  ): Promise<ServiceAuthResult> {
     const { email, password } = await signInUserWithEmailAndPassword.parseAsync(payload);
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -106,17 +147,278 @@ class UserService {
       throw new Error("Invalid email or password");
     }
 
-    const { token } = await this.generateUserToken({ id: user.id });
-    if (!token) {
-      throw new Error("Token generation failed");
-    }
+    // Create a new session family for this login
+    const familyId = randomUUID();
+    const { raw: rawRefreshToken, hash: tokenHash } = generateRefreshToken();
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL * 1000);
+
+    await db.insert(refreshTokensTable).values({
+      userId: user.id,
+      tokenHash,
+      familyId,
+      expiresAt,
+      userAgent: metadata?.userAgent,
+      ipAddress: metadata?.ipAddress,
+    });
+
+    const accessToken = signAccessToken(user.id);
 
     return {
       id: user.id,
       fullName: user.fullName,
       email: user.email,
-      token,
+      tokens: {
+        accessToken,
+        refreshToken: rawRefreshToken,
+      },
     };
+  }
+
+  /**
+   * Refreshes an existing session using rotation, grace period for concurrency,
+   * family reuse detection, and bounded session lifetime.
+   */
+  public async refreshSession(params: {
+    refreshToken?: string;
+    userAgent?: string;
+    ipAddress?: string;
+  }): Promise<AuthTokens> {
+    const { refreshToken, userAgent, ipAddress } = params;
+
+    if (!refreshToken) {
+      throw new AuthServiceError(AUTH_ERROR_CODES.REFRESH_TOKEN_MISSING, "Refresh token is missing");
+    }
+
+    const tokenHash = hashToken(refreshToken);
+
+    const records = await db
+      .select()
+      .from(refreshTokensTable)
+      .where(eq(refreshTokensTable.tokenHash, tokenHash));
+
+    if (!records || records.length === 0 || !records[0]) {
+      throw new AuthServiceError(AUTH_ERROR_CODES.REFRESH_TOKEN_INVALID, "Invalid refresh token");
+    }
+
+    const currentToken = records[0];
+
+    // Check expiry
+    if (new Date(currentToken.expiresAt).getTime() < Date.now()) {
+      throw new AuthServiceError(AUTH_ERROR_CODES.REFRESH_TOKEN_EXPIRED, "Refresh token has expired");
+    }
+
+    // Check if token was already revoked (Reuse Detection)
+    if (currentToken.revokedAt) {
+      const revokedTime = new Date(currentToken.revokedAt).getTime();
+      const isWithinGrace = Date.now() - revokedTime <= REUSE_GRACE_SECONDS * 1000;
+      const hasReplacement = Boolean(currentToken.replacedByTokenId);
+
+      if (isWithinGrace && hasReplacement) {
+        // Benign concurrency race: another tab or request already rotated this token
+        // Do NOT revoke the family or clear cookies.
+        logger.info(`Refresh token race detected within grace period for family ${currentToken.familyId}`);
+        throw new AuthServiceError(
+          AUTH_ERROR_CODES.REFRESH_RACE,
+          "Concurrent refresh detected; existing rotation in progress"
+        );
+      }
+
+      // Malicious replay / theft: Revoke ALL tokens in this family immediately
+      logger.warn(`Refresh token reuse detected! Revoking family ${currentToken.familyId}`);
+      await db
+        .update(refreshTokensTable)
+        .set({ revokedAt: new Date() })
+        .where(
+          and(
+            eq(refreshTokensTable.familyId, currentToken.familyId),
+            isNull(refreshTokensTable.revokedAt)
+          )
+        );
+
+      throw new AuthServiceError(
+        AUTH_ERROR_CODES.REFRESH_TOKEN_REUSED,
+        "Refresh token reuse detected; session revoked"
+      );
+    }
+
+    // Check absolute session lifetime: max MAX_SESSION_DAYS from family creation
+    const earliestToken = await db
+      .select({ createdAt: refreshTokensTable.createdAt })
+      .from(refreshTokensTable)
+      .where(eq(refreshTokensTable.familyId, currentToken.familyId))
+      .orderBy(asc(refreshTokensTable.createdAt))
+      .limit(1);
+
+    if (
+      earliestToken[0] &&
+      Date.now() - new Date(earliestToken[0].createdAt).getTime() >
+        MAX_SESSION_DAYS * 24 * 60 * 60 * 1000
+    ) {
+      // Family exceeded maximum session lifetime
+      await db
+        .update(refreshTokensTable)
+        .set({ revokedAt: new Date() })
+        .where(
+          and(
+            eq(refreshTokensTable.familyId, currentToken.familyId),
+            isNull(refreshTokensTable.revokedAt)
+          )
+        );
+      throw new AuthServiceError(
+        AUTH_ERROR_CODES.REFRESH_TOKEN_EXPIRED,
+        "Maximum session lifetime reached; please sign in again"
+      );
+    }
+
+    // Rotate token inside ONE atomic transaction
+    const newTokens = await db.transaction(async (tx) => {
+      // 1. Conditionally revoke the current token to prevent double-spend under concurrency
+      const updatedOld = await tx
+        .update(refreshTokensTable)
+        .set({
+          revokedAt: new Date(),
+          lastUsedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(refreshTokensTable.id, currentToken.id),
+            isNull(refreshTokensTable.revokedAt)
+          )
+        )
+        .returning({ id: refreshTokensTable.id });
+
+      if (!updatedOld || updatedOld.length !== 1) {
+        // Another concurrent request just rotated it
+        throw new AuthServiceError(
+          AUTH_ERROR_CODES.REFRESH_RACE,
+          "Concurrent refresh detected"
+        );
+      }
+
+      // 2. Verify the user still exists and is active
+      const userCheck = await tx
+        .select({ id: usersTable.id })
+        .from(usersTable)
+        .where(eq(usersTable.id, currentToken.userId));
+
+      if (!userCheck || userCheck.length === 0) {
+        await tx
+          .update(refreshTokensTable)
+          .set({ revokedAt: new Date() })
+          .where(eq(refreshTokensTable.familyId, currentToken.familyId));
+        throw new AuthServiceError(AUTH_ERROR_CODES.INVALID_ACCESS_TOKEN, "User no longer exists");
+      }
+
+      // 3. Generate new refresh token
+      const { raw: newRaw, hash: newHash } = generateRefreshToken();
+      const newExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL * 1000);
+
+      // 4. Insert new RefreshToken in the SAME family
+      const [newRow] = await tx
+        .insert(refreshTokensTable)
+        .values({
+          userId: currentToken.userId,
+          tokenHash: newHash,
+          familyId: currentToken.familyId,
+          expiresAt: newExpiresAt,
+          userAgent: userAgent ?? currentToken.userAgent,
+          ipAddress: ipAddress ?? currentToken.ipAddress,
+        })
+        .returning({ id: refreshTokensTable.id });
+
+      if (!newRow) {
+        throw new Error("Failed to insert rotated refresh token");
+      }
+
+      // 5. Link replacedByTokenId on the old row
+      await tx
+        .update(refreshTokensTable)
+        .set({
+          replacedByTokenId: newRow.id,
+        })
+        .where(eq(refreshTokensTable.id, currentToken.id));
+
+      // 6. Sign new access token
+      const newAccessToken = signAccessToken(currentToken.userId);
+
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRaw,
+      };
+    });
+
+    return newTokens;
+  }
+
+  /**
+   * Logs out the session by revoking the entire family of the provided refresh token.
+   * Tolerates missing or expired tokens gracefully.
+   */
+  public async logoutSession(refreshToken?: string): Promise<{ success: boolean }> {
+    if (!refreshToken) {
+      return { success: true };
+    }
+
+    try {
+      const tokenHash = hashToken(refreshToken);
+      const records = await db
+        .select({ familyId: refreshTokensTable.familyId })
+        .from(refreshTokensTable)
+        .where(eq(refreshTokensTable.tokenHash, tokenHash));
+
+      if (records && records.length > 0 && records[0]?.familyId) {
+        await db
+          .update(refreshTokensTable)
+          .set({ revokedAt: new Date() })
+          .where(
+            and(
+              eq(refreshTokensTable.familyId, records[0].familyId),
+              isNull(refreshTokensTable.revokedAt)
+            )
+          );
+      }
+    } catch (err) {
+      logger.error("Error during session logout", { err });
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Revokes all active refresh tokens for the given user.
+   */
+  public async revokeAllUserRefreshTokens(userId: string): Promise<void> {
+    await db
+      .update(refreshTokensTable)
+      .set({ revokedAt: new Date() })
+      .where(
+        and(
+          eq(refreshTokensTable.userId, userId),
+          isNull(refreshTokensTable.revokedAt)
+        )
+      );
+  }
+
+  /**
+   * Cleans up expired and revoked refresh tokens older than 7 days.
+   */
+  public async deleteExpiredRefreshTokens(): Promise<{ deletedCount: number }> {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const deleted = await db
+      .delete(refreshTokensTable)
+      .where(
+        or(
+          lt(refreshTokensTable.expiresAt, sevenDaysAgo),
+          and(
+            isNotNull(refreshTokensTable.revokedAt),
+            lt(refreshTokensTable.revokedAt, sevenDaysAgo)
+          )
+        )
+      )
+      .returning({ id: refreshTokensTable.id });
+
+    return { deletedCount: deleted.length };
   }
 
   public async requestPasswordReset(payload: RequestPasswordResetSchema) {
@@ -237,7 +539,8 @@ class UserService {
     const newSalt = randomBytes(16).toString("hex");
     const newHashedPassword = createHmac("sha256", newSalt).update(newPassword).digest("hex");
 
-    // Execute password update, mark token as used, and invalidate others in an atomic transaction
+    // Execute password update, mark token as used, invalidate reset tokens,
+    // and revoke ALL active refresh tokens for the user in an atomic transaction
     await db.transaction(async (tx) => {
       await tx
         .update(usersTable)
@@ -262,6 +565,17 @@ class UserService {
             ne(passwordResetTokensTable.id, tokenRecord.id)
           )
         );
+
+      // Security requirement: On password change/reset, revoke all active refresh tokens for this user
+      await tx
+        .update(refreshTokensTable)
+        .set({ revokedAt: new Date() })
+        .where(
+          and(
+            eq(refreshTokensTable.userId, tokenRecord.userId),
+            isNull(refreshTokensTable.revokedAt)
+          )
+        );
     });
 
     return {
@@ -270,24 +584,32 @@ class UserService {
     };
   }
 
-  public async getUserInfoById(id: string) {
-      const user = await db.select({
-          id: usersTable.id,
-          fullName: usersTable.fullName,
-          email: usersTable.email,
-      }).from(usersTable).where(eq(usersTable.id, id));
-      if(!user || user.length === 0) {
-          throw new Error("User doesnt exsists");
-      }
-      return user[0]!;
+  public async getUserInfoById(id: string): Promise<AuthUserInfo> {
+    const user = await db
+      .select({
+        id: usersTable.id,
+        fullName: usersTable.fullName,
+        email: usersTable.email,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, id));
+
+    if (!user || user.length === 0 || !user[0]) {
+      throw new Error("User does not exist");
+    }
+
+    return user[0];
   }
+
+  /**
+   * Backward-compatible token verification helper
+   */
   public async verifyAndDecodeUserToken(token: string) {
-      try {
-          const result = jwt.verify(token, env.JWT_SECRET) as GenerateUserTokenInputSchema;
-          return result;
-      } catch (error) {
-          throw new Error("Invalid token");
-      }
+    const result = verifyAccessToken(token);
+    if (!result.valid) {
+      throw new Error(result.error === "EXPIRED" ? "Token expired" : "Invalid token");
+    }
+    return { id: result.userId };
   }
 }
 

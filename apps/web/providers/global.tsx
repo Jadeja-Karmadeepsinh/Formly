@@ -8,7 +8,7 @@ import { Toaster } from "~/components/ui/sonner";
 import { trpc } from "~/trpc/client";
 import { createTRPCHttpBatchClientClient } from "~/trpc/create-client";
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnMount: true,

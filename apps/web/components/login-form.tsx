@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -58,6 +58,7 @@ export function LoginForm({
   initialView = "signin",
   ...props
 }: LoginFormProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [view, setView] = React.useState<"signin" | "forgot">(initialView);
@@ -111,6 +112,8 @@ export function LoginForm({
       });
 
       reset();
+      const redirect = searchParams.get("redirect") || "/dashboard";
+      router.push(redirect);
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to sign in. Please try again.";

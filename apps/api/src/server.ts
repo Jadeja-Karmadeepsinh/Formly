@@ -1,6 +1,7 @@
 import express from "express";
 import { logger } from "@formly/logger";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { generateOpenApiDocument, createOpenApiExpressMiddleware } from "trpc-to-openapi";
@@ -25,6 +26,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
   return res.json({ message: "Formly is up and running..." });

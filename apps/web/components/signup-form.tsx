@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -74,6 +75,7 @@ export function SignupForm({
   backgroundElement,
   ...props
 }: SignupFormProps) {
+  const router = useRouter();
   // Use tRPC auth mutation hook for signup API integration
   const {
     createUserWithEmailAndPasswordAsync,
@@ -119,6 +121,7 @@ export function SignupForm({
       });
 
       reset();
+      router.push("/dashboard");
     } catch (err: unknown) {
       console.error("Signup submission error:", err);
       const errorMessage =
