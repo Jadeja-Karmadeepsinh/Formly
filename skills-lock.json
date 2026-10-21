@@ -6,6 +6,86 @@
       "sourceType": "github",
       "skillPath": "SKILL.md",
       "computedHash": "91293554cc653b2f8757decdf429325cf4f045c952027b2d6b4fa3b73083ad4d"
+    },
+    "better-auth-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/best-practices/SKILL.md",
+      "computedHash": "f35281e7a0c07b3fd3c4e96c7833dafb294a3a8662cb68a8544f4225008d6568"
+    },
+    "better-auth-security-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "security/SKILL.md",
+      "computedHash": "087c1094fa5f1834af4785c058dcc8c9abe4c1321b853883c76ea46c93a21cfe"
+    },
+    "create-auth": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/create-auth/SKILL.md",
+      "computedHash": "d101953fda9452eb4e59d4eb50aa829c1961cdd7d0587d26a2b1871abe885e07"
+    },
+    "email-and-password-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/emailAndPassword/SKILL.md",
+      "computedHash": "ac9f9b0a549390f157ec62f5421a0bc90ac622c7e425af13155953847e0b68ea"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "106acf230014cbb43ca34e6410371321b56ca742f9ee0442e8ec05bf02eb0384"
+    },
+    "ios-design": {
+      "source": "uizze.sh",
+      "sourceUrl": "https://uizze.sh/",
+      "sourceType": "well-known",
+      "computedHash": "5db10aea0f95d69a54cabcfae129ea0e7069b7022de967b2a04acdd9fa1be050",
+      "wellKnownDigest": "sha256:8db9f7cafeda65751e88fcbc1c9e4fc3f93803a438c30fe8e3fc8b00773417bd"
+    },
+    "migrate-radix-to-base": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/migrate-radix-to-base/SKILL.md",
+      "computedHash": "4fdc31bf287f674ba6bf91a648120f7b34cd7ef370f998f2cc116fed067789c5"
+    },
+    "motion-graphics": {
+      "source": "heygen-com/hyperframes",
+      "sourceType": "github",
+      "skillPath": "skills/motion-graphics/SKILL.md",
+      "computedHash": "1e222908adda01c8eed92dec934363973b6207ff15716a67653435f671f97241"
+    },
+    "organization-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/organization/SKILL.md",
+      "computedHash": "f03e41bc2995c4fceec98f3db85f9638d71cc391fb10f9d85460304d6642efc2"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "7859e9a064940a1a0010c992b63e4633c4f5f39ed367a23c16f24029816b1703"
+    },
+    "two-factor-authentication-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/twoFactor/SKILL.md",
+      "computedHash": "ca66fbdc0281f43065a6c890a9982afba774565085e773863ce31280324d9425"
+    },
+    "ui-taste": {
+      "source": "uizze.sh",
+      "sourceUrl": "https://uizze.sh/",
+      "sourceType": "well-known",
+      "computedHash": "cdcad80e71ee4468a0192683d2a00373502e2d95e7dd1707c5f60e7da51ea857",
+      "wellKnownDigest": "sha256:fdffa833cb19ee79587b2897b98a1dbb280b920a70ff721371bd910f187df75c"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "d8e7d3afe37dcc8a97b99ffb5afdb4d0919ae0092ea8b68f44eb201f035e33ac"
     }
   }
 }

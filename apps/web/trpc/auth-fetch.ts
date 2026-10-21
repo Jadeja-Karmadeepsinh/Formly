@@ -127,6 +127,15 @@ export async function authFetch(
   // Inspect response body to check for ACCESS_TOKEN_EXPIRED
   try {
     const clone = response.clone();
+
+    /*
+    
+    The code clones the response before reading its body.
+    Why?
+    A fetch response body is a stream. Reading it consumes it, and you generally cannot read the same body again afterward.
+
+    */
+
     const data = await clone.json();
 
     const isExpired = Array.isArray(data)

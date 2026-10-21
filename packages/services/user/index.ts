@@ -514,7 +514,13 @@ class UserService {
   }
 
   public async resetPassword(payload: ResetPasswordSchema) {
-    const { token, newPassword } = await resetPasswordSchema.parseAsync(payload);
+    const { token, newPassword, confirmPassword } = await resetPasswordSchema.parseAsync(payload);
+
+    //TODO: add appropriate error handling for password mismatch
+    if (newPassword !== confirmPassword) {
+      throw new Error("Passwords do not match");
+    }
+
     const tokenHash = createHash("sha256").update(token).digest("hex");
 
     const records = await db
