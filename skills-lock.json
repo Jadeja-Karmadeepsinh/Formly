@@ -56,6 +56,12 @@
       "skillPath": "skills/motion-graphics/SKILL.md",
       "computedHash": "1e222908adda01c8eed92dec934363973b6207ff15716a67653435f671f97241"
     },
+    "next-bundle-optimizer": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-bundle-optimizer/SKILL.md",
+      "computedHash": "c6b7c0bcc589582d7c142c20febe4a0501b8e65e2d239abef86b4c59b680b039"
+    },
     "organization-best-practices": {
       "source": "better-auth/skills",
       "sourceType": "github",
