@@ -7,7 +7,8 @@
     "./*": "./*.ts",
     "./user": "./user/index.ts",
     "./user/*": "./user/*.ts",
-    "./clients/*": "./clients/*.ts"
+    "./auth": "./auth/index.ts",
+    "./auth/*": "./auth/*.ts"
   },
   "devDependencies": {
     "@formly/eslint-config": "workspace:*",
@@ -18,9 +19,11 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "1.7.12",
     "@formly/database": "workspace:*",
     "@formly/logger": "workspace:*",
-    "google-auth-library": "^10.5.0",
+    "better-auth": "1.7.12",
+    "drizzle-orm": "^0.45.1",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^10.1.2",
     "zod": "^4.3.5"

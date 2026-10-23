@@ -1,9 +1,10 @@
 import { randomBytes, randomUUID, createHmac, createHash, timingSafeEqual } from "node:crypto";
 import { db, eq, and, or, isNull, isNotNull, gte, lt, ne, asc } from "@formly/database";
-import { usersTable, passwordResetTokensTable, refreshTokensTable } from "@formly/database/schema";
+import { usersTable, passwordResetTokensTable, refreshTokensTable, authSessionsTable } from "@formly/database/schema";
 import { logger } from "@formly/logger";
 import { env } from "../env";
 import { sendPasswordResetEmail } from "../email";
+import { auth } from "../auth";
 
 import {
   createUserWithEmailAndPassword,
@@ -51,6 +52,50 @@ export interface ServiceAuthResult {
 }
 
 class UserService {
+  private toWebHeaders(headers: Headers | Record<string, string | string[] | undefined>): Headers {
+    if (headers instanceof Headers) {
+      return headers;
+    }
+    const webHeaders = new Headers();
+    for (const [key, value] of Object.entries(headers)) {
+      if (value !== undefined) {
+        if (Array.isArray(value)) {
+          for (const item of value) {
+            webHeaders.append(key, item);
+          }
+        } else {
+          webHeaders.set(key, value);
+        }
+      }
+    }
+    return webHeaders;
+  }
+
+  private async issueSessionTokens(
+    userId: string,
+    metadata?: { userAgent?: string; ipAddress?: string }
+  ): Promise<AuthTokens> {
+    const familyId = randomUUID();
+    const { raw: rawRefreshToken, hash: tokenHash } = generateRefreshToken();
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL * 1000);
+
+    await db.insert(refreshTokensTable).values({
+      userId,
+      tokenHash,
+      familyId,
+      expiresAt,
+      userAgent: metadata?.userAgent,
+      ipAddress: metadata?.ipAddress,
+    });
+
+    const accessToken = signAccessToken(userId);
+
+    return {
+      accessToken,
+      refreshToken: rawRefreshToken,
+    };
+  }
+
   private async getUserByEmail(email: string) {
     const result = await db
       .select()
@@ -95,30 +140,13 @@ class UserService {
 
     const userId = result[0].id;
 
-    // Create a new session family for the user
-    const familyId = randomUUID();
-    const { raw: rawRefreshToken, hash: tokenHash } = generateRefreshToken();
-    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL * 1000);
-
-    await db.insert(refreshTokensTable).values({
-      userId,
-      tokenHash,
-      familyId,
-      expiresAt,
-      userAgent: metadata?.userAgent,
-      ipAddress: metadata?.ipAddress,
-    });
-
-    const accessToken = signAccessToken(userId);
+    const tokens = await this.issueSessionTokens(userId, metadata);
 
     return {
       id: userId,
       fullName,
       email: normalizedEmail,
-      tokens: {
-        accessToken,
-        refreshToken: rawRefreshToken,
-      },
+      tokens,
     };
   }
 
@@ -147,30 +175,90 @@ class UserService {
       throw new Error("Invalid email or password");
     }
 
-    // Create a new session family for this login
-    const familyId = randomUUID();
-    const { raw: rawRefreshToken, hash: tokenHash } = generateRefreshToken();
-    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL * 1000);
-
-    await db.insert(refreshTokensTable).values({
-      userId: user.id,
-      tokenHash,
-      familyId,
-      expiresAt,
-      userAgent: metadata?.userAgent,
-      ipAddress: metadata?.ipAddress,
-    });
-
-    const accessToken = signAccessToken(user.id);
+    const tokens = await this.issueSessionTokens(user.id, metadata);
 
     return {
       id: user.id,
       fullName: user.fullName,
       email: user.email,
-      tokens: {
-        accessToken,
-        refreshToken: rawRefreshToken,
-      },
+      tokens,
+    };
+  }
+
+  public async completeOAuthSignIn(params: {
+    headers: Headers | Record<string, string | string[] | undefined>;
+    metadata?: { userAgent?: string; ipAddress?: string };
+  }): Promise<ServiceAuthResult> {
+    const webHeaders = this.toWebHeaders(params.headers);
+    const sessionData = await auth.api.getSession({
+      headers: webHeaders,
+    });
+
+    if (!sessionData || !sessionData.session || !sessionData.user) {
+      throw new AuthServiceError(
+        AUTH_ERROR_CODES.OAUTH_SESSION_MISSING,
+        "No active OAuth session found"
+      );
+    }
+
+    const { user, session } = sessionData;
+
+    // Issue standard Formly session tokens
+    const tokens = await this.issueSessionTokens(user.id, params.metadata);
+
+    // Pre-hijack mitigation safeguard (defense-in-depth):
+    // If an existing password user was linked by OAuth and their email was unverified,
+    // ensure emailVerified=true, clear password/salt, and revoke any pre-existing sessions.
+    try {
+      const dbUsers = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.id, user.id));
+      const dbUser = dbUsers[0];
+
+      if (dbUser && dbUser.password && !dbUser.emailVerified) {
+        logger.info(`Mitigating pre-hijack risk for user ${dbUser.id} in completeOAuthSignIn`);
+        const tokenHash = hashToken(tokens.refreshToken);
+        await db.transaction(async (tx) => {
+          await tx
+            .update(usersTable)
+            .set({
+              emailVerified: true,
+              password: null,
+              salt: null,
+            })
+            .where(eq(usersTable.id, dbUser.id));
+
+          await tx
+            .update(refreshTokensTable)
+            .set({ revokedAt: new Date() })
+            .where(
+              and(
+                eq(refreshTokensTable.userId, dbUser.id),
+                ne(refreshTokensTable.tokenHash, tokenHash),
+                isNull(refreshTokensTable.revokedAt)
+              )
+            );
+        });
+      }
+    } catch (err) {
+      logger.error("Error during pre-hijack mitigation check in completeOAuthSignIn", { err });
+    }
+
+    // Revoke and delete the temporary Better Auth session from the DB
+    try {
+      await db
+        .delete(authSessionsTable)
+        .where(eq(authSessionsTable.token, session.token));
+    } catch (err) {
+      logger.error("Failed to delete Better Auth session row", { err });
+    }
+
+    return {
+      id: user.id,
+      fullName: user.name,
+      email: user.email,
+      tokens,
     };
   }
 

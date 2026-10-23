@@ -195,3 +195,41 @@ export function useAuth() {
     isLoggingOut: logoutHook.isPending || logoutAllHook.isPending,
   };
 }
+
+export function useCompleteOAuthSignIn() {
+  const mutation = trpc.auth.completeOAuthSignIn.useMutation({
+    onSuccess() {
+      // Invalidate current user query after oauth completion
+      queryClient.invalidateQueries({ queryKey: [["auth", "me"]] });
+    },
+  });
+
+  const {
+    mutateAsync: completeOAuthSignInAsync,
+    mutate: completeOAuthSignIn,
+    error,
+    failureCount,
+    isError,
+    isIdle,
+    isSuccess,
+    isPending,
+    status,
+    reset,
+    context,
+  } = mutation;
+
+  return {
+    completeOAuthSignInAsync,
+    completeOAuthSignIn,
+    error,
+    failureCount,
+    isError,
+    isIdle,
+    isSuccess,
+    isPending,
+    status,
+    reset,
+    context,
+  };
+}
+

@@ -17,6 +17,7 @@ export interface TRPCContext {
   deleteCookie: (name: string, options?: Record<string, unknown>) => void;
   clientIp?: string;
   userAgent?: string;
+  headers: Record<string, string | string[] | undefined>;
   user?: TRPCCtxUser;
 }
 
@@ -37,6 +38,7 @@ export async function createContext({ req, res }: CreateExpressContextOptions): 
       deleteCookie(res, name, options),
     clientIp,
     userAgent,
+    headers: req.headers,
     user: undefined,
   };
 

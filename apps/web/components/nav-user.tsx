@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import {
   IconCreditCard,
   IconDotsVertical,
@@ -28,6 +29,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar"
+import { useLogout } from "~/hooks/api/auth"
 
 export function NavUser({
   user,
@@ -35,10 +37,20 @@ export function NavUser({
   user: {
     name: string
     email: string
-    avatar: string
+    avatar?: string
   }
 }) {
   const { isMobile } = useSidebar()
+  const { logout, isPending } = useLogout()
+
+  const initials = React.useMemo(() => {
+    if (!user.name) return "U"
+    const parts = user.name.trim().split(/\s+/)
+    if (parts.length >= 2 && parts[0]?.[0] && parts[1]?.[0]) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+    }
+    return user.name.slice(0, 2).toUpperCase() || "U"
+  }, [user.name])
 
   return (
     <SidebarMenu>
@@ -50,8 +62,10 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                {user.avatar ? (
+                  <AvatarImage src={user.avatar} alt={user.name} />
+                ) : null}
+                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
@@ -71,8 +85,10 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  {user.avatar ? (
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                  ) : null}
+                  <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
@@ -98,9 +114,13 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => void logout()}
+              disabled={isPending}
+              className="cursor-pointer text-destructive focus:text-destructive"
+            >
               <IconLogout />
-              Log out
+              {isPending ? "Logging out..." : "Log out"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
