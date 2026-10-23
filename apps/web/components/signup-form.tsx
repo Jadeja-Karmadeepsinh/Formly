@@ -2,14 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { cn } from "~/lib/utils";
+import { cn, getSafeRedirect } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -30,6 +30,7 @@ import { Input } from "~/components/ui/input";
 import { PasswordInput } from "~/components/ui/password-input";
 import { Spinner } from "~/components/ui/spinner";
 import { useSignUp } from "~/hooks/api/auth";
+import { authClient } from "~/lib/auth-client";
 
 // Validation schema matching backend requirements & security best practices
 const signupFormSchema = z
@@ -76,6 +77,9 @@ export function SignupForm({
   ...props
 }: SignupFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [pendingProvider, setPendingProvider] = React.useState<"google" | "github" | null>(null);
+
   // Use tRPC auth mutation hook for signup API integration
   const {
     createUserWithEmailAndPasswordAsync,
@@ -84,6 +88,8 @@ export function SignupForm({
     isError,
     error: apiError,
   } = useSignUp();
+
+  const isAnyPending = isPending || Boolean(pendingProvider);
 
   // Initialize React Hook Form with Zod validation
   const {
@@ -104,9 +110,6 @@ export function SignupForm({
 
   // Submission handler: logs values, invokes API, handles success & error toasts
   const onSubmit = async (values: SignupFormValues) => {
-    // 1. Console log all form values as requested
-    console.log("Signup form submitted with values:", values);
-
     try {
       const response = await createUserWithEmailAndPasswordAsync({
         fullName: values.fullName,
@@ -114,16 +117,14 @@ export function SignupForm({
         password: values.password,
       });
 
-      console.log("Signup successful, server response:", response);
-
       toast.success("Account created successfully!", {
-        description: `Welcome to Formly, ${values.fullName}!`,
+        description: `Welcome to Formly, ${response.fullName || values.fullName}!`,
       });
 
       reset();
-      router.push("/dashboard");
+      const redirect = getSafeRedirect(searchParams?.get("redirect"));
+      router.push(redirect);
     } catch (err: unknown) {
-      console.error("Signup submission error:", err);
       const errorMessage =
         err instanceof Error ? err.message : "Failed to create your account. Please try again.";
       toast.error("Account creation failed", {
@@ -132,16 +133,32 @@ export function SignupForm({
     }
   };
 
-  // Google OAuth button handler
-  const handleGoogleClick = () => {
-    console.log("clicked on google");
-    toast.info("Google sign-up clicked");
-  };
+  const handleSocialSignIn = async (provider: "google" | "github") => {
+    try {
+      setPendingProvider(provider);
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const redirectParam = searchParams?.get("redirect");
+      const safeRedirect = getSafeRedirect(redirectParam);
+      const callbackURL = `${origin}/oauth/callback?redirect=${encodeURIComponent(safeRedirect)}`;
+      const errorCallbackURL = `${origin}/login?error=oauth_failed`;
 
-  // GitHub OAuth button handler
-  const handleGithubClick = () => {
-    console.log("clicked on github");
-    toast.info("GitHub sign-up clicked");
+      const res = await authClient.signIn.social({
+        provider,
+        callbackURL,
+        errorCallbackURL,
+      });
+
+      if (res?.error) {
+        toast.error("Authentication failed", {
+          description: res.error.message || "Failed to connect to provider. Please try again.",
+        });
+        setPendingProvider(null);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to connect to provider.";
+      toast.error("Authentication failed", { description: message });
+      setPendingProvider(null);
+    }
   };
 
   return (
@@ -182,29 +199,47 @@ export function SignupForm({
               <Button
                 type="button"
                 variant="outline"
-                disabled={isPending}
-                onClick={handleGoogleClick}
-                className="w-full flex items-center justify-center gap-2 font-normal transition-colors"
+                disabled={isAnyPending}
+                onClick={() => handleSocialSignIn("google")}
+                className="w-full flex items-center justify-center gap-2 font-normal transition-colors cursor-pointer"
               >
-                <svg className="size-4 shrink-0" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                  />
-                </svg>
-                Google
+                {pendingProvider === "google" ? (
+                  <>
+                    <Spinner className="size-4 shrink-0" />
+                    Google
+                  </>
+                ) : (
+                  <>
+                    <svg className="size-4 shrink-0" viewBox="0 0 24 24">
+                      <path
+                        fill="currentColor"
+                        d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
+                      />
+                    </svg>
+                    Google
+                  </>
+                )}
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                disabled={isPending}
-                onClick={handleGithubClick}
-                className="w-full flex items-center justify-center gap-2 font-normal transition-colors"
+                disabled={isAnyPending}
+                onClick={() => handleSocialSignIn("github")}
+                className="w-full flex items-center justify-center gap-2 font-normal transition-colors cursor-pointer"
               >
-                <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-                </svg>
-                GitHub
+                {pendingProvider === "github" ? (
+                  <>
+                    <Spinner className="size-4 shrink-0" />
+                    GitHub
+                  </>
+                ) : (
+                  <>
+                    <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                    </svg>
+                    GitHub
+                  </>
+                )}
               </Button>
             </div>
 
@@ -254,7 +289,7 @@ export function SignupForm({
                   type="text"
                   placeholder="John Doe"
                   autoComplete="name"
-                  disabled={isPending}
+                  disabled={isAnyPending}
                   aria-invalid={!!errors.fullName}
                   {...register("fullName")}
                 />
@@ -271,7 +306,7 @@ export function SignupForm({
                   type="email"
                   placeholder="m@example.com"
                   autoComplete="email"
-                  disabled={isPending}
+                  disabled={isAnyPending}
                   aria-invalid={!!errors.email}
                   {...register("email")}
                 />
@@ -287,7 +322,7 @@ export function SignupForm({
                   id="password"
                   placeholder="••••••••"
                   autoComplete="new-password"
-                  disabled={isPending}
+                  disabled={isAnyPending}
                   aria-invalid={!!errors.password}
                   aria-describedby={
                     errors.password ? "signup-password-error" : "signup-password-hint"
@@ -317,7 +352,7 @@ export function SignupForm({
                   id="confirmPassword"
                   placeholder="••••••••"
                   autoComplete="new-password"
-                  disabled={isPending}
+                  disabled={isAnyPending}
                   aria-invalid={!!errors.confirmPassword}
                   aria-describedby={
                     errors.confirmPassword ? "signup-confirm-error" : undefined
@@ -335,7 +370,7 @@ export function SignupForm({
               <Field className="pt-1">
                 <Button
                   type="submit"
-                  disabled={isPending}
+                  disabled={isAnyPending}
                   className="w-full font-medium transition-all"
                 >
                   {isPending ? (

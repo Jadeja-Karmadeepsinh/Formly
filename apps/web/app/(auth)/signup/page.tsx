@@ -1,3 +1,4 @@
+import * as React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -20,7 +21,9 @@ export default function SignupPage() {
         >
           <FormlyLogo size={24} />
         </Link>
-        <SignupForm />
+        <React.Suspense fallback={null}>
+          <SignupForm />
+        </React.Suspense>
       </div>
     </div>
   );

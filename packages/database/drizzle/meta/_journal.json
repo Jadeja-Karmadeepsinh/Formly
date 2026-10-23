@@ -22,6 +22,13 @@
       "when": 1792312954651,
       "tag": "0002_strange_rachel_grey",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792733734582,
+      "tag": "0003_awesome_karma",
+      "breakpoints": true
     }
   ]
 }

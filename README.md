@@ -1,135 +1,149 @@
-# Turborepo starter
+# Formly
 
-This Turborepo starter is maintained by the Turborepo core team.
+A Typeform/Tally-inspired form builder SaaS platform built with modern TypeScript, Express 5, tRPC v11, Next.js 16, and PostgreSQL with Drizzle ORM.
 
-## Using this example
+---
 
-Run the following command:
+## Architecture Overview
 
-```sh
-npx create-turbo@latest
+- **`apps/web`**: Next.js 16 (App Router) + React 19 + Tailwind CSS v4 web application (port `3000`).
+- **`apps/api`**: Express 5 API server mounting native tRPC at `/trpc`, Better Auth at `/api/auth/{*any}`, REST endpoints at `/api`, and Scalar docs at `/docs` (port `8000`).
+- **`packages/services`**: Domain business logic, `UserService`, Better Auth identity layer, token cryptographic engine, and Nodemailer email dispatch.
+- **`packages/trpc`**: tRPC server router, context, authentication procedures, and client re-exports.
+- **`packages/database`**: Drizzle ORM client singleton, PostgreSQL 15 schemas (`users`, `accounts`, `auth_sessions`, `verifications`, `refresh_tokens`, `password_reset_tokens`), and migration management.
+- **`packages/logger`**: Winston structured logging package.
+- **`packages/typescript-config` & `packages/eslint-config`**: Shared toolchain configurations.
+
+### Authentication Strategy (Hybrid Architecture)
+
+Formly uses a hybrid authentication model:
+1. **OAuth Identity Layer**: Better Auth handles third-party OAuth flows with Google and GitHub.
+2. **Session Authority**: The custom dual-token session architecture remains the sole authority:
+   - `access_token`: 15-minute HS256 JWT, scoped to `/`
+   - `refresh_token`: 7-day cryptographically secure opaque token with SHA-256 storage hash, session family tracking, reuse detection, and path scoped to `/trpc`
+3. **Bridge Mutation**: Upon successful OAuth redirect to `/oauth/callback`, the web client calls `auth.completeOAuthSignIn`, which validates the temporary Better Auth session, applies account pre-hijack mitigation, issues standard dual tokens via `UserService`, and revokes the temporary Better Auth session.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js >= 18
+- pnpm 9.0.0 (`npm i -g pnpm`)
+- PostgreSQL 15 (Docker or local instance)
+
+### 1. Environment Configuration
+
+Copy the example environment file:
+```bash
+cp .env.example .env
 ```
 
-## What's inside?
-
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+Distribute `.env` to all workspace packages:
+```bash
+bash setup.sh
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### 2. Database Setup
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+Start local PostgreSQL 15 container (if using Docker):
+```bash
+docker compose up -d
 ```
 
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+Generate and run migrations:
+```bash
+pnpm db:generate
+pnpm db:migrate
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### 3. Development Server
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+Start both the API (`http://localhost:8000`) and Web app (`http://localhost:3000`):
+```bash
+pnpm dev
 ```
 
-### Remote Caching
+Key Endpoints:
+- Web App: `http://localhost:3000`
+- API Health: `http://localhost:8000/health`
+- tRPC Endpoint: `http://localhost:8000/trpc`
+- Better Auth Base: `http://localhost:8000/api/auth`
+- Interactive OpenAPI Docs (Scalar): `http://localhost:8000/docs`
+- OpenAPI Specification: `http://localhost:8000/openapi.json`
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+---
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+## OAuth Provider Setup Guide
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+To enable Google and GitHub social authentication, register OAuth applications with the respective providers and populate your local `.env`. Never commit secrets to version control.
 
-```
-cd my-turborepo
+### 1. Google Cloud Console
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
+1. Navigate to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create or select an existing project.
+3. Configure the **OAuth consent screen** (User Type: External) and add the `userinfo.email` and `userinfo.profile` scopes.
+4. Go to **Credentials** -> **Create Credentials** -> **OAuth client ID**.
+5. Select **Application type**: **Web application**.
+6. Set **Authorized JavaScript origins**:
+   - Development: `http://localhost:3000`
+   - Production: `https://your-frontend-domain.com`
+7. Set **Authorized redirect URIs**:
+   - Development: `http://localhost:8000/api/auth/callback/google`
+   - Production: `https://your-api-domain.com/api/auth/callback/google`
+8. Copy the **Client ID** and **Client Secret** into `.env`:
+   ```env
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
+   ```
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
+### 2. GitHub Developer Settings
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+1. Navigate to [GitHub Developer Settings](https://github.com/settings/developers) -> **OAuth Apps**.
+2. Click **New OAuth App** (recommend separate apps for Dev and Prod, as GitHub allows only one callback URL per OAuth App).
+3. Set **Application name**: `Formly (Dev)`
+4. Set **Homepage URL**:
+   - Development: `http://localhost:3000`
+   - Production: `https://your-frontend-domain.com`
+5. Set **Authorization callback URL**:
+   - Development: `http://localhost:8000/api/auth/callback/github`
+   - Production: `https://your-api-domain.com/api/auth/callback/github`
+6. Register the application, then generate a new client secret.
+7. Copy the **Client ID** and **Client Secret** into `.env`:
+   ```env
+   GITHUB_CLIENT_ID=your_github_client_id
+   GITHUB_CLIENT_SECRET=your_github_client_secret
+   ```
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+*(Note: In development mode, if provider credentials are omitted, Formly logs a warning and disables that provider rather than crashing. In production, provider credentials are required).*
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
+---
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
+## Available Scripts
 
-## Useful Links
+| Script | Command | Purpose |
+|---|---|---|
+| `pnpm dev` | `turbo dev` | Runs all applications in watch mode |
+| `pnpm build` | `turbo build` | Compiles API (`tsup`) and builds Next.js production bundle |
+| `pnpm check-types` | `turbo check-types` | Type-checks all 8 workspace packages |
+| `pnpm format` | `prettier --write "**/*.{ts,tsx,md}"` | Formats all source files with Prettier |
+| `pnpm db:generate` | `drizzle-kit generate` | Generates SQL migrations from schema |
+| `pnpm db:migrate` | `drizzle-kit migrate` | Applies pending SQL migrations |
+| `pnpm --filter @formly/database dev` | `drizzle-kit studio` | Opens Drizzle Studio database viewer |
 
-Learn more about the power of Turborepo:
+---
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+## Documentation
+
+Full architectural specifications, data schemas, API procedures, and recipes can be found in `docs/ai-context/`:
+- [`00-OVERVIEW.md`](file:///c:/Users/ASUS/Desktop/CoHort%2026/Projects/Formly/docs/ai-context/00-OVERVIEW.md)
+- [`01-DATABASE.md`](file:///c:/Users/ASUS/Desktop/CoHort%2026/Projects/Formly/docs/ai-context/01-DATABASE.md)
+- [`02-SERVICES.md`](file:///c:/Users/ASUS/Desktop/CoHort%2026/Projects/Formly/docs/ai-context/02-SERVICES.md)
+- [`03-TRPC-API.md`](file:///c:/Users/ASUS/Desktop/CoHort%2026/Projects/Formly/docs/ai-context/03-TRPC-API.md)
+- [`04-AUTH.md`](file:///c:/Users/ASUS/Desktop/CoHort%2026/Projects/Formly/docs/ai-context/04-AUTH.md)
+- [`05-FORM-BUILDER-DOMAIN.md`](file:///c:/Users/ASUS/Desktop/CoHort%2026/Projects/Formly/docs/ai-context/05-FORM-BUILDER-DOMAIN.md)
+- [`06-FRONTEND.md`](file:///c:/Users/ASUS/Desktop/CoHort%2026/Projects/Formly/docs/ai-context/06-FRONTEND.md)
+- [`07-FLOWS-AND-RECIPES.md`](file:///c:/Users/ASUS/Desktop/CoHort%2026/Projects/Formly/docs/ai-context/07-FLOWS-AND-RECIPES.md)
+- [`08-RISKS-AND-OPEN-QUESTIONS.md`](file:///c:/Users/ASUS/Desktop/CoHort%2026/Projects/Formly/docs/ai-context/08-RISKS-AND-OPEN-QUESTIONS.md)
+- [`PROJECT_CONTEXT.md`](file:///c:/Users/ASUS/Desktop/CoHort%2026/Projects/Formly/docs/ai-context/PROJECT_CONTEXT.md)

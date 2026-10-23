@@ -1,0 +1,19 @@
+import { pgTable, uuid, timestamp, text, index } from "drizzle-orm/pg-core";
+
+export const verificationsTable = pgTable(
+  "verifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index("verifications_identifier_idx").on(table.identifier),
+  ]
+);
+
+export type SelectVerification = typeof verificationsTable.$inferSelect;
+export type InsertVerification = typeof verificationsTable.$inferInsert;

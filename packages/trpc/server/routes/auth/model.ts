@@ -68,3 +68,12 @@ export const meOutputModel = z.object({
   fullName: z.string().describe("full name of the user"),
   email: z.string().describe("email of the user"),
 });
+
+export const completeOAuthSignInInputModel = z.object({}).optional().default({});
+
+export const completeOAuthSignInOutputModel = z.object({
+  id: z.string().describe("id of the user"),
+  fullName: z.string().describe("full name of the user"),
+  email: z.string().describe("email of the user"),
+});
+

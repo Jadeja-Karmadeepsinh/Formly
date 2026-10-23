@@ -2,6 +2,8 @@ import express from "express";
 import { logger } from "@formly/logger";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "@formly/services/auth";
 
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { generateOpenApiDocument, createOpenApiExpressMiddleware } from "trpc-to-openapi";
@@ -18,12 +20,17 @@ const openApiDocument = generateOpenApiDocument(serverRouter, {
   baseUrl: env.BASE_URL.concat("/api"),
 });
 
+const allowedOrigins = Array.from(new Set([env.FRONTEND_URL, "http://localhost:3000"].filter(Boolean)));
+
 app.use(
   cors({
-    origin: env.NODE_ENV === "prod" ? ["backenddomain.com"] : ["http://localhost:3000", true],
+    origin: allowedOrigins,
     credentials: true,
   })
 );
+
+// Mount Better Auth before express.json() and before /api OpenAPI middleware
+app.all("/api/auth/{*any}", toNodeHandler(auth));
 
 app.use(express.json());
 app.use(cookieParser());
