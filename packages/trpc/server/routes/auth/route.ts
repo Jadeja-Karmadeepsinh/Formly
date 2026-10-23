@@ -22,6 +22,8 @@ import {
   logoutOutputModel,
   logoutAllOutputModel,
   meOutputModel,
+  completeOAuthSignInInputModel,
+  completeOAuthSignInOutputModel,
 } from "./model";
 
 const TAGS = ["Authentication"];
@@ -273,6 +275,55 @@ export const authRouter = router({
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Reset password failed";
         throw new TRPCError({ code: "BAD_REQUEST", message });
+      }
+    }),
+
+  completeOAuthSignIn: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/completeOAuthSignIn"),
+        tags: TAGS,
+      },
+    })
+    .input(completeOAuthSignInInputModel)
+    .output(completeOAuthSignInOutputModel)
+    .mutation(async ({ ctx }) => {
+      try {
+        const res = await userService.completeOAuthSignIn({
+          headers: ctx.headers,
+          metadata: { userAgent: ctx.userAgent, ipAddress: ctx.clientIp },
+        });
+
+        // Set httpOnly access_token and refresh_token cookies
+        setAuthCookies(ctx.res, res.tokens);
+
+        // Clear temporary Better Auth cookies via context helpers
+        const clearOpts = { path: "/", httpOnly: true, sameSite: "lax" as const };
+        ctx.deleteCookie("better-auth.session_token", clearOpts);
+        ctx.deleteCookie("__Secure-better-auth.session_token", clearOpts);
+        ctx.deleteCookie("better-auth.session_data", clearOpts);
+        ctx.deleteCookie("__Secure-better-auth.session_data", clearOpts);
+
+        return {
+          id: res.id,
+          fullName: res.fullName,
+          email: res.email,
+        };
+      } catch (err: unknown) {
+        if (err instanceof AuthServiceError) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: err.message || err.code,
+            cause: { appCode: err.code },
+          });
+        }
+        const message = err instanceof Error ? err.message : "OAuth sign-in failed";
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message,
+          cause: { appCode: AUTH_ERROR_CODES.OAUTH_SESSION_MISSING },
+        });
       }
     }),
 });

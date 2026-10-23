@@ -12,6 +12,7 @@ const BYPASS_ENDPOINTS = [
   "auth.signInUserWithEmailAndPassword",
   "auth.createUserWithEmailAndPassword",
   "auth.logout",
+  "auth.completeOAuthSignIn",
 ];
 
 const PUBLIC_AUTH_ROUTES = [
