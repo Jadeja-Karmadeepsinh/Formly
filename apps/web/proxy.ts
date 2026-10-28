@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+//TODO: Currently only i have dashboard page thats why only it is in protected routes 
 const PROTECTED_ROUTES = ["/dashboard"];
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password"];
 

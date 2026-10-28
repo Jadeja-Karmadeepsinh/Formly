@@ -79,6 +79,7 @@ class UserService {
     const { raw: rawRefreshToken, hash: tokenHash } = generateRefreshToken();
     const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL * 1000);
 
+    //TODO: here db operation might fail so add try-catch block to handle the error
     await db.insert(refreshTokensTable).values({
       userId,
       tokenHash,
@@ -630,6 +631,7 @@ class UserService {
     }
 
     // Generate new salt and hash using exact signup parameters
+    //TODO: can make a private function to generate salt which can be used in signin signup and here also
     const newSalt = randomBytes(16).toString("hex");
     const newHashedPassword = createHmac("sha256", newSalt).update(newPassword).digest("hex");
 
