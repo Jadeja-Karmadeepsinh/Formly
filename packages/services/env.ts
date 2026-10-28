@@ -2,11 +2,10 @@ import { z } from "zod";
 
 const envSchema = z
   .object({
-    NODE_ENV: z.enum(["development", "prod", "production", "test"]).default("development").describe("Node Environment"),
-    JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters").optional().describe("JWT Secret"),
-    JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must be at least 32 characters").optional().describe("JWT Access Secret"),
-    ACCESS_TOKEN_TTL_MINUTES: z.coerce.number().default(15).describe("Access Token TTL Minutes"),
-    REFRESH_TOKEN_TTL_DAYS: z.coerce.number().default(7).describe("Refresh Token TTL Days"),
+    NODE_ENV: z
+      .enum(["development", "prod", "production", "test"])
+      .default("development")
+      .describe("Node Environment"),
     COOKIE_DOMAIN: z.string().optional().describe("Cookie Domain"),
     APP_URL: z.string().default("http://localhost:3000").describe("App URL"),
     SMTP_HOST: z.string().optional().describe("SMTP Host"),
@@ -31,11 +30,6 @@ const envSchema = z
     FRONTEND_URL: z.string().default("http://localhost:3000").describe("Frontend URL"),
   })
   .transform((data) => {
-    const accessSecret = data.JWT_ACCESS_SECRET || data.JWT_SECRET;
-    if (!accessSecret) {
-      throw new Error("Either JWT_ACCESS_SECRET (min 32 chars) or JWT_SECRET must be defined");
-    }
-
     const isProd = data.NODE_ENV === "production" || data.NODE_ENV === "prod";
     if (isProd) {
       if (!data.BETTER_AUTH_SECRET) {
@@ -49,11 +43,7 @@ const envSchema = z
       }
     }
 
-    return {
-      ...data,
-      JWT_ACCESS_SECRET: accessSecret,
-      JWT_SECRET: accessSecret,
-    };
+    return data;
   });
 
 function createEnv(env: NodeJS.ProcessEnv) {

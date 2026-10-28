@@ -8,20 +8,19 @@ A Typeform/Tally-inspired form builder SaaS platform built with modern TypeScrip
 
 - **`apps/web`**: Next.js 16 (App Router) + React 19 + Tailwind CSS v4 web application (port `3000`).
 - **`apps/api`**: Express 5 API server mounting native tRPC at `/trpc`, Better Auth at `/api/auth/{*any}`, REST endpoints at `/api`, and Scalar docs at `/docs` (port `8000`).
-- **`packages/services`**: Domain business logic, `UserService`, Better Auth identity layer, token cryptographic engine, and Nodemailer email dispatch.
-- **`packages/trpc`**: tRPC server router, context, authentication procedures, and client re-exports.
-- **`packages/database`**: Drizzle ORM client singleton, PostgreSQL 15 schemas (`users`, `accounts`, `auth_sessions`, `verifications`, `refresh_tokens`, `password_reset_tokens`), and migration management.
+- **`packages/services`**: Domain business logic, Better Auth server instance and configuration, Formly auth service, and Nodemailer email dispatch.
+- **`packages/trpc`**: tRPC server router, context resolving Better Auth sessions from headers, protected procedures, and client re-exports.
+- **`packages/database`**: Drizzle ORM client singleton, PostgreSQL schemas (`user`, `session`, `account`, `verification`), and migration management.
 - **`packages/logger`**: Winston structured logging package.
 - **`packages/typescript-config` & `packages/eslint-config`**: Shared toolchain configurations.
 
-### Authentication Strategy (Hybrid Architecture)
+### Authentication Strategy (Better Auth Sole Authority)
 
-Formly uses a hybrid authentication model:
-1. **OAuth Identity Layer**: Better Auth handles third-party OAuth flows with Google and GitHub.
-2. **Session Authority**: The custom dual-token session architecture remains the sole authority:
-   - `access_token`: 15-minute HS256 JWT, scoped to `/`
-   - `refresh_token`: 7-day cryptographically secure opaque token with SHA-256 storage hash, session family tracking, reuse detection, and path scoped to `/trpc`
-3. **Bridge Mutation**: Upon successful OAuth redirect to `/oauth/callback`, the web client calls `auth.completeOAuthSignIn`, which validates the temporary Better Auth session, applies account pre-hijack mitigation, issues standard dual tokens via `UserService`, and revokes the temporary Better Auth session.
+Better Auth serves as the sole authentication and session authority for the entire application:
+1. **Core Authentication**: Email/password signup, login, password reset, and email verification are handled natively by Better Auth HTTP endpoints mounted at `/api/auth/*`.
+2. **Social OAuth**: Google and GitHub OAuth flows run directly through Better Auth end-to-end without custom token exchange or intermediate bridge pages.
+3. **Session Management**: Secure, database-backed HTTP-only cookie sessions managed by Better Auth, with automatic session renewal and multi-session revocation.
+4. **tRPC Integration**: The tRPC server context resolves the Better Auth session directly from incoming request headers; `protectedProcedure` automatically enforces valid sessions and injects `ctx.user`.
 
 ---
 

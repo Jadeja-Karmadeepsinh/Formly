@@ -150,8 +150,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, isLoading } = useAuth();
 
   const currentUser = {
-    name: user?.fullName || (isLoading ? "Loading..." : "User"),
+    name: user?.name || user?.fullName || (isLoading ? "Loading..." : "User"),
     email: user?.email || "",
+    avatar: user?.image || undefined,
   };
 
   return (

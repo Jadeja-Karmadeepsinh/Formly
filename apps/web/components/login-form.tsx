@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AlertCircle, CheckCircle2, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Mail, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn, getSafeRedirect } from "~/lib/utils";
@@ -29,9 +29,8 @@ import {
 import { Input } from "~/components/ui/input";
 import { PasswordInput } from "~/components/ui/password-input";
 import { Spinner } from "~/components/ui/spinner";
-import { useSignIn } from "~/hooks/api/auth";
-import { ForgotPasswordForm } from "./forgot-password-form";
-import { authClient } from "~/lib/auth-client";
+import { ForgotPasswordForm } from "~/components/forgot-password-form";
+import { useSignIn, useSocialSignIn, useAuth, useResendVerification } from "~/hooks/api/auth";
 
 const loginFormSchema = z.object({
   email: z
@@ -40,8 +39,7 @@ const loginFormSchema = z.object({
     .email("Please enter a valid email address"),
   password: z
     .string()
-    .min(1, "Password is required")
-    .min(8, "Password must be at least 8 characters long"),
+    .min(1, "Password is required"),
 });
 
 export type LoginFormValues = z.infer<typeof loginFormSchema>;
@@ -64,27 +62,80 @@ export function LoginForm({
 
   const [view, setView] = React.useState<"signin" | "forgot">(initialView);
   const [showResetSuccess, setShowResetSuccess] = React.useState<boolean>(false);
-  const [pendingProvider, setPendingProvider] = React.useState<"google" | "github" | null>(null);
   const [oauthErrorMessage, setOauthErrorMessage] = React.useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = React.useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = React.useState<number>(0);
 
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+
+  const {
+    signInUserWithEmailAndPasswordAsync,
+    isPending,
+    isError,
+    error: apiError,
+    isEmailNotVerified,
+  } = useSignIn();
+
+  const {
+    signInWithSocial,
+    isPending: isSocialPending,
+    pendingProvider,
+  } = useSocialSignIn();
+
+  const {
+    resendVerificationAsync,
+    isPending: isResending,
+  } = useResendVerification();
+
+  const isAnyPending = isPending || isSocialPending;
+
+  // Auto-redirect if already authenticated
+  React.useEffect(() => {
+    if (!isAuthLoading && isAuthenticated) {
+      const redirect = getSafeRedirect(searchParams.get("redirect"));
+      router.replace(redirect);
+    }
+  }, [isAuthenticated, isAuthLoading, router, searchParams]);
+
+  // Resend cooldown timer
+  React.useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  // Handle password reset success from query params
   React.useEffect(() => {
     if (searchParams.get("reset") === "success") {
       setShowResetSuccess(true);
-      // Clean up URL so page refresh won't show the banner again
       if (typeof window !== "undefined") {
         window.history.replaceState({}, "", window.location.pathname);
       }
       const timer = setTimeout(() => {
         setShowResetSuccess(false);
-      }, 5000);
+      }, 6000);
       return () => clearTimeout(timer);
     }
   }, [searchParams]);
 
+  // Handle OAuth callback errors
   React.useEffect(() => {
     const errorParam = searchParams.get("error");
     if (errorParam) {
-      setOauthErrorMessage("Sign-in with the provider failed. Please try again.");
+      if (
+        errorParam === "unable_to_link_account" ||
+        errorParam === "UNABLE_TO_LINK_ACCOUNT" ||
+        errorParam.toLowerCase().includes("link")
+      ) {
+        setOauthErrorMessage(
+          "An account with this email already exists. Please sign in with your email/password first, then connect your social account from Settings."
+        );
+      } else {
+        setOauthErrorMessage("Sign-in with the provider failed or was canceled. Please try again.");
+      }
+
       if (typeof window !== "undefined") {
         const url = new URL(window.location.href);
         url.searchParams.delete("error");
@@ -92,16 +143,6 @@ export function LoginForm({
       }
     }
   }, [searchParams]);
-
-  const {
-    signInUserWithEmailAndPasswordAsync,
-    isPending,
-    isSuccess,
-    isError,
-    error: apiError,
-  } = useSignIn();
-
-  const isAnyPending = isPending || Boolean(pendingProvider);
 
   const {
     register,
@@ -119,52 +160,49 @@ export function LoginForm({
 
   const onSubmit = async (values: LoginFormValues) => {
     try {
-      const response = await signInUserWithEmailAndPasswordAsync({
+      setUnverifiedEmail(null);
+      await signInUserWithEmailAndPasswordAsync({
         email: values.email,
         password: values.password,
       });
 
       toast.success("Welcome back!", {
-        description: `Signed in as ${response.fullName || values.email}`,
+        description: "Signing you in...",
       });
 
       reset();
       const redirect = getSafeRedirect(searchParams.get("redirect"));
-      router.push(redirect);
+      router.replace(redirect);
+      router.refresh();
     } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to sign in. Please try again.";
-      toast.error("Sign in failed", {
-        description: errorMessage,
+      if (isEmailNotVerified || (err instanceof Error && err.message.toLowerCase().includes("verify"))) {
+        setUnverifiedEmail(values.email);
+      }
+    }
+  };
+
+  const handleResendForUnverified = async () => {
+    if (resendCooldown > 0 || isResending || !unverifiedEmail) return;
+    try {
+      await resendVerificationAsync({ email: unverifiedEmail });
+      setResendCooldown(60);
+      toast.success("Verification link sent", {
+        description: `Please check ${unverifiedEmail} for instructions.`,
       });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to resend verification email.";
+      toast.error("Resend failed", { description: msg });
     }
   };
 
   const handleSocialSignIn = async (provider: "google" | "github") => {
     try {
-      setPendingProvider(provider);
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
       const redirectParam = searchParams.get("redirect");
       const safeRedirect = getSafeRedirect(redirectParam);
-      const callbackURL = `${origin}/oauth/callback?redirect=${encodeURIComponent(safeRedirect)}`;
-      const errorCallbackURL = `${origin}/login?error=oauth_failed`;
-
-      const res = await authClient.signIn.social({
-        provider,
-        callbackURL,
-        errorCallbackURL,
-      });
-
-      if (res?.error) {
-        toast.error("Authentication failed", {
-          description: res.error.message || "Failed to connect to provider. Please try again.",
-        });
-        setPendingProvider(null);
-      }
+      await signInWithSocial(provider, safeRedirect);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to connect to provider.";
       toast.error("Authentication failed", { description: message });
-      setPendingProvider(null);
     }
   };
 
@@ -236,7 +274,7 @@ export function LoginForm({
                   <AlertCircle className="size-4 shrink-0 mt-0.5" />
                   <div className="space-y-0.5">
                     <p className="font-medium">Sign-in error</p>
-                    <p className="text-muted-foreground">{oauthErrorMessage}</p>
+                    <p className="text-muted-foreground leading-relaxed">{oauthErrorMessage}</p>
                   </div>
                   <button
                     type="button"
@@ -246,6 +284,42 @@ export function LoginForm({
                   >
                     <X className="size-3.5" />
                   </button>
+                </div>
+              )}
+
+              {/* Unverified email alert with resend option */}
+              {unverifiedEmail && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3.5 text-xs text-amber-800 dark:text-amber-400 animate-in fade-in-50 duration-200"
+                >
+                  <Mail className="size-4 shrink-0 mt-0.5" />
+                  <div className="space-y-1.5 flex-1">
+                    <p className="font-medium">Email verification required</p>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Please verify your email before logging in. Check your inbox and spam folder for the link.
+                    </p>
+                    <div>
+                      {resendCooldown > 0 ? (
+                        <span className="text-muted-foreground">Resend available in {resendCooldown}s</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleResendForUnverified}
+                          disabled={isResending}
+                          className="font-medium underline underline-offset-4 hover:opacity-80 transition-opacity cursor-pointer inline-flex items-center gap-1"
+                        >
+                          {isResending ? (
+                            <>
+                              <Spinner className="size-3" /> Sending...
+                            </>
+                          ) : (
+                            "Resend verification email"
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -302,9 +376,11 @@ export function LoginForm({
                 Or continue with email
               </FieldSeparator>
 
+              {/* Standard Email/Password Form */}
               <form onSubmit={handleSubmit(onSubmit)} noValidate>
                 <FieldGroup className="gap-4">
-                  {isError && (
+                  {/* General Error (if not email verification) */}
+                  {isError && !unverifiedEmail && (
                     <div
                       role="alert"
                       className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs text-destructive animate-in fade-in-50 duration-200"
@@ -313,31 +389,17 @@ export function LoginForm({
                       <div className="space-y-0.5">
                         <p className="font-medium">Could not sign in</p>
                         <p className="text-muted-foreground">
-                          {apiError?.message || "Invalid credentials. Please try again."}
+                          {apiError?.message || "Invalid email or password."}
                         </p>
                       </div>
                     </div>
                   )}
 
-                  {isSuccess && (
-                    <div
-                      role="status"
-                      className="flex items-start gap-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-emerald-700 dark:text-emerald-400 animate-in fade-in-50 duration-200"
-                    >
-                      <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
-                      <div className="space-y-0.5">
-                        <p className="font-medium">Signed in successfully</p>
-                        <p className="text-muted-foreground">
-                          Redirecting to your workspace...
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
+                  {/* Email Field */}
                   <Field data-invalid={!!errors.email}>
-                    <FieldLabel htmlFor="login-email">Email</FieldLabel>
+                    <FieldLabel htmlFor="email">Email</FieldLabel>
                     <Input
-                      id="login-email"
+                      id="email"
                       type="email"
                       placeholder="m@example.com"
                       autoComplete="email"
@@ -351,20 +413,20 @@ export function LoginForm({
                     )}
                   </Field>
 
+                  {/* Password Field */}
                   <Field data-invalid={!!errors.password}>
                     <div className="flex items-center justify-between">
-                      <FieldLabel htmlFor="login-password">Password</FieldLabel>
+                      <FieldLabel htmlFor="password">Password</FieldLabel>
                       <button
                         type="button"
                         onClick={() => setView("forgot")}
-                        disabled={isAnyPending}
-                        className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-foreground transition-colors cursor-pointer disabled:pointer-events-none disabled:opacity-50"
+                        className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors cursor-pointer"
                       >
                         Forgot password?
                       </button>
                     </div>
                     <PasswordInput
-                      id="login-password"
+                      id="password"
                       placeholder="••••••••"
                       autoComplete="current-password"
                       disabled={isAnyPending}
@@ -377,6 +439,7 @@ export function LoginForm({
                     )}
                   </Field>
 
+                  {/* Submit Button & Sign Up Link */}
                   <Field className="pt-1">
                     <Button
                       type="submit"

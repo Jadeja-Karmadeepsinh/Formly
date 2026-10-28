@@ -30,7 +30,7 @@ app.use(
 );
 
 // Mount Better Auth before express.json() and before /api OpenAPI middleware
-app.all("/api/auth/{*any}", toNodeHandler(auth));
+app.all(["/api/auth", "/api/auth/{*any}"], toNodeHandler(auth));
 
 app.use(express.json());
 app.use(cookieParser());

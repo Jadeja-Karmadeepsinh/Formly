@@ -5,15 +5,14 @@
   "type": "module",
   "exports": {
     "./*": "./*.ts",
-    "./user": "./user/index.ts",
-    "./user/*": "./user/*.ts",
     "./auth": "./auth/index.ts",
-    "./auth/*": "./auth/*.ts"
+    "./auth/*": "./auth/*.ts",
+    "./email": "./email/index.ts",
+    "./email/*": "./email/*.ts"
   },
   "devDependencies": {
     "@formly/eslint-config": "workspace:*",
     "@formly/typescript-config": "workspace:*",
-    "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^8.0.2",
     "dotenv-cli": "^11.0.0",
     "typescript": "^5.9.3"
@@ -24,7 +23,6 @@
     "@formly/logger": "workspace:*",
     "better-auth": "1.7.12",
     "drizzle-orm": "^0.45.1",
-    "jsonwebtoken": "^9.0.3",
     "nodemailer": "^10.1.2",
     "zod": "^4.3.5"
   }

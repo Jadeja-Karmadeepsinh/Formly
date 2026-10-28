@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1792230936357,
-      "tag": "0000_tiny_angel",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1792248088663,
-      "tag": "0001_marvelous_hobgoblin",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1792312954651,
-      "tag": "0002_strange_rachel_grey",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1792733734582,
-      "tag": "0003_awesome_karma",
+      "when": 1793193782153,
+      "tag": "0000_brave_tinkerer",
       "breakpoints": true
     }
   ]
