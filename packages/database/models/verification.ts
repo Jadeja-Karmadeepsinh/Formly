@@ -1,19 +1,22 @@
-import { pgTable, uuid, timestamp, text, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, index } from "drizzle-orm/pg-core";
 
-export const verificationsTable = pgTable(
-  "verifications",
+export const verification = pgTable(
+  "verification",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: text("id").primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
   },
-  (table) => [
-    index("verifications_identifier_idx").on(table.identifier),
-  ]
+  (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export type SelectVerification = typeof verificationsTable.$inferSelect;
-export type InsertVerification = typeof verificationsTable.$inferInsert;
+export const verificationsTable = verification;
+
+export type SelectVerification = typeof verification.$inferSelect;
+export type InsertVerification = typeof verification.$inferInsert;

@@ -1,3 +1,3 @@
-import UserService from "@formly/services/user";
+import { authService } from "@formly/services/auth/service";
 
-export const userService = new UserService();
+export { authService };

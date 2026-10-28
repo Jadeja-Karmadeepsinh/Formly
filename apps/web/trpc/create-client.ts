@@ -1,6 +1,5 @@
 import { httpLink, httpBatchStreamLink } from "@formly/trpc/client";
 import { env } from "~/env.js";
-import { authFetch } from "./auth-fetch";
 
 interface CreateTRPCHttpBatchClientClientOpts {
   enableStreaming?: boolean;
@@ -18,7 +17,10 @@ export const createTRPCHttpBatchClientClient = (opts?: CreateTRPCHttpBatchClient
   return c({
     url,
     fetch(url, options) {
-      return authFetch(url, options);
+      return fetch(url, {
+        ...options,
+        credentials: "include",
+      });
     },
   });
 };

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft, RefreshCw } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { FormlyLogo } from "~/components/formly-logo";
@@ -15,12 +15,12 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Spinner } from "~/components/ui/spinner";
-import { trpc } from "~/trpc/client";
 import { ResetPasswordForm } from "~/components/reset-password-form";
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const rawToken = searchParams.get("token")?.trim() || "";
+  const errorParam = searchParams.get("error");
   const [token, setToken] = React.useState<string>(rawToken);
 
   React.useEffect(() => {
@@ -31,71 +31,34 @@ function ResetPasswordContent() {
 
   const activeToken = token || rawToken;
 
-  const { data, isLoading } = trpc.auth.verifyResetToken.useQuery(
-    { token: activeToken },
-    {
-      enabled: Boolean(activeToken),
-      retry: false,
-      refetchOnWindowFocus: false,
-    }
-  );
-
-  // Missing token in initial URL
-  if (!activeToken) {
+  // If Better Auth returned error or token is missing
+  if (errorParam || !activeToken) {
+    const isExpired = errorParam === "INVALID_TOKEN" || errorParam === "TOKEN_EXPIRED";
     return (
       <Card className="border-border/80 bg-card/95 shadow-xs">
         <CardHeader className="text-center pb-4">
-          <CardTitle className="text-xl font-semibold tracking-tight text-destructive flex items-center justify-center gap-2">
+          <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <AlertCircle className="size-5" />
-            Invalid reset link
-          </CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">
-            No reset token was provided. Please request a new password reset link.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Link href="/login" className="w-full block">
-            <Button variant="outline" className="w-full">
-              Back to sign in
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Loading skeleton while verifying token with server
-  if (isLoading) {
-    return (
-      <Card className="border-border/80 bg-card/95 shadow-xs">
-        <CardContent className="py-12 flex flex-col items-center justify-center gap-3">
-          <Spinner className="size-6 text-foreground" />
-          <p className="text-sm text-muted-foreground">Verifying reset link...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Expired, already used, or invalid token
-  if (!data?.valid) {
-    return (
-      <Card className="border-border/80 bg-card/95 shadow-xs">
-        <CardHeader className="text-center pb-4">
-          <CardTitle className="text-xl font-semibold tracking-tight text-destructive flex items-center justify-center gap-2">
-            <AlertCircle className="size-5" />
-            Link expired or invalid
+          </div>
+          <CardTitle className="text-xl font-semibold tracking-tight">
+            {isExpired ? "Reset link expired or invalid" : "Invalid reset link"}
           </CardTitle>
           <CardDescription className="text-sm text-muted-foreground leading-relaxed">
-            This password reset link is invalid or has expired. Password reset links are valid for 30 minutes and can only be used once.
+            {isExpired
+              ? "This password reset link has expired or has already been used. Please request a new link."
+              : "No valid reset token was provided. Please request a new password reset link."}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <Link href="/login" className="w-full">
-            <Button className="w-full font-medium">Request a new link</Button>
+        <CardContent className="space-y-3">
+          <Link href="/forgot-password" className="w-full block">
+            <Button className="w-full flex items-center justify-center gap-2">
+              <RefreshCw className="size-3.5" />
+              Request new reset link
+            </Button>
           </Link>
-          <Link href="/login" className="w-full">
-            <Button variant="outline" className="w-full font-normal flex items-center justify-center gap-2">
-              <ArrowLeft className="size-4" />
+          <Link href="/login" className="w-full block">
+            <Button variant="outline" className="w-full flex items-center justify-center gap-2 font-normal">
+              <ArrowLeft className="size-3.5" />
               Back to sign in
             </Button>
           </Link>
@@ -104,7 +67,6 @@ function ResetPasswordContent() {
     );
   }
 
-  // Valid token -> render password reset form
   return <ResetPasswordForm token={activeToken} />;
 }
 

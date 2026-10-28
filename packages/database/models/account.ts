@@ -1,38 +1,39 @@
-import { pgTable, uuid, varchar, timestamp, text, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { usersTable } from "./user";
+import { pgTable, text, timestamp, index } from "drizzle-orm/pg-core";
+import { user } from "./user";
 
-export const accountsTable = pgTable(
-  "accounts",
+export const account = pgTable(
+  "account",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => usersTable.id, { onDelete: "cascade" }),
+    id: text("id").primaryKey(),
     accountId: text("account_id").notNull(),
-    providerId: varchar("provider_id", { length: 50 }).notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
-    accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
-    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }),
-    scope: text("scope"),
     idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at"),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+    scope: text("scope"),
     password: text("password"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .$onUpdate(() => new Date())
+      .notNull(),
   },
-  (table) => [
-    index("accounts_user_id_idx").on(table.userId),
-    index("accounts_provider_account_idx").on(table.providerId, table.accountId),
-  ]
+  (table) => [index("account_userId_idx").on(table.userId)],
 );
 
-export const accountsRelations = relations(accountsTable, ({ one }) => ({
-  user: one(usersTable, {
-    fields: [accountsTable.userId],
-    references: [usersTable.id],
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
   }),
 }));
 
-export type SelectAccount = typeof accountsTable.$inferSelect;
-export type InsertAccount = typeof accountsTable.$inferInsert;
+export const accountsTable = account;
+
+export type SelectAccount = typeof account.$inferSelect;
+export type InsertAccount = typeof account.$inferInsert;
