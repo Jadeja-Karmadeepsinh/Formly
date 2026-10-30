@@ -6,6 +6,7 @@ import { CheckCircle2, AlertCircle, Link2, Shield, Laptop, LogOut, Check, X } fr
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
+import { FormlyBadge } from "~/components/formly-logo";
 import {
   Card,
   CardContent,
@@ -135,6 +136,24 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex items-center gap-4 pb-2">
+            {user.image ? (
+              <img
+                src={user.image}
+                alt={user.name}
+                className="size-12 rounded-xl object-cover border border-border"
+              />
+            ) : (
+              <FormlyBadge size="xl" />
+            )}
+            <div>
+              <p className="font-semibold text-foreground text-base leading-tight">
+                {user.fullName || user.name}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div className="rounded-lg border border-border/60 bg-muted/20 p-3.5 space-y-1">
               <span className="text-xs text-muted-foreground">Full Name</span>

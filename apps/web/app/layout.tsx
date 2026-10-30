@@ -15,6 +15,15 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Formly — Build forms. Get real responses.",
   description: "A beautifully simple way to create forms and collect meaningful responses.",
+  icons: {
+    icon: [
+      { url: "/brand/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: ["/brand/favicon.svg"],
+    apple: [
+      { url: "/brand/favicon.svg" },
+    ],
+  },
 };
 
 export default function RootLayout({

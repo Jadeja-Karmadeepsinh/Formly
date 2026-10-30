@@ -82,7 +82,7 @@ export default function ResetPasswordPage() {
           className="flex items-center gap-2 self-center transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-md p-1"
           aria-label="Formly homepage"
         >
-          <FormlyLogo size={24} />
+          <FormlyLogo size={28} />
         </Link>
         <React.Suspense
           fallback={

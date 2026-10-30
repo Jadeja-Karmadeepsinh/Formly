@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { FormlyLogo } from "~/components/formly-logo";
+import { FormlyLogo, FormlySymbol } from "~/components/formly-logo";
+import { ThemeToggle } from "~/components/theme-toggle";
 import { Button } from "~/components/ui/button";
 
 export const metadata: Metadata = {
@@ -13,15 +14,18 @@ export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between items-center px-4 py-8 sm:py-12">
       <header className="flex w-full max-w-2xl items-center justify-between pb-6 border-b border-border">
-        <Link href="/" className="inline-flex items-center gap-2">
-          <FormlyLogo size={22} />
+        <Link href="/" className="inline-flex items-center gap-2" aria-label="Formly homepage">
+          <FormlyLogo size={24} />
         </Link>
-        <Link href="/login">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="size-4" />
-            Back to sign in
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link href="/login">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <ArrowLeft className="size-4" />
+              Back to sign in
+            </Button>
+          </Link>
+        </div>
       </header>
 
       <main className="w-full max-w-2xl my-auto py-10 space-y-6">
@@ -38,26 +42,28 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-          <h2 className="text-base font-semibold text-foreground">2. How We Protect Your Data</h2>
+          <h2 className="text-base font-semibold text-foreground">2. How We Use Information</h2>
           <p>
-            Your account passwords are cryptographically hashed using standard secure algorithms. We do not store plain-text passwords and we implement transport encryption across all endpoints.
+            Information collected is strictly utilized to operate and deliver the Formly services, provide authentication, and communicate service updates.
           </p>
         </section>
 
         <section className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-          <h2 className="text-base font-semibold text-foreground">3. Form Submissions</h2>
+          <h2 className="text-base font-semibold text-foreground">3. Security</h2>
           <p>
-            Form respondents’ submissions are stored on behalf of the form creator. We do not sell or monetize submission data.
+            We maintain modern encryption standards for credentials, OAuth account links, and user records. We never sell your personal data.
           </p>
         </section>
       </main>
 
-      <footer className="w-full max-w-2xl pt-6 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-        <span>© {new Date().getFullYear()} Formly</span>
-        <div className="flex gap-4">
-          <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
-          <Link href="/login" className="hover:text-foreground transition-colors">Sign In</Link>
+      <footer className="w-full max-w-2xl pt-6 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <FormlySymbol size={14} />
+          <span>© {new Date().getFullYear()} Formly</span>
         </div>
+        <Link href="/terms" className="hover:underline">
+          Terms of Service
+        </Link>
       </footer>
     </div>
   );

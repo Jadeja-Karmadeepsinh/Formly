@@ -29,6 +29,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { PasswordInput } from "~/components/ui/password-input";
 import { Spinner } from "~/components/ui/spinner";
+import { FormlyBadge } from "~/components/formly-logo";
 import { useSignUp, useResendVerification, useSocialSignIn } from "~/hooks/api/auth";
 import { authClient } from "~/lib/auth-client";
 
@@ -252,8 +253,8 @@ export function SignupForm({
           /* ================= VERIFICATION PENDING STATE ================= */
           <div className="animate-in fade-in-50 duration-200">
             <CardHeader className="text-center pb-4">
-              <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-primary/5 text-primary">
-                <Mail className="size-6" />
+              <div className="mx-auto mb-3 flex items-center justify-center">
+                <FormlyBadge size="lg" />
               </div>
               <CardTitle className="text-xl font-semibold tracking-tight">
                 Check your inbox
