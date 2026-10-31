@@ -35,9 +35,23 @@ export function proxy(request: NextRequest) {
     pathname === "/reset-password" &&
     (request.nextUrl.searchParams.has("token") || request.nextUrl.searchParams.has("error"));
 
-  // 2. Authenticated user trying to access login/signup/auth pages -> redirect to /dashboard
-  if (isAuthRoute && sessionToken && !isResetWithParams) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  // 2. User accessing login/signup/auth pages
+  if (isAuthRoute) {
+    // If arriving with ?redirect= or ?error=, it means a protected route rejected their session
+    // (e.g. database was reset, session expired or was revoked). Clear any stale cookies and stay on auth page!
+    if (request.nextUrl.searchParams.has("redirect") || request.nextUrl.searchParams.has("error")) {
+      const response = NextResponse.next();
+      if (sessionToken) {
+        response.cookies.delete("better-auth.session_token");
+        response.cookies.delete("__Secure-better-auth.session_token");
+      }
+      return response;
+    }
+
+    // Authenticated user with session attempting to access auth page -> redirect to /dashboard
+    if (sessionToken && !isResetWithParams) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
   }
 
   return NextResponse.next();

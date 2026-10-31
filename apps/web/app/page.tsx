@@ -32,7 +32,7 @@ export default function Home() {
           </Link>
 
           <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
-            <Link href="/dashboard" className="transition-colors hover:text-foreground">
+            <Link href="/dashboard" prefetch={false} className="transition-colors hover:text-foreground">
               Dashboard
             </Link>
             <Link href="/privacy" className="transition-colors hover:text-foreground">
@@ -98,7 +98,7 @@ export default function Home() {
                   <ArrowRight className="size-4" />
                 </Button>
               </Link>
-              <Link href="/dashboard">
+              <Link href="/dashboard" prefetch={false}>
                 <Button size="lg" variant="outline" className="h-11 px-6 text-sm">
                   Go to Dashboard
                 </Button>
@@ -180,7 +180,7 @@ export default function Home() {
             <Link href="/terms" className="hover:text-foreground transition-colors">
               Terms of Service
             </Link>
-            <Link href="/dashboard" className="hover:text-foreground transition-colors">
+            <Link href="/dashboard" prefetch={false} className="hover:text-foreground transition-colors">
               Dashboard
             </Link>
           </div>
