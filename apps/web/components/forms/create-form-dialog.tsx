@@ -48,7 +48,6 @@ export function CreateFormDialog({
   const [maxSubmissions, setMaxSubmissions] = React.useState("");
   const [expiresAt, setExpiresAt] = React.useState("");
   const [submitButtonText, setSubmitButtonText] = React.useState("Submit");
-  const [allowMultipleSubmissions, setAllowMultipleSubmissions] = React.useState(true);
   const [showProgressBar, setShowProgressBar] = React.useState(false);
   const [validationError, setValidationError] = React.useState<string | null>(null);
 
@@ -61,7 +60,6 @@ export function CreateFormDialog({
     setMaxSubmissions("");
     setExpiresAt("");
     setSubmitButtonText("Submit");
-    setAllowMultipleSubmissions(true);
     setShowProgressBar(false);
     setValidationError(null);
   };
@@ -92,7 +90,6 @@ export function CreateFormDialog({
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         settings: {
           submitButtonText: submitButtonText.trim() || "Submit",
-          allowMultipleSubmissions,
           showProgressBar,
         },
       });
@@ -233,23 +230,6 @@ export function CreateFormDialog({
 
               <div className="flex items-center justify-between rounded-lg border p-2.5">
                 <div className="space-y-0.5">
-                  <Label htmlFor="form-allow-multiple" className="text-sm font-medium cursor-pointer">
-                    Allow Multiple Submissions
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Allow users to submit this form more than once.
-                  </p>
-                </div>
-                <Switch
-                  id="form-allow-multiple"
-                  checked={allowMultipleSubmissions}
-                  onCheckedChange={setAllowMultipleSubmissions}
-                  disabled={isPending}
-                />
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border p-2.5">
-                <div className="space-y-0.5">
                   <Label htmlFor="form-progress-bar" className="text-sm font-medium cursor-pointer">
                     Show Progress Bar
                   </Label>
@@ -286,4 +266,3 @@ export function CreateFormDialog({
     </Dialog>
   );
 }
-

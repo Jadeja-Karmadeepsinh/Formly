@@ -7,14 +7,12 @@ import {
   IconCopy,
   IconDotsVertical,
   IconEdit,
-  IconEye,
   IconFileText,
   IconGlobe,
   IconLock,
   IconPlus,
   IconRefresh,
   IconSearch,
-  IconSend,
   IconTrash,
 } from "@tabler/icons-react";
 import { toast } from "sonner";

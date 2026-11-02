@@ -1,4 +1,6 @@
 import { authService } from "@formly/services/auth/service";
-import { formService, FormService } from "@formly/services/forms";
+import FormService from "@formly/services/form";
 
-export { authService, formService, FormService };
+export const formService = new FormService();
+
+export { authService };

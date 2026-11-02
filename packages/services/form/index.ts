@@ -11,7 +11,7 @@ import {
 
 export type Form = typeof formsTable.$inferSelect;
 
-export class FormService {
+export default class FormService {
   /**
    * Generates a secure 16-character base64url share ID (12 bytes = 16 base64url chars).
    */
@@ -210,4 +210,3 @@ export class FormService {
   }
 }
 
-export const formService = new FormService();

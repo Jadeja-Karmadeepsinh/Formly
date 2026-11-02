@@ -4,7 +4,7 @@ import {
   formStatusEnum,
   formVisibilityEnum,
   updateFormInputSchema,
-} from "@formly/services/forms";
+} from "@formly/services/form/model";
 
 export const formIdInputModel = z.object({
   id: z.string().uuid("Invalid form ID"),
