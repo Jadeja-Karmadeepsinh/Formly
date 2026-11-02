@@ -1,6 +1,10 @@
 import crypto from "node:crypto";
-import { and, db, desc, eq, isNull } from "@formly/database";
-import { formsTable, type FormSettings } from "@formly/database/schema";
+import { and, asc, db, desc, eq, isNull } from "@formly/database";
+import {
+  formsTable,
+  formElementsTable,
+  type FormSettings,
+} from "@formly/database/schema";
 import {
   type CreateFormInput,
   createFormInputSchema,
@@ -10,6 +14,7 @@ import {
 } from "./model";
 
 export type Form = typeof formsTable.$inferSelect;
+export type FormElement = typeof formElementsTable.$inferSelect;
 
 export default class FormService {
   /**
@@ -207,6 +212,58 @@ export default class FormService {
       .returning({ id: formsTable.id });
 
     return result.length > 0;
+  }
+
+  /**
+   * Publishes a form owned by the user.
+   */
+  public async publishForm(userId: string, formId: string): Promise<Form | null> {
+    return this.updateForm(userId, formId, {
+      status: "published",
+    });
+  }
+
+  /**
+   * Unpublishes a form owned by the user (sets status back to draft).
+   */
+  public async unpublishForm(userId: string, formId: string): Promise<Form | null> {
+    return this.updateForm(userId, formId, {
+      status: "draft",
+    });
+  }
+
+  /**
+   * Retrieves a public form by its shareId along with its questions.
+   */
+  public async getFormByShareId(shareId: string): Promise<{
+    form: Form;
+    fields: FormElement[];
+  } | null> {
+    const [form] = await db
+      .select()
+      .from(formsTable)
+      .where(
+        and(
+          eq(formsTable.shareId, shareId),
+          isNull(formsTable.deletedAt)
+        )
+      )
+      .limit(1);
+
+    if (!form) {
+      return null;
+    }
+
+    const fields = await db
+      .select()
+      .from(formElementsTable)
+      .where(eq(formElementsTable.formId, form.id))
+      .orderBy(asc(formElementsTable.sortOrder));
+
+    return {
+      form,
+      fields,
+    };
   }
 }
 

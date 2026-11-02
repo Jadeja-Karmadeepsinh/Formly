@@ -5,6 +5,7 @@ import {
   formVisibilityEnum,
   updateFormInputSchema,
 } from "@formly/services/form/model";
+import { formFieldOutputModel } from "../form-field/model";
 
 export const formIdInputModel = z.object({
   id: z.string().uuid("Invalid form ID"),
@@ -50,4 +51,15 @@ export const deleteFormOutputModel = z.object({
   id: z.string().uuid(),
 });
 export type DeleteFormOutput = z.infer<typeof deleteFormOutputModel>;
+
+export const formShareIdInputModel = z.object({
+  shareId: z.string().min(1, "Share ID is required"),
+});
+export type FormShareIdInput = z.infer<typeof formShareIdInputModel>;
+
+export const publicFormDetailOutputModel = z.object({
+  form: formOutputModel,
+  fields: z.array(formFieldOutputModel),
+});
+export type PublicFormDetailOutput = z.infer<typeof publicFormDetailOutputModel>;
 

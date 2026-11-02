@@ -6,6 +6,7 @@ import type { RouterInputs, RouterOutputs } from "@formly/trpc/client";
 
 export type FormItem = RouterOutputs["forms"]["listFormsByUserId"][number];
 export type FormDetail = RouterOutputs["forms"]["getFormById"];
+export type PublicFormDetail = RouterOutputs["forms"]["getPublicFormByShareId"];
 export type CreateFormInput = RouterInputs["forms"]["createForm"];
 export type UpdateFormInput = RouterInputs["forms"]["updateFormById"];
 
@@ -93,6 +94,82 @@ export function useUpdateForm() {
     error: mutation.error,
     reset: mutation.reset,
     data: mutation.data,
+  };
+}
+
+export function usePublishForm() {
+  const utils = trpc.useUtils();
+
+  const mutation = trpc.forms.publishForm.useMutation({
+    onSuccess: async (published) => {
+      await Promise.all([
+        utils.forms.listFormsByUserId.invalidate(),
+        utils.forms.getFormById.invalidate({ id: published.id }),
+      ]);
+      toast.success("Form published successfully");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to publish form");
+    },
+  });
+
+  return {
+    publishForm: mutation.mutate,
+    publishFormAsync: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
+    data: mutation.data,
+  };
+}
+
+export function useUnpublishForm() {
+  const utils = trpc.useUtils();
+
+  const mutation = trpc.forms.unpublishForm.useMutation({
+    onSuccess: async (unpublished) => {
+      await Promise.all([
+        utils.forms.listFormsByUserId.invalidate(),
+        utils.forms.getFormById.invalidate({ id: unpublished.id }),
+      ]);
+      toast.success("Form unpublished (moved to draft)");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to unpublish form");
+    },
+  });
+
+  return {
+    unpublishForm: mutation.mutate,
+    unpublishFormAsync: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
+    data: mutation.data,
+  };
+}
+
+export function usePublicForm(shareId: string, options?: { enabled?: boolean }) {
+  const query = trpc.forms.getPublicFormByShareId.useQuery(
+    { shareId },
+    {
+      enabled: Boolean(shareId) && (options?.enabled ?? true),
+      staleTime: 60 * 1000,
+      ...options,
+    }
+  );
+
+  return {
+    data: query.data ?? null,
+    form: query.data?.form ?? null,
+    fields: query.data?.fields ?? [],
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
   };
 }
 

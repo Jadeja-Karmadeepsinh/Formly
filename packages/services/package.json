@@ -10,7 +10,9 @@
     "./email": "./email/index.ts",
     "./email/*": "./email/*.ts",
     "./form": "./form/index.ts",
-    "./form/*": "./form/*.ts"
+    "./form/*": "./form/*.ts",
+    "./form-field": "./form-field/index.ts",
+    "./form-field/*": "./form-field/*.ts"
   },
   "devDependencies": {
     "@formly/eslint-config": "workspace:*",

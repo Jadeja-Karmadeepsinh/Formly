@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   IconAlertCircle,
   IconCheck,
@@ -347,8 +348,11 @@ export function FormsDashboard() {
                     {filteredForms.map((form) => (
                       <TableRow key={form.id} className="group">
                         <TableCell className="font-medium">
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                          <Link
+                            href={`/dashboard/forms/${form.id}`}
+                            className="flex flex-col group/title hover:opacity-85 transition-opacity"
+                          >
+                            <span className="font-semibold text-foreground group-hover/title:text-primary transition-colors">
                               {form.title}
                             </span>
                             {form.description && (
@@ -356,7 +360,7 @@ export function FormsDashboard() {
                                 {form.description}
                               </span>
                             )}
-                          </div>
+                          </Link>
                         </TableCell>
 
                         <TableCell>{getStatusBadge(form.status)}</TableCell>
@@ -426,12 +430,19 @@ export function FormsDashboard() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem asChild className="gap-2 cursor-pointer">
+                                <Link href={`/dashboard/forms/${form.id}`}>
+                                  <IconFileText className="size-4" />
+                                  <span>Open Editor</span>
+                                </Link>
+                              </DropdownMenuItem>
+
                               <DropdownMenuItem
                                 onClick={() => setEditingForm(form)}
                                 className="gap-2 cursor-pointer"
                               >
                                 <IconEdit className="size-4" />
-                                <span>Edit</span>
+                                <span>Settings</span>
                               </DropdownMenuItem>
 
                               <DropdownMenuItem
@@ -484,4 +495,3 @@ export function FormsDashboard() {
     </div>
   );
 }
-
