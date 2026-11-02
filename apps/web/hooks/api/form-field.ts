@@ -13,6 +13,8 @@ export type UpdateFormFieldInput =
   RouterInputs["formFields"]["updateFormField"];
 export type ReorderFormFieldsInput =
   RouterInputs["formFields"]["reorderFormFields"];
+export type SyncFormFieldsInput =
+  RouterInputs["formFields"]["syncFormFields"];
 
 export function useFormFields(
   formId: string,
@@ -130,6 +132,30 @@ export function useDeleteFormField(formId: string) {
   return {
     deleteFormField: mutation.mutate,
     deleteFormFieldAsync: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
+    data: mutation.data,
+  };
+}
+
+export function useSyncFormFields(formId: string) {
+  const utils = trpc.useUtils();
+
+  const mutation = trpc.formFields.syncFormFields.useMutation({
+    onSuccess: async (data) => {
+      utils.formFields.listFormFields.setData({ formId }, data);
+      await utils.formFields.listFormFields.invalidate({ formId });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to sync fields");
+    },
+  });
+
+  return {
+    syncFormFields: mutation.mutate,
+    syncFormFieldsAsync: mutation.mutateAsync,
     isPending: mutation.isPending,
     isError: mutation.isError,
     error: mutation.error,

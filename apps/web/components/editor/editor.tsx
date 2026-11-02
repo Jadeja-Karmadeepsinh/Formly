@@ -14,11 +14,8 @@ import Link from "@tiptap/extension-link";
 import { toast } from "sonner";
 import { useForm, useUpdateForm } from "~/hooks/api/form";
 import {
-  useCreateFormField,
-  useDeleteFormField,
   useFormFields,
-  useReorderFormFields,
-  useUpdateFormField,
+  useSyncFormFields,
 } from "~/hooks/api/form-field";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
@@ -26,7 +23,17 @@ import { EditorHeader, type SaveStatus } from "./components/editor-header";
 import { EditorBubbleMenu } from "./components/bubble-menu";
 import { FormFieldNode } from "./nodes/form-field-node";
 import { SlashCommand } from "./extensions/slash-command";
-import { type FieldSettingsData } from "./components/form-field-settings-dialog";
+import {
+  PropertiesPanel,
+  type PropertiesFieldData,
+} from "./components/properties-panel";
+import { PublishDialog } from "./components/publish-dialog";
+import {
+  FormPreviewModal,
+  type PreviewFieldData,
+} from "./components/preview-modal";
+import { ShortcutsDialog } from "./components/shortcuts-dialog";
+import { EditorEmptyState } from "./components/empty-state";
 
 interface FormEditorProps {
   formId: string;
@@ -38,68 +45,70 @@ export function FormEditor({ formId }: FormEditorProps) {
   );
   const { fields, isLoading: isFieldsLoading } = useFormFields(formId);
 
-  const { createFormFieldAsync } = useCreateFormField(formId);
-  const { updateFormFieldAsync } = useUpdateFormField(formId);
-  const { deleteFormFieldAsync } = useDeleteFormField(formId);
-  const { reorderFormFieldsAsync } = useReorderFormFields(formId);
   const { updateFormAsync } = useUpdateForm();
+  const { syncFormFieldsAsync } = useSyncFormFields(formId);
 
+  // Manual save state
   const [saveStatus, setSaveStatus] = React.useState<SaveStatus>("saved");
+  const [isDirty, setIsDirty] = React.useState<boolean>(false);
   const [lastSavedAt, setLastSavedAt] = React.useState<Date | null>(null);
 
-  // Form title state
+  // Form Metadata
   const [formTitle, setFormTitle] = React.useState("");
   const [formDescription, setFormDescription] = React.useState("");
+  const [formStatus, setFormStatus] = React.useState<string>("draft");
 
+  // Dialog and Inspector States
+  const [selectedField, setSelectedField] =
+    React.useState<PropertiesFieldData | null>(null);
+  const [isPropertiesOpen, setIsPropertiesOpen] = React.useState(false);
+  const [isPublishOpen, setIsPublishOpen] = React.useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = React.useState(false);
+
+  // Field count tracker for validation & empty state
+  const [questionCount, setQuestionCount] = React.useState<number>(0);
+
+  const isInitialLoadedRef = React.useRef(false);
+
+  // Sync form initial metadata
   React.useEffect(() => {
     if (form) {
       setFormTitle(form.title || "");
       setFormDescription(form.description || "");
+      setFormStatus(form.status || "draft");
     }
   }, [form]);
 
-  // Track field order to avoid redundant reorder calls
-  const lastOrderedIdsRef = React.useRef<string[]>([]);
-  const isInitialLoadedRef = React.useRef(false);
-  const reorderTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const contentSaveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const titleSaveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  // Handlers for FormFieldNode interactions
-  const handleFieldUpdated = React.useCallback(
-    async (fieldId: string, data: FieldSettingsData) => {
-      setSaveStatus("saving");
-      try {
-        await updateFormFieldAsync({
-          formId,
-          id: fieldId,
-          ...data,
-        });
-        setSaveStatus("saved");
-        setLastSavedAt(new Date());
-      } catch {
-        setSaveStatus("error");
+  // Unsaved changes protection
+  React.useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "";
       }
-    },
-    [formId, updateFormFieldAsync]
-  );
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
 
-  const handleFieldDeleted = React.useCallback(
-    async (fieldId: string) => {
-      setSaveStatus("saving");
-      try {
-        await deleteFormFieldAsync({
-          formId,
-          id: fieldId,
-        });
-        setSaveStatus("saved");
-        setLastSavedAt(new Date());
-      } catch {
-        setSaveStatus("error");
+  // Mark draft as dirty
+  const markDirty = React.useCallback(() => {
+    setIsDirty(true);
+    setSaveStatus("unsaved");
+  }, []);
+
+  // Update question count in editor
+  const refreshQuestionCount = React.useCallback((ed: any) => {
+    if (!ed) return;
+    let count = 0;
+    ed.state.doc.descendants((node: any) => {
+      if (node.type.name === "formField") {
+        count++;
       }
-    },
-    [formId, deleteFormFieldAsync]
-  );
+    });
+    setQuestionCount(count);
+  }, []);
 
   // Initialize Tiptap editor
   const editor = useEditor({
@@ -111,7 +120,7 @@ export function FormEditor({ formId }: FormEditorProps) {
         },
       }),
       Placeholder.configure({
-        placeholder: "Type '/' to insert form questions or formatting...",
+        placeholder: "Type '/' to insert questions or format text...",
         emptyEditorClass: "is-editor-empty",
       }),
       Typography,
@@ -149,86 +158,67 @@ export function FormEditor({ formId }: FormEditorProps) {
     },
     onUpdate: ({ editor: ed }) => {
       if (!isInitialLoadedRef.current) return;
-
-      setSaveStatus("unsaved");
-
-      // 1. Detect field order changes
-      const currentFieldIds: string[] = [];
-      ed.state.doc.descendants((node) => {
-        if (node.type.name === "formField" && node.attrs.fieldId) {
-          currentFieldIds.push(node.attrs.fieldId);
-        }
-      });
-
-      const prevIds = lastOrderedIdsRef.current;
-      const orderChanged =
-        currentFieldIds.length === prevIds.length &&
-        currentFieldIds.some((id, index) => id !== prevIds[index]);
-
-      if (orderChanged && currentFieldIds.length > 0) {
-        lastOrderedIdsRef.current = currentFieldIds;
-        if (reorderTimeoutRef.current) clearTimeout(reorderTimeoutRef.current);
-        reorderTimeoutRef.current = setTimeout(async () => {
-          try {
-            setSaveStatus("saving");
-            await reorderFormFieldsAsync({
-              formId,
-              fieldIds: currentFieldIds,
-            });
-            setSaveStatus("saved");
-            setLastSavedAt(new Date());
-          } catch {
-            setSaveStatus("error");
-          }
-        }, 800);
-      }
-
-      // 2. Autosave rich text document content
-      if (contentSaveTimeoutRef.current) {
-        clearTimeout(contentSaveTimeoutRef.current);
-      }
-      contentSaveTimeoutRef.current = setTimeout(async () => {
-        try {
-          setSaveStatus("saving");
-          const jsonContent = ed.getJSON();
-          await updateFormAsync({
-            id: formId,
-            settings: {
-              ...(typeof form?.settings === "object" && form.settings !== null
-                ? form.settings
-                : {}),
-              documentContent: jsonContent,
-            },
-          });
-          setSaveStatus("saved");
-          setLastSavedAt(new Date());
-        } catch {
-          setSaveStatus("error");
-        }
-      }, 1500);
+      markDirty();
+      refreshQuestionCount(ed);
     },
   });
 
-  // Attach custom handlers to editor storage so NodeViews can access them
+  // Handle selecting a field to open properties panel
+  const handleSelectField = React.useCallback(
+    (fieldData: PropertiesFieldData) => {
+      setSelectedField(fieldData);
+      setIsPropertiesOpen(true);
+    },
+    []
+  );
+
+  // Handle deleting a field from local draft
+  const handleDeleteField = React.useCallback(
+    (fieldId: string) => {
+      if (!editor) return;
+
+      editor.commands.command(({ tr, state }) => {
+        state.doc.descendants((node, pos) => {
+          if (node.type.name === "formField" && node.attrs.fieldId === fieldId) {
+            tr.delete(pos, pos + node.nodeSize);
+            return false;
+          }
+        });
+        return true;
+      });
+
+      if (selectedField?.fieldId === fieldId) {
+        setSelectedField(null);
+        setIsPropertiesOpen(false);
+      }
+
+      markDirty();
+      refreshQuestionCount(editor);
+      toast.info("Question removed from draft");
+    },
+    [editor, selectedField, markDirty, refreshQuestionCount]
+  );
+
+  // Attach storage handlers for NodeViews
   React.useEffect(() => {
     if (editor) {
       (
         editor.storage as {
           formly?: {
-            onFieldUpdated?: (id: string, d: FieldSettingsData) => void;
+            onSelectField?: (data: PropertiesFieldData) => void;
             onFieldDeleted?: (id: string) => void;
           };
         }
       ).formly = {
-        onFieldUpdated: handleFieldUpdated,
-        onFieldDeleted: handleFieldDeleted,
+        onSelectField: handleSelectField,
+        onFieldDeleted: handleDeleteField,
       };
     }
-  }, [editor, handleFieldUpdated, handleFieldDeleted]);
+  }, [editor, handleSelectField, handleDeleteField]);
 
-  // Insert a new form field into the editor and backend
+  // Insert a new form field into the local draft
   const handleInsertField = React.useCallback(
-    async (field: {
+    (field: {
       type: string;
       label: string;
       placeholder?: string;
@@ -236,52 +226,59 @@ export function FormEditor({ formId }: FormEditorProps) {
     }) => {
       if (!editor) return;
 
-      setSaveStatus("saving");
-      try {
-        const created = await createFormFieldAsync({
-          formId,
-          type: field.type as Parameters<typeof createFormFieldAsync>[0]["type"],
-          label: field.label,
-          placeholder: field.placeholder || null,
-          config: field.config || {},
-          required: false,
-        });
+      const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      const newFieldData: PropertiesFieldData = {
+        fieldId: tempId,
+        type: field.type,
+        label: field.label,
+        placeholder: field.placeholder || null,
+        helpText: null,
+        required: false,
+        config: field.config || {},
+        validationRules: {},
+      };
 
-        // Insert node into editor at current selection or end
-        editor
-          .chain()
-          .focus()
-          .insertContent({
-            type: "formField",
-            attrs: {
-              fieldId: created.id,
-              kind: created.kind,
-              type: created.type,
-              label: created.label,
-              helpText: created.helpText,
-              placeholder: created.placeholder,
-              required: created.required,
-              config: created.config || {},
-              validationRules: created.validationRules || {},
-            },
-          })
-          .run();
+      editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: "formField",
+          attrs: newFieldData,
+        })
+        .run();
 
-        // Update tracked field IDs
-        lastOrderedIdsRef.current = [
-          ...lastOrderedIdsRef.current,
-          created.id,
-        ];
+      markDirty();
+      refreshQuestionCount(editor);
 
-        setSaveStatus("saved");
-        setLastSavedAt(new Date());
-      } catch (err: unknown) {
-        setSaveStatus("error");
-        const msg = err instanceof Error ? err.message : "Failed to create field";
-        toast.error(msg);
-      }
+      // Auto-open properties inspector for the newly added question
+      setSelectedField(newFieldData);
+      setIsPropertiesOpen(true);
     },
-    [editor, formId, createFormFieldAsync]
+    [editor, markDirty, refreshQuestionCount]
+  );
+
+  // Update a field's attributes from the Properties Inspector
+  const handleUpdateField = React.useCallback(
+    (fieldId: string, updates: Partial<PropertiesFieldData>) => {
+      if (!editor) return;
+
+      editor.commands.command(({ tr, state }) => {
+        state.doc.descendants((node, pos) => {
+          if (node.type.name === "formField" && node.attrs.fieldId === fieldId) {
+            tr.setNodeMarkup(pos, undefined, {
+              ...node.attrs,
+              ...updates,
+            });
+            return false;
+          }
+        });
+        return true;
+      });
+
+      setSelectedField((prev) => (prev ? { ...prev, ...updates } : null));
+      markDirty();
+    },
+    [editor, markDirty]
   );
 
   // Initial Content Load & Hydration
@@ -295,23 +292,16 @@ export function FormEditor({ formId }: FormEditorProps) {
     )?.documentContent as JSONContent | undefined;
 
     if (docContent && docContent.content) {
-      // Rehydrate existing document content
       editor.commands.setContent(docContent, { emitUpdate: false });
     } else if (fields && fields.length > 0) {
-      // Construct initial document from existing database fields
-      const content: JSONContent[] = [
-        {
+      const content: JSONContent[] = [];
+
+      if (form?.description) {
+        content.push({
           type: "paragraph",
-          content: [
-            {
-              type: "text",
-              text:
-                form?.description ||
-                "Welcome to this form. Please fill out the details below.",
-            },
-          ],
-        },
-      ];
+          content: [{ type: "text", text: form.description }],
+        });
+      }
 
       for (const f of fields) {
         content.push({
@@ -332,7 +322,6 @@ export function FormEditor({ formId }: FormEditorProps) {
 
       editor.commands.setContent({ type: "doc", content }, { emitUpdate: false });
     } else {
-      // Fresh clean empty form document
       editor.commands.setContent(
         {
           type: "doc",
@@ -354,62 +343,151 @@ export function FormEditor({ formId }: FormEditorProps) {
       );
     }
 
-    // Set initial tracked order
-    const initialIds: string[] = [];
-    editor.state.doc.descendants((node) => {
-      if (node.type.name === "formField" && node.attrs.fieldId) {
-        initialIds.push(node.attrs.fieldId as string);
-      }
-    });
-    lastOrderedIdsRef.current = initialIds;
+    refreshQuestionCount(editor);
     isInitialLoadedRef.current = true;
-  }, [editor, form, fields, isFormLoading, isFieldsLoading]);
+    setIsDirty(false);
+    setSaveStatus("saved");
+  }, [editor, form, fields, isFormLoading, isFieldsLoading, refreshQuestionCount]);
 
-  // Handle title change
+  // Handle title & description changes (local draft only!)
   const handleTitleChange = (newTitle: string) => {
     setFormTitle(newTitle);
-    setSaveStatus("unsaved");
-
-    if (titleSaveTimeoutRef.current) {
-      clearTimeout(titleSaveTimeoutRef.current);
-    }
-    titleSaveTimeoutRef.current = setTimeout(async () => {
-      if (!newTitle.trim()) return;
-      try {
-        setSaveStatus("saving");
-        await updateFormAsync({
-          id: formId,
-          title: newTitle.trim(),
-        });
-        setSaveStatus("saved");
-        setLastSavedAt(new Date());
-      } catch {
-        setSaveStatus("error");
-      }
-    }, 1000);
+    markDirty();
   };
 
-  // Handle description change
   const handleDescriptionChange = (newDesc: string) => {
     setFormDescription(newDesc);
-    setSaveStatus("unsaved");
+    markDirty();
+  };
 
-    if (titleSaveTimeoutRef.current) {
-      clearTimeout(titleSaveTimeoutRef.current);
-    }
-    titleSaveTimeoutRef.current = setTimeout(async () => {
-      try {
-        setSaveStatus("saving");
-        await updateFormAsync({
+  // EXPLICIT SAVE CHANGES HANDLER (NO AUTOSAVE!)
+  const handleSaveChanges = React.useCallback(async (): Promise<boolean> => {
+    if (!editor) return false;
+
+    setSaveStatus("saving");
+
+    try {
+      // 1. Extract all question nodes from the Tiptap document in their current visual order
+      const fieldsToSync: Array<{
+        id?: string;
+        kind: "question" | "content";
+        type: any;
+        label?: string | null;
+        content?: string | null;
+        helpText?: string | null;
+        placeholder?: string | null;
+        required: boolean;
+        sortOrder: number;
+        config: Record<string, unknown>;
+        validationRules: Record<string, unknown>;
+      }> = [];
+
+      editor.state.doc.descendants((node) => {
+        if (node.type.name === "formField") {
+          const attrs = node.attrs;
+          const isTempId = !attrs.fieldId || String(attrs.fieldId).startsWith("temp_");
+          fieldsToSync.push({
+            id: isTempId ? undefined : attrs.fieldId,
+            kind: attrs.kind || "question",
+            type: attrs.type,
+            label: attrs.label ?? "",
+            content: attrs.content ?? null,
+            helpText: attrs.helpText ?? null,
+            placeholder: attrs.placeholder ?? null,
+            required: Boolean(attrs.required),
+            sortOrder: fieldsToSync.length,
+            config: attrs.config || {},
+            validationRules: attrs.validationRules || {},
+          });
+        }
+      });
+
+      // 2. Perform concurrent batch sync of fields and form document metadata
+      const [savedFields] = await Promise.all([
+        syncFormFieldsAsync({
+          formId,
+          fields: fieldsToSync,
+        }),
+        updateFormAsync({
           id: formId,
-          description: newDesc.trim() || null,
+          title: formTitle.trim() || "Untitled Form",
+          description: formDescription.trim() || null,
+          settings: {
+            ...(typeof form?.settings === "object" && form.settings !== null
+              ? form.settings
+              : {}),
+            documentContent: editor.getJSON(),
+          },
+        }),
+      ]);
+
+      // 3. Update in-editor node IDs with the persisted DB IDs
+      if (Array.isArray(savedFields)) {
+        let fieldIndex = 0;
+        editor.commands.command(({ tr, state }) => {
+          state.doc.descendants((node, pos) => {
+            if (node.type.name === "formField") {
+              const matchedDbField = savedFields[fieldIndex];
+              if (matchedDbField && node.attrs.fieldId !== matchedDbField.id) {
+                tr.setNodeMarkup(pos, undefined, {
+                  ...node.attrs,
+                  fieldId: matchedDbField.id,
+                });
+              }
+              fieldIndex++;
+            }
+          });
+          return true;
         });
-        setSaveStatus("saved");
-        setLastSavedAt(new Date());
-      } catch {
-        setSaveStatus("error");
       }
-    }, 1000);
+
+      setIsDirty(false);
+      setSaveStatus("saved");
+      setLastSavedAt(new Date());
+      toast.success("All changes saved successfully");
+      return true;
+    } catch (err: unknown) {
+      setSaveStatus("error");
+      const msg = err instanceof Error ? err.message : "Failed to save changes";
+      toast.error(msg);
+      return false;
+    }
+  }, [
+    editor,
+    formId,
+    formTitle,
+    formDescription,
+    form?.settings,
+    syncFormFieldsAsync,
+    updateFormAsync,
+  ]);
+
+  // Global Keyboard Shortcuts (Ctrl/Cmd + S to save, Ctrl/Cmd + P to preview)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMod = e.metaKey || e.ctrlKey;
+      if (isMod && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        handleSaveChanges();
+      } else if (isMod && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        setIsPreviewOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleSaveChanges]);
+
+  // Extract preview fields from current editor state
+  const getPreviewFields = (): PreviewFieldData[] => {
+    if (!editor) return [];
+    const result: PreviewFieldData[] = [];
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === "formField") {
+        result.push(node.attrs as PreviewFieldData);
+      }
+    });
+    return result;
   };
 
   if (isFormLoading || isFieldsLoading) {
@@ -417,7 +495,10 @@ export function FormEditor({ formId }: FormEditorProps) {
       <div className="flex flex-col min-h-screen bg-background">
         <div className="h-14 border-b flex items-center px-4 justify-between">
           <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-8 w-24" />
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-20" />
+            <Skeleton className="h-8 w-24" />
+          </div>
         </div>
         <div className="max-w-3xl w-full mx-auto p-8 space-y-6">
           <Skeleton className="h-12 w-3/4" />
@@ -437,7 +518,7 @@ export function FormEditor({ formId }: FormEditorProps) {
           The requested form could not be found or you do not have permission to view it.
         </p>
         <Button asChild variant="outline">
-          <a href="/dashboard">Return to Forms</a>
+          <a href="/dashboard">Return to Dashboard</a>
         </Button>
       </div>
     );
@@ -445,21 +526,25 @@ export function FormEditor({ formId }: FormEditorProps) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      {/* Notion-style Header with Breadcrumb & Save Status */}
+      {/* Notion-style Header with Manual Save & Publish */}
       <EditorHeader
         formId={formId}
         title={formTitle || form.title}
         shareId={form.shareId}
-        status={form.status}
+        status={formStatus}
         saveStatus={saveStatus}
-        lastSavedAt={lastSavedAt}
+        isDirty={isDirty}
+        onSave={handleSaveChanges}
+        onOpenPreview={() => setIsPreviewOpen(true)}
+        onOpenPublish={() => setIsPublishOpen(true)}
+        onOpenShortcuts={() => setIsShortcutsOpen(true)}
         onInsertField={handleInsertField}
       />
 
       {/* Floating Text Formatting Menu */}
       <EditorBubbleMenu editor={editor} />
 
-      {/* Notion-style Editor Body */}
+      {/* Editor Body Canvas */}
       <main className="flex-1 w-full max-w-3xl mx-auto px-6 py-10 md:py-16">
         {/* Editable Form Title */}
         <input
@@ -467,7 +552,7 @@ export function FormEditor({ formId }: FormEditorProps) {
           value={formTitle}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Untitled Form"
-          className="w-full text-3xl md:text-4xl font-bold tracking-tight bg-transparent border-none outline-none focus:outline-none placeholder:text-muted-foreground/40 mb-3"
+          className="w-full text-3xl md:text-4xl font-bold tracking-tight bg-transparent border-none outline-none focus:outline-none placeholder:text-muted-foreground/30 mb-3"
         />
 
         {/* Editable Form Description */}
@@ -476,16 +561,59 @@ export function FormEditor({ formId }: FormEditorProps) {
           onChange={(e) => handleDescriptionChange(e.target.value)}
           placeholder="Add a form description or instructions for respondents..."
           rows={2}
-          className="w-full text-base text-muted-foreground bg-transparent border-none outline-none focus:outline-none resize-none placeholder:text-muted-foreground/40 mb-6"
+          className="w-full text-base text-muted-foreground bg-transparent border-none outline-none focus:outline-none resize-none placeholder:text-muted-foreground/30 mb-6"
         />
 
         <div className="h-px bg-border/60 w-full mb-8" />
 
-        {/* Tiptap Document Canvas */}
-        <div className="notion-editor-canvas min-h-[500px]">
+        {/* Onboarding Empty State when no questions exist */}
+        {questionCount === 0 && (
+          <EditorEmptyState onInsertField={handleInsertField} />
+        )}
+
+        {/* Tiptap Canvas */}
+        <div className="notion-editor-canvas min-h-[400px]">
           <EditorContent editor={editor} />
         </div>
       </main>
+
+      {/* Contextual Properties Inspector (Slide-over Sheet) */}
+      <PropertiesPanel
+        open={isPropertiesOpen}
+        onOpenChange={setIsPropertiesOpen}
+        field={selectedField}
+        onUpdateField={handleUpdateField}
+        onDeleteField={handleDeleteField}
+      />
+
+      {/* Publish Dialog */}
+      <PublishDialog
+        open={isPublishOpen}
+        onOpenChange={setIsPublishOpen}
+        formId={formId}
+        shareId={form.shareId}
+        title={formTitle || form.title}
+        fieldCount={questionCount}
+        isDirty={isDirty}
+        status={formStatus}
+        onSaveDraft={handleSaveChanges}
+        onPublishedChange={(newStatus) => setFormStatus(newStatus)}
+      />
+
+      {/* Respondent Preview Modal */}
+      <FormPreviewModal
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        title={formTitle || form.title}
+        description={formDescription || form.description || ""}
+        fields={getPreviewFields()}
+      />
+
+      {/* Keyboard Shortcuts Dialog */}
+      <ShortcutsDialog
+        open={isShortcutsOpen}
+        onOpenChange={setIsShortcutsOpen}
+      />
     </div>
   );
 }

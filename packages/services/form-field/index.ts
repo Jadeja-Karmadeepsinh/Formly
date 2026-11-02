@@ -1,4 +1,4 @@
-import { and, asc, db, eq, inArray, isNull, max, sql } from "@formly/database";
+import { and, asc, db, eq, inArray, isNull, max } from "@formly/database";
 import {
   formElementsTable,
   formsTable,
@@ -10,6 +10,8 @@ import {
   createFormFieldInputSchema,
   type ReorderFormFieldsInput,
   reorderFormFieldsInputSchema,
+  type SyncFormFieldsInput,
+  syncFormFieldsInputSchema,
   type UpdateFormFieldInput,
   updateFormFieldInputSchema,
 } from "./model";
@@ -312,5 +314,106 @@ export default class FormFieldService {
     });
 
     return await this.listFormFields(userId, formId);
+  }
+
+  /**
+   * Batch synchronizes the entire list of form fields in a single transaction.
+   * - Deletes fields removed from the draft.
+   * - Updates existing fields with new values and sequential sortOrder.
+   * - Inserts new fields with sequential sortOrder.
+   */
+  public async syncFormFields(
+    userId: string,
+    formId: string,
+    input: SyncFormFieldsInput
+  ): Promise<FormElement[]> {
+    const validated = syncFormFieldsInputSchema.parse(input);
+
+    const form = await this.getOwnedForm(userId, formId);
+    if (!form) {
+      throw new Error("Form not found or you do not have permission to modify it.");
+    }
+
+    return await db.transaction(async (tx) => {
+      // 1. Get all current DB element IDs for this form
+      const existingElements = await tx
+        .select({ id: formElementsTable.id })
+        .from(formElementsTable)
+        .where(eq(formElementsTable.formId, formId));
+
+      const existingIdSet = new Set(existingElements.map((e) => e.id));
+
+      // 2. Determine fields to delete
+      const incomingIds = new Set(
+        validated.fields.map((f) => f.id).filter((id): id is string => Boolean(id))
+      );
+
+      const toDelete = existingElements
+        .map((e) => e.id)
+        .filter((id) => !incomingIds.has(id));
+
+      if (toDelete.length > 0) {
+        await tx
+          .delete(formElementsTable)
+          .where(
+            and(
+              eq(formElementsTable.formId, formId),
+              inArray(formElementsTable.id, toDelete)
+            )
+          );
+      }
+
+      // 3. Process each incoming field in its draft order
+      for (let i = 0; i < validated.fields.length; i++) {
+        const item = validated.fields[i];
+        if (!item) continue;
+
+        const isExisting = item.id && existingIdSet.has(item.id);
+
+        if (isExisting && item.id) {
+          await tx
+            .update(formElementsTable)
+            .set({
+              type: item.type,
+              label: item.label ?? null,
+              content: item.content ?? null,
+              helpText: item.helpText ?? null,
+              placeholder: item.placeholder ?? null,
+              required: item.kind === "content" ? false : item.required,
+              sortOrder: i,
+              config: item.config as FormElementConfig,
+              validationRules: item.validationRules as FormValidationRules,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(formElementsTable.id, item.id),
+                eq(formElementsTable.formId, formId)
+              )
+            );
+        } else {
+          await tx.insert(formElementsTable).values({
+            formId,
+            kind: item.kind,
+            type: item.type,
+            label: item.label ?? null,
+            content: item.content ?? null,
+            helpText: item.helpText ?? null,
+            placeholder: item.placeholder ?? null,
+            required: item.kind === "content" ? false : item.required,
+            sortOrder: i,
+            config: item.config as FormElementConfig,
+            validationRules: item.validationRules as FormValidationRules,
+          });
+        }
+      }
+
+      // 4. Return all updated elements in sortOrder
+      return await tx
+        .select()
+        .from(formElementsTable)
+        .where(eq(formElementsTable.formId, formId))
+        .orderBy(asc(formElementsTable.sortOrder));
+    });
   }
 }

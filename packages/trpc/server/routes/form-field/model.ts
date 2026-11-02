@@ -4,6 +4,7 @@ import {
   formElementKindEnum,
   formElementTypeEnum,
   reorderFormFieldsInputSchema,
+  syncFormFieldsInputSchema,
   updateFormFieldInputSchema,
 } from "@formly/services/form-field/model";
 
@@ -44,6 +45,15 @@ export const reorderFormFieldsProcedureInputModel = z
   .merge(reorderFormFieldsInputSchema);
 export type ReorderFormFieldsProcedureInput = z.infer<
   typeof reorderFormFieldsProcedureInputModel
+>;
+
+export const syncFormFieldsProcedureInputModel = z
+  .object({
+    formId: z.string().uuid("Invalid form ID"),
+  })
+  .merge(syncFormFieldsInputSchema);
+export type SyncFormFieldsProcedureInput = z.infer<
+  typeof syncFormFieldsProcedureInputModel
 >;
 
 export const formFieldOutputModel = z.object({

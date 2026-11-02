@@ -15,6 +15,7 @@ import {
   IconArrowsSort,
   IconCalendar,
   IconCheckbox,
+  IconChevronDown,
   IconCircleDot,
   IconClock,
   IconFileText,
@@ -32,10 +33,6 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  FormFieldSettingsDialog,
-  type FieldSettingsData,
-} from "../components/form-field-settings-dialog";
 
 export const getFieldTypeMeta = (type: string) => {
   switch (type) {
@@ -76,13 +73,10 @@ export const getFieldTypeMeta = (type: string) => {
 
 function FormFieldNodeView({
   node,
-  updateAttributes,
   deleteNode,
   editor,
   selected,
 }: NodeViewProps) {
-  const [settingsOpen, setSettingsOpen] = React.useState(false);
-
   const {
     fieldId,
     type,
@@ -97,23 +91,41 @@ function FormFieldNodeView({
   const typeMeta = getFieldTypeMeta(type);
   const Icon = typeMeta.icon;
 
-  const handleSaveSettings = (data: FieldSettingsData) => {
-    updateAttributes(data);
-
-    // Notify Formly editor handler if attached to editor storage
-    const onFieldUpdated = (
+  // Open properties panel for this field in parent editor
+  const handleSelectField = () => {
+    const onSelectField = (
       editor?.storage as {
         formly?: {
-          onFieldUpdated?: (id: string, d: FieldSettingsData) => void;
+          onSelectField?: (field: {
+            fieldId: string;
+            type: string;
+            label: string;
+            placeholder?: string | null;
+            helpText?: string | null;
+            required: boolean;
+            config: Record<string, unknown>;
+            validationRules: Record<string, unknown>;
+          }) => void;
         };
       }
-    )?.formly?.onFieldUpdated;
-    if (typeof onFieldUpdated === "function" && fieldId) {
-      onFieldUpdated(fieldId, data);
+    )?.formly?.onSelectField;
+
+    if (typeof onSelectField === "function" && fieldId) {
+      onSelectField({
+        fieldId,
+        type,
+        label,
+        placeholder,
+        helpText,
+        required,
+        config: config || {},
+        validationRules: validationRules || {},
+      });
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const onFieldDeleted = (
       editor?.storage as {
         formly?: {
@@ -121,6 +133,7 @@ function FormFieldNodeView({
         };
       }
     )?.formly?.onFieldDeleted;
+
     if (typeof onFieldDeleted === "function" && fieldId) {
       onFieldDeleted(fieldId);
     }
@@ -130,14 +143,11 @@ function FormFieldNodeView({
   const renderFieldPreview = () => {
     switch (type) {
       case "short_text":
-      case "email":
-      case "phone":
-      case "website_url":
         return (
           <Input
             disabled
-            placeholder={placeholder || `Enter ${typeMeta.label.toLowerCase()}...`}
-            className="bg-muted/30 border-dashed cursor-not-allowed"
+            placeholder={placeholder || "Short answer text"}
+            className="bg-muted/20 border-dashed cursor-not-allowed max-w-md"
           />
         );
 
@@ -145,25 +155,64 @@ function FormFieldNodeView({
         return (
           <Textarea
             disabled
-            placeholder={placeholder || "Enter long answer..."}
+            placeholder={placeholder || "Long answer text..."}
             rows={3}
-            className="bg-muted/30 border-dashed cursor-not-allowed resize-none"
+            className="bg-muted/20 border-dashed cursor-not-allowed resize-none"
           />
+        );
+
+      case "email":
+        return (
+          <div className="relative max-w-md">
+            <IconMail className="size-4 absolute left-3 top-3 text-muted-foreground/60" />
+            <Input
+              disabled
+              placeholder={placeholder || "name@example.com"}
+              className="pl-9 bg-muted/20 border-dashed cursor-not-allowed"
+            />
+          </div>
+        );
+
+      case "phone":
+        return (
+          <div className="relative max-w-xs">
+            <IconPhone className="size-4 absolute left-3 top-3 text-muted-foreground/60" />
+            <Input
+              disabled
+              placeholder={placeholder || "+1 (555) 000-0000"}
+              className="pl-9 bg-muted/20 border-dashed cursor-not-allowed"
+            />
+          </div>
+        );
+
+      case "website_url":
+        return (
+          <div className="relative max-w-md">
+            <IconLink className="size-4 absolute left-3 top-3 text-muted-foreground/60" />
+            <Input
+              disabled
+              placeholder={placeholder || "https://"}
+              className="pl-9 bg-muted/20 border-dashed cursor-not-allowed"
+            />
+          </div>
         );
 
       case "number":
         return (
-          <Input
-            type="number"
-            disabled
-            placeholder={placeholder || "0"}
-            className="bg-muted/30 border-dashed cursor-not-allowed w-48"
-          />
+          <div className="relative w-48">
+            <IconHash className="size-4 absolute left-3 top-3 text-muted-foreground/60" />
+            <Input
+              type="number"
+              disabled
+              placeholder={placeholder || "0"}
+              className="pl-9 bg-muted/20 border-dashed cursor-not-allowed"
+            />
+          </div>
         );
 
       case "date":
         return (
-          <div className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-md bg-muted/30 text-muted-foreground text-sm w-48 cursor-not-allowed">
+          <div className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-md bg-muted/20 text-muted-foreground text-sm w-48 cursor-not-allowed">
             <IconCalendar className="size-4" />
             <span>Select a date...</span>
           </div>
@@ -171,21 +220,20 @@ function FormFieldNodeView({
 
       case "time":
         return (
-          <div className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-md bg-muted/30 text-muted-foreground text-sm w-36 cursor-not-allowed">
+          <div className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-md bg-muted/20 text-muted-foreground text-sm w-36 cursor-not-allowed">
             <IconClock className="size-4" />
             <span>--:-- --</span>
           </div>
         );
 
-      case "single_select":
-      case "dropdown": {
+      case "single_select": {
         const options: Array<{ label: string }> = Array.isArray(config?.options)
           ? config.options
           : [{ label: "Option 1" }, { label: "Option 2" }];
         return (
-          <div className="space-y-1.5 pt-1">
+          <div className="space-y-2 pt-1">
             {options.map((opt, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div key={i} className="flex items-center gap-2.5 text-sm text-muted-foreground">
                 <div className="size-4 rounded-full border border-muted-foreground/50 shrink-0" />
                 <span>{opt.label}</span>
               </div>
@@ -199,9 +247,9 @@ function FormFieldNodeView({
           ? config.options
           : [{ label: "Option 1" }, { label: "Option 2" }];
         return (
-          <div className="space-y-1.5 pt-1">
+          <div className="space-y-2 pt-1">
             {options.map((opt, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div key={i} className="flex items-center gap-2.5 text-sm text-muted-foreground">
                 <div className="size-4 rounded-sm border border-muted-foreground/50 shrink-0" />
                 <span>{opt.label}</span>
               </div>
@@ -210,16 +258,28 @@ function FormFieldNodeView({
         );
       }
 
+      case "dropdown": {
+        const options: Array<{ label: string }> = Array.isArray(config?.options)
+          ? config.options
+          : [{ label: "Select an option..." }];
+        return (
+          <div className="flex items-center justify-between px-3 py-2 border border-dashed rounded-md bg-muted/20 text-muted-foreground text-sm max-w-xs cursor-not-allowed">
+            <span>{options[0]?.label || "Select an option..."}</span>
+            <IconChevronDown className="size-4" />
+          </div>
+        );
+      }
+
       case "checkbox":
         return (
           <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1">
             <div className="size-4 rounded-sm border border-muted-foreground/50 shrink-0" />
-            <span>{placeholder || "Check here to confirm"}</span>
+            <span>{placeholder || "Check here to confirm / agree"}</span>
           </div>
         );
 
       case "star_rating": {
-        const maxStars = config?.max || 5;
+        const maxStars = typeof config?.max === "number" ? config.max : 5;
         return (
           <div className="flex items-center gap-1.5 py-1">
             {Array.from({ length: maxStars }).map((_, i) => (
@@ -233,15 +293,42 @@ function FormFieldNodeView({
       }
 
       case "linear_rating": {
-        const maxScore = config?.max || 10;
+        const maxScore = typeof config?.max === "number" ? config.max : 10;
         return (
-          <div className="flex flex-wrap items-center gap-1.5 py-1">
-            {Array.from({ length: maxScore }).map((_, i) => (
+          <div className="space-y-1.5 py-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {Array.from({ length: maxScore }).map((_, i) => (
+                <div
+                  key={i}
+                  className="size-8 rounded-md border border-muted-foreground/30 flex items-center justify-center text-xs text-muted-foreground bg-muted/20"
+                >
+                  {i + 1}
+                </div>
+              ))}
+            </div>
+            {(config?.minLabel || config?.maxLabel) && (
+              <div className="flex justify-between text-[11px] text-muted-foreground max-w-sm">
+                <span>{typeof config?.minLabel === "string" ? config.minLabel : ""}</span>
+                <span>{typeof config?.maxLabel === "string" ? config.maxLabel : ""}</span>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      case "ranking": {
+        const options: Array<{ label: string }> = Array.isArray(config?.options)
+          ? config.options
+          : [{ label: "Choice A" }, { label: "Choice B" }, { label: "Choice C" }];
+        return (
+          <div className="space-y-1.5 pt-1">
+            {options.map((opt, i) => (
               <div
                 key={i}
-                className="size-8 rounded-md border border-muted-foreground/30 flex items-center justify-center text-xs text-muted-foreground bg-muted/20"
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded border border-dashed border-border/80 bg-muted/20 text-xs text-muted-foreground max-w-sm"
               >
-                {i + 1}
+                <span className="font-semibold text-foreground/70">{i + 1}.</span>
+                <span>{opt.label}</span>
               </div>
             ))}
           </div>
@@ -253,7 +340,7 @@ function FormFieldNodeView({
           <Input
             disabled
             placeholder={placeholder || "Input preview"}
-            className="bg-muted/30 border-dashed cursor-not-allowed"
+            className="bg-muted/20 border-dashed cursor-not-allowed"
           />
         );
     }
@@ -261,33 +348,34 @@ function FormFieldNodeView({
 
   return (
     <NodeViewWrapper
-      className={`my-3.5 group/field rounded-lg border transition-all duration-150 bg-card ${
+      onClick={handleSelectField}
+      className={`my-4 group/field rounded-xl border transition-all duration-150 bg-card cursor-pointer select-none ${
         selected
-          ? "border-primary ring-1 ring-primary shadow-sm"
+          ? "border-primary ring-2 ring-primary/20 shadow-sm"
           : "border-border/80 hover:border-border hover:shadow-xs"
       }`}
     >
-      <div className="p-3.5">
-        {/* Field Header */}
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <div className="flex items-start gap-2 flex-1 min-w-0">
+      <div className="p-4">
+        {/* Field Card Header */}
+        <div className="flex items-start justify-between gap-3 mb-2.5">
+          <div className="flex items-start gap-2.5 flex-1 min-w-0">
             {/* Drag Handle */}
-            <button
-              type="button"
+            <div
               data-drag-handle
               className="mt-0.5 text-muted-foreground/40 hover:text-foreground cursor-grab active:cursor-grabbing p-0.5 rounded transition-colors shrink-0"
               title="Drag to reorder"
+              onClick={(e) => e.stopPropagation()}
             >
               <IconGripVertical className="size-4" />
-            </button>
+            </div>
 
             <div className="flex flex-col flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium text-sm text-foreground">
+                <span className="font-semibold text-sm text-foreground">
                   {label || "Untitled Question"}
                 </span>
                 {required && (
-                  <span className="text-destructive font-semibold text-xs" title="Required field">
+                  <span className="text-destructive font-bold text-xs" title="Required question">
                     *
                   </span>
                 )}
@@ -308,15 +396,18 @@ function FormFieldNodeView({
             </div>
           </div>
 
-          {/* Action buttons (hover/visible) */}
-          <div className="flex items-center gap-1 opacity-80 group-hover/field:opacity-100 transition-opacity shrink-0">
+          {/* Quick Action buttons */}
+          <div className="flex items-center gap-1 opacity-70 group-hover/field:opacity-100 transition-opacity shrink-0">
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => setSettingsOpen(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSelectField();
+              }}
               className="size-7 text-muted-foreground hover:text-foreground"
-              title="Configure field"
+              title="Configure properties"
             >
               <IconSettings className="size-3.5" />
             </Button>
@@ -326,33 +417,18 @@ function FormFieldNodeView({
               size="icon"
               onClick={handleDelete}
               className="size-7 text-muted-foreground hover:text-destructive"
-              title="Delete field"
+              title="Delete question"
             >
               <IconTrash className="size-3.5" />
             </Button>
           </div>
         </div>
 
-        {/* Interactive / Visual Field Preview */}
+        {/* Realistic Field Preview */}
         <div className="pl-6 pt-1">
           {renderFieldPreview()}
         </div>
       </div>
-
-      <FormFieldSettingsDialog
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        type={type}
-        initialData={{
-          label,
-          placeholder,
-          helpText,
-          required,
-          config: config || {},
-          validationRules: validationRules || {},
-        }}
-        onSave={handleSaveSettings}
-      />
     </NodeViewWrapper>
   );
 }

@@ -77,3 +77,23 @@ export const reorderFormFieldsInputSchema = z.object({
 });
 
 export type ReorderFormFieldsInput = z.infer<typeof reorderFormFieldsInputSchema>;
+
+export const syncFieldItemSchema = z.object({
+  id: z.string().optional(),
+  kind: formElementKindEnum.default("question"),
+  type: formElementTypeEnum,
+  label: z.string().trim().max(500).nullable().optional(),
+  content: z.string().trim().nullable().optional(),
+  helpText: z.string().trim().max(2000).nullable().optional(),
+  placeholder: z.string().trim().max(255).nullable().optional(),
+  required: z.boolean().default(false),
+  sortOrder: z.number().int().min(0).optional(),
+  config: formElementConfigSchema.optional().default({}),
+  validationRules: formValidationRulesSchema.optional().default({}),
+});
+
+export const syncFormFieldsInputSchema = z.object({
+  fields: z.array(syncFieldItemSchema),
+});
+
+export type SyncFormFieldsInput = z.infer<typeof syncFormFieldsInputSchema>;

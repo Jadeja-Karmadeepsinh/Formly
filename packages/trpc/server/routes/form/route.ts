@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { formService } from "../../services";
-import { authenticatedProcedure, router } from "../../trpc";
+import { authenticatedProcedure, publicProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
 import { zodUndefinedModel } from "../../schema";
 import {
@@ -8,7 +8,9 @@ import {
   deleteFormOutputModel,
   formIdInputModel,
   formOutputModel,
+  formShareIdInputModel,
   listFormsOutputModel,
+  publicFormDetailOutputModel,
   updateFormProcedureInputModel,
 } from "./model";
 
@@ -124,6 +126,71 @@ export const formsRouter = router({
         });
       }
       return { success: true, id: input.id };
+    }),
+
+  publishForm: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/publishForm/{id}"),
+        tags: TAGS,
+        protect: true,
+      },
+    })
+    .input(formIdInputModel)
+    .output(formOutputModel)
+    .mutation(async ({ ctx, input }) => {
+      const updated = await formService.publishForm(ctx.user.id, input.id);
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Form not found or could not be published",
+        });
+      }
+      return updated;
+    }),
+
+  unpublishForm: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/unpublishForm/{id}"),
+        tags: TAGS,
+        protect: true,
+      },
+    })
+    .input(formIdInputModel)
+    .output(formOutputModel)
+    .mutation(async ({ ctx, input }) => {
+      const updated = await formService.unpublishForm(ctx.user.id, input.id);
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Form not found or could not be unpublished",
+        });
+      }
+      return updated;
+    }),
+
+  getPublicFormByShareId: publicProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/getPublicFormByShareId/{shareId}"),
+        tags: TAGS,
+      },
+    })
+    .input(formShareIdInputModel)
+    .output(publicFormDetailOutputModel)
+    .query(async ({ input }) => {
+      const result = await formService.getFormByShareId(input.shareId);
+      if (!result) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Form not found",
+        });
+      }
+      return result as any;
     }),
 });
 

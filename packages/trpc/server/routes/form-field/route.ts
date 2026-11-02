@@ -10,6 +10,7 @@ import {
   formFieldParentInputModel,
   listFormFieldsOutputModel,
   reorderFormFieldsProcedureInputModel,
+  syncFormFieldsProcedureInputModel,
   updateFormFieldProcedureInputModel,
 } from "./model";
 
@@ -190,6 +191,39 @@ export const formFieldsRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to reorder form fields",
+        });
+      }
+    }),
+
+  syncFormFields: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/syncFormFields"),
+        tags: TAGS,
+        protect: true,
+      },
+    })
+    .input(syncFormFieldsProcedureInputModel)
+    .output(listFormFieldsOutputModel)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const { formId, ...data } = input;
+        return (await formFieldService.syncFormFields(
+          ctx.user.id,
+          formId,
+          data
+        )) as any;
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: error.message,
+          });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to sync form fields",
         });
       }
     }),
