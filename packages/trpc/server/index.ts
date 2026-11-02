@@ -1,11 +1,12 @@
-import { publicProcedure, router } from "./trpc";
-import { z } from "zod";
+import { router } from "./trpc";
 import { healthRouter } from "./routes/health/route";
 import { authRouter } from "./routes/auth/route";
+import { formsRouter } from "./routes/form/route";
 
 export const serverRouter = router({
   health: healthRouter,
   auth: authRouter,
+  forms: formsRouter,
 });
 
 export { createContext } from "./context";
