@@ -2,6 +2,9 @@
 
 import * as React from "react";
 import {
+  IconArrowDown,
+  IconArrowUp,
+  IconListDetails,
   IconPlus,
   IconTrash,
   IconX,
@@ -19,7 +22,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "~/components/ui/sheet";
-import { getFieldTypeMeta } from "../nodes/form-field-node";
+import { getQuestionTypeDefinition } from "../registry/question-registry";
 
 export interface PropertiesFieldData {
   fieldId: string;
@@ -47,21 +50,18 @@ export function PropertiesPanel({
   onUpdateField,
   onDeleteField,
 }: PropertiesPanelProps) {
+  const [showBulkAdd, setShowBulkAdd] = React.useState(false);
+  const [bulkText, setBulkText] = React.useState("");
+
   if (!field) return null;
 
-  const typeMeta = getFieldTypeMeta(field.type);
-  const Icon = typeMeta.icon;
+  const qDef = getQuestionTypeDefinition(field.type);
+  const Icon = qDef.icon;
 
-  const isChoiceField = [
-    "single_select",
-    "multi_select",
-    "dropdown",
-    "ranking",
-  ].includes(field.type);
-
-  const isRatingField = ["star_rating", "linear_rating"].includes(field.type);
-  const isNumberField = field.type === "number";
-  const isTextField = ["short_text", "long_text", "email", "phone", "website_url"].includes(field.type);
+  const isChoiceField = Boolean(qDef.hasOptions);
+  const isRatingField = Boolean(qDef.hasRatingScale);
+  const isNumberField = Boolean(qDef.hasNumberBounds);
+  const isTextField = Boolean(qDef.hasTextValidation);
 
   // Choice Options
   const rawOptions = Array.isArray(field.config?.options)
@@ -105,21 +105,54 @@ export function PropertiesPanel({
     });
   };
 
+  const handleMoveOption = (idx: number, direction: "up" | "down") => {
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= rawOptions.length) return;
+
+    const newOptions = [...rawOptions];
+    const temp = newOptions[idx]!;
+    newOptions[idx] = newOptions[targetIdx]!;
+    newOptions[targetIdx] = temp;
+
+    onUpdateField(field.fieldId, {
+      config: { ...field.config, options: newOptions },
+    });
+  };
+
+  const handleApplyBulkOptions = () => {
+    const lines = bulkText
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    if (lines.length > 0) {
+      const generated = lines.map((line, idx) => ({
+        label: line,
+        value: line.toLowerCase().replace(/\s+/g, "_") || `opt_${idx + 1}`,
+      }));
+      onUpdateField(field.fieldId, {
+        config: { ...field.config, options: generated },
+      });
+      setBulkText("");
+      setShowBulkAdd(false);
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto flex flex-col p-6 gap-6">
         <SheetHeader className="p-0 border-b pb-4">
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="outline" className="text-xs gap-1 py-0.5">
+            <Badge variant="outline" className="text-xs gap-1 py-0.5 bg-background">
               <Icon className="size-3 text-muted-foreground" />
-              <span>{typeMeta.label}</span>
+              <span>{qDef.label}</span>
             </Badge>
           </div>
           <SheetTitle className="text-base font-semibold">
-            Field Properties
+            Question Properties
           </SheetTitle>
           <SheetDescription className="text-xs">
-            Configure question label, placeholder, rules, and choices.
+            {qDef.description}
           </SheetDescription>
         </SheetHeader>
 
@@ -127,7 +160,7 @@ export function PropertiesPanel({
           {/* Label */}
           <div className="space-y-1.5">
             <Label htmlFor="prop_label" className="text-xs font-medium">
-              Question Title / Label
+              Question Title
             </Label>
             <Input
               id="prop_label"
@@ -160,10 +193,10 @@ export function PropertiesPanel({
           </div>
 
           {/* Placeholder (for text/input fields) */}
-          {!isChoiceField && !isRatingField && (
+          {qDef.hasPlaceholder && (
             <div className="space-y-1.5">
               <Label htmlFor="prop_placeholder" className="text-xs font-medium">
-                Placeholder Text
+                {field.type === "checkbox" ? "Agreement Text" : "Placeholder Text"}
               </Label>
               <Input
                 id="prop_placeholder"
@@ -173,20 +206,20 @@ export function PropertiesPanel({
                     placeholder: e.target.value || null,
                   })
                 }
-                placeholder="Hint inside empty input..."
+                placeholder={qDef.defaultPlaceholder || "Placeholder hint..."}
                 className="text-xs"
               />
             </div>
           )}
 
           {/* Required Switch */}
-          <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/20">
+          <div className="flex items-center justify-between rounded-xl border p-3.5 bg-muted/20">
             <div className="space-y-0.5">
               <Label htmlFor="prop_required" className="text-xs font-medium cursor-pointer">
-                Required Field
+                Required Question
               </Label>
               <p className="text-[11px] text-muted-foreground">
-                Respondents must answer this question before submitting
+                Respondents cannot submit the form without answering
               </p>
             </div>
             <Switch
@@ -200,70 +233,148 @@ export function PropertiesPanel({
 
           {/* Choice Options Manager */}
           {isChoiceField && (
-            <div className="space-y-3 rounded-lg border p-3 bg-card">
+            <div className="space-y-3 rounded-xl border p-3.5 bg-card shadow-2xs">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-medium">Options</Label>
-                <span className="text-[11px] text-muted-foreground">
-                  {rawOptions.length} items
-                </span>
+                <Label className="text-xs font-medium">Choices & Options</Label>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowBulkAdd(!showBulkAdd)}
+                    className="h-6 text-[10px] text-muted-foreground hover:text-foreground px-1.5"
+                  >
+                    <IconListDetails className="size-3 mr-1" />
+                    <span>{showBulkAdd ? "Close Bulk" : "Bulk Add"}</span>
+                  </Button>
+                  <span className="text-[11px] text-muted-foreground">
+                    ({rawOptions.length})
+                  </span>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                {rawOptions.map((opt, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <Input
-                      value={opt.label}
-                      onChange={(e) => handleUpdateOption(i, e.target.value)}
-                      placeholder={`Option ${i + 1}`}
-                      className="text-xs h-8"
-                    />
+              {showBulkAdd ? (
+                <div className="space-y-2 p-2.5 rounded-lg border bg-muted/30">
+                  <Label className="text-[11px] text-muted-foreground">
+                    Enter one choice per line:
+                  </Label>
+                  <Textarea
+                    rows={4}
+                    value={bulkText}
+                    onChange={(e) => setBulkText(e.target.value)}
+                    placeholder={"Option A\nOption B\nOption C"}
+                    className="text-xs resize-none"
+                  />
+                  <div className="flex justify-end gap-1.5 pt-1">
                     <Button
                       type="button"
                       variant="ghost"
-                      size="icon"
-                      disabled={rawOptions.length <= 1}
-                      onClick={() => handleRemoveOption(i)}
-                      className="size-8 text-muted-foreground hover:text-destructive shrink-0"
+                      size="sm"
+                      onClick={() => setShowBulkAdd(false)}
+                      className="text-xs h-7"
                     >
-                      <IconTrash className="size-3.5" />
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleApplyBulkOptions}
+                      className="text-xs h-7"
+                    >
+                      Apply Choices
                     </Button>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {rawOptions.map((opt, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <div className="flex items-center text-muted-foreground/40 shrink-0">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={i === 0}
+                          onClick={() => handleMoveOption(i, "up")}
+                          className="size-6 text-muted-foreground/50 hover:text-foreground disabled:opacity-20"
+                          title="Move choice up"
+                        >
+                          <IconArrowUp className="size-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={i === rawOptions.length - 1}
+                          onClick={() => handleMoveOption(i, "down")}
+                          className="size-6 text-muted-foreground/50 hover:text-foreground disabled:opacity-20"
+                          title="Move choice down"
+                        >
+                          <IconArrowDown className="size-3" />
+                        </Button>
+                      </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddOption}
-                className="w-full text-xs h-8 gap-1.5"
-              >
-                <IconPlus className="size-3.5" />
-                <span>Add Option</span>
-              </Button>
+                      <Input
+                        value={opt.label}
+                        onChange={(e) => handleUpdateOption(i, e.target.value)}
+                        placeholder={`Option ${i + 1}`}
+                        className="text-xs h-8 flex-1"
+                      />
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={rawOptions.length <= 1}
+                        onClick={() => handleRemoveOption(i)}
+                        className="size-7 text-muted-foreground hover:text-destructive shrink-0"
+                      >
+                        <IconTrash className="size-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddOption}
+                    className="w-full text-xs h-8 gap-1.5 mt-2"
+                  >
+                    <IconPlus className="size-3.5" />
+                    <span>Add Choice</span>
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
           {/* Rating Scale Configuration */}
           {isRatingField && (
-            <div className="space-y-3 rounded-lg border p-3 bg-card">
+            <div className="space-y-3 rounded-xl border p-3.5 bg-card">
               <Label className="text-xs font-medium">Rating Scale</Label>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Maximum Score</span>
+                  <span className="text-muted-foreground">Maximum Scale</span>
                   <select
-                    value={typeof field.config?.max === "number" ? field.config.max : (field.type === "star_rating" ? 5 : 10)}
+                    value={
+                      typeof field.config?.max === "number"
+                        ? field.config.max
+                        : field.type === "star_rating"
+                        ? 5
+                        : 10
+                    }
                     onChange={(e) =>
                       onUpdateField(field.fieldId, {
                         config: { ...field.config, max: Number(e.target.value) },
                       })
                     }
-                    className="border rounded px-2 py-1 text-xs bg-background"
+                    className="border rounded-md px-2.5 py-1 text-xs bg-background"
                   >
                     {field.type === "star_rating" ? (
                       <>
                         <option value={3}>3 Stars</option>
-                        <option value={5}>5 Stars</option>
+                        <option value={5}>5 Stars (Default)</option>
                         <option value={7}>7 Stars</option>
                         <option value={10}>10 Stars</option>
                       </>
@@ -271,37 +382,45 @@ export function PropertiesPanel({
                       <>
                         <option value={5}>1 to 5</option>
                         <option value={7}>1 to 7</option>
-                        <option value={10}>1 to 10</option>
+                        <option value={10}>1 to 10 (Default)</option>
                       </>
                     )}
                   </select>
                 </div>
 
                 {field.type === "linear_rating" && (
-                  <div className="grid grid-cols-2 gap-2 pt-2">
+                  <div className="grid grid-cols-2 gap-2 pt-1">
                     <div>
                       <Label className="text-[11px] text-muted-foreground">Low Label</Label>
                       <Input
-                        value={typeof field.config?.minLabel === "string" ? field.config.minLabel : ""}
+                        value={
+                          typeof field.config?.minLabel === "string"
+                            ? field.config.minLabel
+                            : ""
+                        }
                         onChange={(e) =>
                           onUpdateField(field.fieldId, {
                             config: { ...field.config, minLabel: e.target.value },
                           })
                         }
-                        placeholder="e.g. Poor"
+                        placeholder="e.g. Not likely"
                         className="text-xs h-8 mt-1"
                       />
                     </div>
                     <div>
                       <Label className="text-[11px] text-muted-foreground">High Label</Label>
                       <Input
-                        value={typeof field.config?.maxLabel === "string" ? field.config.maxLabel : ""}
+                        value={
+                          typeof field.config?.maxLabel === "string"
+                            ? field.config.maxLabel
+                            : ""
+                        }
                         onChange={(e) =>
                           onUpdateField(field.fieldId, {
                             config: { ...field.config, maxLabel: e.target.value },
                           })
                         }
-                        placeholder="e.g. Excellent"
+                        placeholder="e.g. Very likely"
                         className="text-xs h-8 mt-1"
                       />
                     </div>
@@ -313,14 +432,18 @@ export function PropertiesPanel({
 
           {/* Number Field Bounds */}
           {isNumberField && (
-            <div className="space-y-3 rounded-lg border p-3 bg-card">
+            <div className="space-y-3 rounded-xl border p-3.5 bg-card">
               <Label className="text-xs font-medium">Number Validation</Label>
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <Label className="text-[11px] text-muted-foreground">Min</Label>
                   <Input
                     type="number"
-                    value={typeof field.config?.min === "number" ? field.config.min : ""}
+                    value={
+                      typeof field.config?.min === "number"
+                        ? field.config.min
+                        : ""
+                    }
                     onChange={(e) =>
                       onUpdateField(field.fieldId, {
                         config: {
@@ -337,7 +460,11 @@ export function PropertiesPanel({
                   <Label className="text-[11px] text-muted-foreground">Max</Label>
                   <Input
                     type="number"
-                    value={typeof field.config?.max === "number" ? field.config.max : ""}
+                    value={
+                      typeof field.config?.max === "number"
+                        ? field.config.max
+                        : ""
+                    }
                     onChange={(e) =>
                       onUpdateField(field.fieldId, {
                         config: {
@@ -354,7 +481,11 @@ export function PropertiesPanel({
                   <Label className="text-[11px] text-muted-foreground">Step</Label>
                   <Input
                     type="number"
-                    value={typeof field.config?.step === "number" ? field.config.step : ""}
+                    value={
+                      typeof field.config?.step === "number"
+                        ? field.config.step
+                        : ""
+                    }
                     onChange={(e) =>
                       onUpdateField(field.fieldId, {
                         config: {
@@ -373,14 +504,18 @@ export function PropertiesPanel({
 
           {/* Text Length Rules */}
           {isTextField && (
-            <div className="space-y-3 rounded-lg border p-3 bg-card">
-              <Label className="text-xs font-medium">Text Length Bounds</Label>
+            <div className="space-y-3 rounded-xl border p-3.5 bg-card">
+              <Label className="text-xs font-medium">Character Constraints</Label>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-[11px] text-muted-foreground">Min Characters</Label>
+                  <Label className="text-[11px] text-muted-foreground">Min Length</Label>
                   <Input
                     type="number"
-                    value={typeof field.validationRules?.min === "number" ? field.validationRules.min : ""}
+                    value={
+                      typeof field.validationRules?.min === "number"
+                        ? field.validationRules.min
+                        : ""
+                    }
                     onChange={(e) =>
                       onUpdateField(field.fieldId, {
                         validationRules: {
@@ -394,10 +529,14 @@ export function PropertiesPanel({
                   />
                 </div>
                 <div>
-                  <Label className="text-[11px] text-muted-foreground">Max Characters</Label>
+                  <Label className="text-[11px] text-muted-foreground">Max Length</Label>
                   <Input
                     type="number"
-                    value={typeof field.validationRules?.max === "number" ? field.validationRules.max : ""}
+                    value={
+                      typeof field.validationRules?.max === "number"
+                        ? field.validationRules.max
+                        : ""
+                    }
                     onChange={(e) =>
                       onUpdateField(field.fieldId, {
                         validationRules: {
@@ -427,11 +566,10 @@ export function PropertiesPanel({
             className="w-full text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5 h-9"
           >
             <IconTrash className="size-4" />
-            <span>Delete this question</span>
+            <span>Delete Question</span>
           </Button>
         </div>
       </SheetContent>
     </Sheet>
   );
 }
-

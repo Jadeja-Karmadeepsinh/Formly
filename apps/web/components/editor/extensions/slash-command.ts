@@ -42,7 +42,9 @@ export const SlashCommand = Extension.create<SlashCommandOptions>({
           return items.filter(
             (item) =>
               item.title.toLowerCase().includes(q) ||
-              item.description.toLowerCase().includes(q)
+              item.description.toLowerCase().includes(q) ||
+              (item.keywords &&
+                item.keywords.some((k) => k.toLowerCase().includes(q)))
           );
         },
         render: () => {

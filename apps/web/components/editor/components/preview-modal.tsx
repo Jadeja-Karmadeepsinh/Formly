@@ -8,13 +8,14 @@ import {
   IconStar,
   IconX,
 } from "@tabler/icons-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Dialog, DialogContent } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
+import { getQuestionTypeDefinition } from "../registry/question-registry";
 
 export interface PreviewFieldData {
   fieldId?: string;
@@ -25,6 +26,7 @@ export interface PreviewFieldData {
   helpText?: string | null;
   required?: boolean;
   config?: Record<string, unknown>;
+  validationRules?: Record<string, unknown>;
 }
 
 interface FormPreviewModalProps {
@@ -65,9 +67,9 @@ export function FormPreviewModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl h-[88vh] flex flex-col p-0 gap-0 overflow-hidden">
         {/* Preview Top Bar */}
-        <div className="flex items-center justify-between border-b px-4 py-2.5 bg-muted/30">
+        <div className="flex items-center justify-between border-b px-4 py-2.5 bg-muted/40 backdrop-blur-xs">
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30">
+            <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 font-medium">
               Preview Mode
             </Badge>
             <span className="text-xs text-muted-foreground hidden sm:inline">
@@ -75,7 +77,7 @@ export function FormPreviewModal({
             </span>
           </div>
 
-          <div className="flex items-center gap-1 border rounded-lg p-0.5 bg-background">
+          <div className="flex items-center gap-1 border rounded-lg p-0.5 bg-background shadow-2xs">
             <Button
               type="button"
               variant={device === "desktop" ? "secondary" : "ghost"}
@@ -110,8 +112,8 @@ export function FormPreviewModal({
         </div>
 
         {/* Scrollable Viewport */}
-        <div className="flex-1 overflow-y-auto bg-muted/10 p-6 md:p-10 flex justify-center">
-          <div className={`w-full ${getContainerWidth()} transition-all duration-200 bg-card border rounded-2xl p-6 md:p-10 shadow-sm h-fit space-y-8`}>
+        <div className="flex-1 overflow-y-auto bg-muted/15 p-6 md:p-12 flex justify-center">
+          <div className={`w-full ${getContainerWidth()} transition-all duration-200 bg-card border rounded-2xl p-6 md:p-10 shadow-xs h-fit space-y-8`}>
             {/* Header */}
             <div className="border-b pb-6 space-y-2">
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
@@ -130,27 +132,31 @@ export function FormPreviewModal({
                 No questions added to this form yet.
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-7">
                 {fields.map((field, index) => {
                   const key = field.fieldId || `f_${index}`;
                   const val = mockValues[key];
 
                   return (
                     <div key={key} className="space-y-2">
-                      <div className="flex items-baseline gap-1.5">
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
                         <span className="font-medium text-sm text-foreground">
                           {field.label || `Question ${index + 1}`}
                         </span>
                         {field.required && (
-                          <span className="text-destructive font-semibold text-xs">*</span>
+                          <span className="text-destructive font-bold text-xs" title="Required">
+                            *
+                          </span>
                         )}
                       </div>
 
                       {field.helpText && (
-                        <p className="text-xs text-muted-foreground">{field.helpText}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {field.helpText}
+                        </p>
                       )}
 
-                      {/* Realistic Field Renderers */}
+                      {/* Field Preview Control */}
                       <div className="pt-1">
                         {renderPreviewInput(field, val, (newVal) =>
                           handleValueChange(key, newVal)
@@ -160,10 +166,13 @@ export function FormPreviewModal({
                   );
                 })}
 
-                <div className="pt-4 border-t">
-                  <Button type="button" className="w-full sm:w-auto px-6">
+                <div className="pt-4 border-t flex items-center justify-between">
+                  <Button type="button" className="w-full sm:w-auto px-6 h-9 text-xs">
                     Submit (Preview)
                   </Button>
+                  <span className="text-[11px] text-muted-foreground/60 hidden sm:inline">
+                    Simulated response
+                  </span>
                 </div>
               </div>
             )}
@@ -188,6 +197,7 @@ function renderPreviewInput(
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder || "Your answer"}
+          className="max-w-md h-9 text-xs"
         />
       );
 
@@ -197,7 +207,8 @@ function renderPreviewInput(
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder || "Your answer"}
-          rows={3}
+          rows={typeof config?.rows === "number" ? config.rows : 3}
+          className="text-xs"
         />
       );
 
@@ -208,6 +219,7 @@ function renderPreviewInput(
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder || "name@example.com"}
+          className="max-w-md h-9 text-xs"
         />
       );
 
@@ -218,6 +230,7 @@ function renderPreviewInput(
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder || "+1 (555) 000-0000"}
+          className="max-w-xs h-9 text-xs"
         />
       );
 
@@ -228,6 +241,7 @@ function renderPreviewInput(
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder || "https://example.com"}
+          className="max-w-md h-9 text-xs"
         />
       );
 
@@ -235,10 +249,13 @@ function renderPreviewInput(
       return (
         <Input
           type="number"
+          min={typeof config?.min === "number" ? config.min : undefined}
+          max={typeof config?.max === "number" ? config.max : undefined}
+          step={typeof config?.step === "number" ? config.step : undefined}
           value={value ?? ""}
           onChange={(e) => onChange(e.target.value ? Number(e.target.value) : "")}
           placeholder={placeholder || "0"}
-          className="w-48"
+          className="w-48 h-9 text-xs"
         />
       );
 
@@ -248,7 +265,7 @@ function renderPreviewInput(
           type="date"
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
-          className="w-48"
+          className="w-48 h-9 text-xs"
         />
       );
 
@@ -258,7 +275,7 @@ function renderPreviewInput(
           type="time"
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
-          className="w-36"
+          className="w-36 h-9 text-xs"
         />
       );
 
@@ -272,21 +289,21 @@ function renderPreviewInput(
           ];
 
       return (
-        <div className="space-y-2">
+        <div className="space-y-1.5 pt-0.5">
           {options.map((opt, i) => {
             const isChecked = value === opt.value;
             return (
               <label
                 key={i}
                 onClick={() => onChange(opt.value)}
-                className={`flex items-center gap-3 p-3 rounded-lg border text-sm cursor-pointer transition-colors ${
+                className={`flex items-center gap-3 p-2.5 rounded-lg border text-xs cursor-pointer transition-colors ${
                   isChecked
                     ? "border-primary bg-primary/5 font-medium"
                     : "border-border/70 hover:bg-muted/30"
                 }`}
               >
                 <div
-                  className={`size-4 rounded-full border flex items-center justify-center ${
+                  className={`size-4 rounded-full border flex items-center justify-center shrink-0 ${
                     isChecked ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"
                   }`}
                 >
@@ -319,14 +336,14 @@ function renderPreviewInput(
       };
 
       return (
-        <div className="space-y-2">
+        <div className="space-y-1.5 pt-0.5">
           {options.map((opt, i) => {
             const isChecked = currentVals.includes(opt.value);
             return (
               <label
                 key={i}
                 onClick={() => toggleOption(opt.value)}
-                className={`flex items-center gap-3 p-3 rounded-lg border text-sm cursor-pointer transition-colors ${
+                className={`flex items-center gap-3 p-2.5 rounded-lg border text-xs cursor-pointer transition-colors ${
                   isChecked
                     ? "border-primary bg-primary/5 font-medium"
                     : "border-border/70 hover:bg-muted/30"
@@ -354,9 +371,9 @@ function renderPreviewInput(
           />
           <Label
             htmlFor={`mock_cb_${field.fieldId}`}
-            className="text-sm font-normal cursor-pointer"
+            className="text-xs font-normal cursor-pointer"
           >
-            {placeholder || "I agree / confirm"}
+            {placeholder || "I agree to the terms and conditions"}
           </Label>
         </div>
       );
@@ -375,7 +392,7 @@ function renderPreviewInput(
                 key={i}
                 type="button"
                 onClick={() => onChange(starValue)}
-                className="p-1 hover:scale-110 transition-transform"
+                className="p-1 hover:scale-110 transition-transform cursor-pointer"
               >
                 <IconStar
                   className={`size-6 ${
@@ -402,7 +419,7 @@ function renderPreviewInput(
 
       return (
         <div className="space-y-2 py-1">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             {Array.from({ length: maxScore }).map((_, i) => {
               const score = i + 1;
               const isSelected = currentScore === score;
@@ -411,9 +428,9 @@ function renderPreviewInput(
                   key={i}
                   type="button"
                   onClick={() => onChange(score)}
-                  className={`size-10 rounded-lg border text-sm font-medium transition-colors ${
+                  className={`size-9 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
                     isSelected
-                      ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                      ? "border-primary bg-primary text-primary-foreground shadow-xs"
                       : "border-border/80 hover:bg-accent/40"
                   }`}
                 >
@@ -422,10 +439,12 @@ function renderPreviewInput(
               );
             })}
           </div>
-          <div className="flex justify-between text-xs text-muted-foreground max-w-sm pt-1">
-            <span>{typeof config?.minLabel === "string" ? config.minLabel : "Not likely"}</span>
-            <span>{typeof config?.maxLabel === "string" ? config.maxLabel : "Extremely likely"}</span>
-          </div>
+          {Boolean(config?.minLabel || config?.maxLabel) && (
+            <div className="flex justify-between text-[11px] text-muted-foreground max-w-sm pt-0.5">
+              <span>{typeof config?.minLabel === "string" ? config.minLabel : ""}</span>
+              <span>{typeof config?.maxLabel === "string" ? config.maxLabel : ""}</span>
+            </div>
+          )}
         </div>
       );
     }
@@ -434,19 +453,19 @@ function renderPreviewInput(
       const options: Array<{ label: string; value: string }> = Array.isArray(config?.options)
         ? (config?.options as any)
         : [
-            { label: "First Item", value: "item_1" },
-            { label: "Second Item", value: "item_2" },
-            { label: "Third Item", value: "item_3" },
+            { label: "Option 1", value: "opt_1" },
+            { label: "Option 2", value: "opt_2" },
+            { label: "Option 3", value: "opt_3" },
           ];
 
       return (
-        <div className="space-y-2">
+        <div className="space-y-1.5 max-w-sm">
           {options.map((opt, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 p-3 rounded-lg border border-border/70 bg-card text-sm"
+              className="flex items-center gap-2.5 p-2.5 rounded-lg border border-border/70 bg-card text-xs"
             >
-              <div className="size-6 rounded bg-muted flex items-center justify-center font-bold text-xs text-muted-foreground shrink-0">
+              <div className="size-5 rounded bg-muted flex items-center justify-center font-bold text-[11px] text-muted-foreground shrink-0">
                 {i + 1}
               </div>
               <span className="flex-1">{opt.label}</span>
@@ -462,8 +481,8 @@ function renderPreviewInput(
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder || "Your answer"}
+          className="max-w-md h-9 text-xs"
         />
       );
   }
 }
-

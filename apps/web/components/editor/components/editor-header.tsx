@@ -3,29 +3,19 @@
 import * as React from "react";
 import Link from "next/link";
 import {
+  IconArrowBackUp,
+  IconArrowForwardUp,
   IconArrowLeft,
   IconCheck,
-  IconCopy,
   IconDeviceFloppy,
   IconEye,
   IconHelp,
   IconLoader,
-  IconPlus,
   IconShare,
   IconWorld,
 } from "@tabler/icons-react";
-import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { getSlashMenuItems } from "./slash-command-menu";
 
 export type SaveStatus = "saved" | "saving" | "unsaved" | "error";
 
@@ -36,34 +26,30 @@ interface EditorHeaderProps {
   status?: string;
   saveStatus: SaveStatus;
   isDirty: boolean;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
   onSave: () => void;
   onOpenPreview: () => void;
   onOpenPublish: () => void;
   onOpenShortcuts: () => void;
-  onInsertField: (field: {
-    type: string;
-    label: string;
-    placeholder?: string;
-    config?: Record<string, unknown>;
-  }) => void;
 }
 
 export function EditorHeader({
-  formId,
   title,
-  shareId,
   status = "draft",
   saveStatus,
   isDirty,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
   onSave,
   onOpenPreview,
   onOpenPublish,
   onOpenShortcuts,
-  onInsertField,
 }: EditorHeaderProps) {
-  const menuItems = getSlashMenuItems(onInsertField);
-  const formFieldItems = menuItems.filter((i) => i.category === "form");
-
   const isMac =
     typeof window !== "undefined" &&
     navigator.platform.toUpperCase().indexOf("MAC") >= 0;
@@ -89,7 +75,7 @@ export function EditorHeader({
         return (
           <div className="flex items-center gap-1.5 text-xs text-amber-500 font-medium">
             <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
-            <span>Unsaved changes</span>
+            <span>Unsaved</span>
           </div>
         );
       case "saved":
@@ -104,30 +90,30 @@ export function EditorHeader({
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b bg-background/95 px-4 backdrop-blur-xs">
-      {/* Left: Breadcrumbs, Title, Status */}
+    <header className="sticky top-0 z-30 flex h-13 w-full items-center justify-between border-b bg-background/95 px-4 backdrop-blur-md">
+      {/* Left: Back Link, Title Breadcrumb, Status Badge */}
       <div className="flex items-center gap-3 min-w-0">
         <Link
           href="/dashboard"
-          className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-muted"
-          title="Back to dashboard"
+          className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted"
+          title="Back to forms dashboard"
         >
           <IconArrowLeft className="size-4" />
           <span className="hidden sm:inline">Forms</span>
         </Link>
 
-        <span className="text-muted-foreground/30 text-sm hidden sm:inline">/</span>
+        <span className="text-muted-foreground/30 text-xs hidden sm:inline">/</span>
 
         <div className="flex items-center gap-2 min-w-0">
-          <h1 className="font-semibold text-sm truncate max-w-[140px] sm:max-w-xs md:max-w-md text-foreground">
+          <span className="font-medium text-xs sm:text-sm truncate max-w-[120px] sm:max-w-xs text-foreground">
             {title || "Untitled Form"}
-          </h1>
+          </span>
 
           <Badge
             variant={status === "published" ? "default" : "outline"}
-            className={`text-[10px] capitalize px-1.5 py-0 h-4 hidden md:inline-flex ${
+            className={`text-[10px] capitalize px-1.5 py-0 h-4 ${
               status === "published"
-                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-medium"
                 : "text-muted-foreground"
             }`}
           >
@@ -140,9 +126,35 @@ export function EditorHeader({
         </div>
       </div>
 
-      {/* Right: Actions */}
-      <div className="flex items-center gap-2">
-        {/* Help / Shortcuts Button */}
+      {/* Right: Undo, Redo, Preview, Save Changes, Publish */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Undo / Redo */}
+        <div className="flex items-center border rounded-lg p-0.5 bg-background hidden sm:flex">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            disabled={!canUndo}
+            onClick={onUndo}
+            className="size-7 text-muted-foreground hover:text-foreground disabled:opacity-30"
+            title={`Undo (${modKey}+Z)`}
+          >
+            <IconArrowBackUp className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            disabled={!canRedo}
+            onClick={onRedo}
+            className="size-7 text-muted-foreground hover:text-foreground disabled:opacity-30"
+            title={`Redo (${modKey}+Shift+Z)`}
+          >
+            <IconArrowForwardUp className="size-3.5" />
+          </Button>
+        </div>
+
+        {/* Keyboard Shortcuts Help */}
         <Button
           type="button"
           variant="ghost"
@@ -153,46 +165,6 @@ export function EditorHeader({
         >
           <IconHelp className="size-4" />
         </Button>
-
-        {/* Quick Add Question Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
-              <IconPlus className="size-3.5" />
-              <span className="hidden sm:inline">Add Question</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 max-h-80 overflow-y-auto">
-            <DropdownMenuLabel className="text-xs">
-              Form Question Types
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {formFieldItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <DropdownMenuItem
-                  key={item.title}
-                  onSelect={() => {
-                    const dummyEditor = {
-                      chain: () => ({
-                        focus: () => ({
-                          deleteRange: () => ({
-                            run: () => {},
-                          }),
-                        }),
-                      }),
-                    };
-                    item.command(dummyEditor, { from: 0, to: 0 });
-                  }}
-                  className="gap-2 cursor-pointer text-xs"
-                >
-                  <Icon className="size-4 text-muted-foreground" />
-                  <span>{item.title}</span>
-                </DropdownMenuItem>
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
 
         {/* Preview Button */}
         <Button
@@ -207,7 +179,7 @@ export function EditorHeader({
           <span className="hidden sm:inline">Preview</span>
         </Button>
 
-        {/* Explicit Save Changes Button */}
+        {/* Save Changes Button */}
         <Button
           type="button"
           size="sm"
@@ -216,7 +188,7 @@ export function EditorHeader({
           onClick={onSave}
           className={`h-8 gap-1.5 text-xs transition-all ${
             isDirty
-              ? "bg-primary text-primary-foreground shadow-xs font-medium"
+              ? "bg-primary text-primary-foreground shadow-xs font-medium cursor-pointer"
               : "text-muted-foreground border-border/60"
           }`}
           title={`Save Changes (${modKey}+S)`}

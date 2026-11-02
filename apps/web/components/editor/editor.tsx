@@ -21,6 +21,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import { EditorHeader, type SaveStatus } from "./components/editor-header";
 import { EditorBubbleMenu } from "./components/bubble-menu";
+import { BlockGutter } from "./components/block-gutter";
 import { FormFieldNode } from "./nodes/form-field-node";
 import { SlashCommand } from "./extensions/slash-command";
 import {
@@ -52,6 +53,10 @@ export function FormEditor({ formId }: FormEditorProps) {
   const [saveStatus, setSaveStatus] = React.useState<SaveStatus>("saved");
   const [isDirty, setIsDirty] = React.useState<boolean>(false);
   const [lastSavedAt, setLastSavedAt] = React.useState<Date | null>(null);
+
+  // Undo / Redo tracking
+  const [canUndo, setCanUndo] = React.useState<boolean>(false);
+  const [canRedo, setCanRedo] = React.useState<boolean>(false);
 
   // Form Metadata
   const [formTitle, setFormTitle] = React.useState("");
@@ -144,7 +149,9 @@ export function FormEditor({ formId }: FormEditorProps) {
           type: string;
           label: string;
           placeholder?: string;
+          helpText?: string;
           config?: Record<string, unknown>;
+          validationRules?: Record<string, unknown>;
         }) => {
           handleInsertField(field);
         },
@@ -156,10 +163,16 @@ export function FormEditor({ formId }: FormEditorProps) {
           "prose prose-neutral dark:prose-invert max-w-none focus:outline-none min-h-[400px] text-base leading-relaxed",
       },
     },
+    onTransaction: ({ editor: ed }) => {
+      setCanUndo(ed.can().undo());
+      setCanRedo(ed.can().redo());
+    },
     onUpdate: ({ editor: ed }) => {
       if (!isInitialLoadedRef.current) return;
       markDirty();
       refreshQuestionCount(ed);
+      setCanUndo(ed.can().undo());
+      setCanRedo(ed.can().redo());
     },
   });
 
@@ -222,7 +235,9 @@ export function FormEditor({ formId }: FormEditorProps) {
       type: string;
       label: string;
       placeholder?: string;
+      helpText?: string;
       config?: Record<string, unknown>;
+      validationRules?: Record<string, unknown>;
     }) => {
       if (!editor) return;
 
@@ -232,10 +247,10 @@ export function FormEditor({ formId }: FormEditorProps) {
         type: field.type,
         label: field.label,
         placeholder: field.placeholder || null,
-        helpText: null,
+        helpText: field.helpText || null,
         required: false,
         config: field.config || {},
-        validationRules: {},
+        validationRules: field.validationRules || {},
       };
 
       editor
@@ -250,7 +265,7 @@ export function FormEditor({ formId }: FormEditorProps) {
       markDirty();
       refreshQuestionCount(editor);
 
-      // Auto-open properties inspector for the newly added question
+      // Auto-focus the newly added question in the properties inspector
       setSelectedField(newFieldData);
       setIsPropertiesOpen(true);
     },
@@ -367,7 +382,7 @@ export function FormEditor({ formId }: FormEditorProps) {
     setSaveStatus("saving");
 
     try {
-      // 1. Extract all question nodes from the Tiptap document in their current visual order
+      // 1. Extract all question nodes from the Tiptap document in their visual order
       const fieldsToSync: Array<{
         id?: string;
         kind: "question" | "content";
@@ -402,7 +417,7 @@ export function FormEditor({ formId }: FormEditorProps) {
         }
       });
 
-      // 2. Perform concurrent batch sync of fields and form document metadata
+      // 2. Perform transactional batch sync of fields and form document metadata
       const [savedFields] = await Promise.all([
         syncFormFieldsAsync({
           formId,
@@ -493,14 +508,14 @@ export function FormEditor({ formId }: FormEditorProps) {
   if (isFormLoading || isFieldsLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
-        <div className="h-14 border-b flex items-center px-4 justify-between">
+        <div className="h-13 border-b flex items-center px-4 justify-between">
           <Skeleton className="h-6 w-32" />
           <div className="flex gap-2">
             <Skeleton className="h-8 w-20" />
             <Skeleton className="h-8 w-24" />
           </div>
         </div>
-        <div className="max-w-3xl w-full mx-auto p-8 space-y-6">
+        <div className="max-w-[700px] w-full mx-auto p-8 space-y-6">
           <Skeleton className="h-12 w-3/4" />
           <Skeleton className="h-6 w-full" />
           <Skeleton className="h-28 w-full rounded-lg" />
@@ -526,7 +541,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      {/* Notion-style Header with Manual Save & Publish */}
+      {/* Tally-style Header with Undo/Redo, Manual Save & Publish */}
       <EditorHeader
         formId={formId}
         title={formTitle || form.title}
@@ -534,25 +549,28 @@ export function FormEditor({ formId }: FormEditorProps) {
         status={formStatus}
         saveStatus={saveStatus}
         isDirty={isDirty}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={() => editor?.commands.undo()}
+        onRedo={() => editor?.commands.redo()}
         onSave={handleSaveChanges}
         onOpenPreview={() => setIsPreviewOpen(true)}
         onOpenPublish={() => setIsPublishOpen(true)}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
-        onInsertField={handleInsertField}
       />
 
       {/* Floating Text Formatting Menu */}
       <EditorBubbleMenu editor={editor} />
 
-      {/* Editor Body Canvas */}
-      <main className="flex-1 w-full max-w-3xl mx-auto px-6 py-10 md:py-16">
+      {/* Document Canvas (Tally-inspired writing width) */}
+      <main className="flex-1 w-full max-w-[700px] mx-auto px-6 sm:px-8 py-10 md:py-16">
         {/* Editable Form Title */}
         <input
           type="text"
           value={formTitle}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder="Untitled Form"
-          className="w-full text-3xl md:text-4xl font-bold tracking-tight bg-transparent border-none outline-none focus:outline-none placeholder:text-muted-foreground/30 mb-3"
+          className="w-full text-3xl sm:text-4xl font-bold tracking-tight bg-transparent border-none outline-none focus:outline-none placeholder:text-muted-foreground/30 mb-2"
         />
 
         {/* Editable Form Description */}
@@ -560,19 +578,27 @@ export function FormEditor({ formId }: FormEditorProps) {
           value={formDescription}
           onChange={(e) => handleDescriptionChange(e.target.value)}
           placeholder="Add a form description or instructions for respondents..."
-          rows={2}
-          className="w-full text-base text-muted-foreground bg-transparent border-none outline-none focus:outline-none resize-none placeholder:text-muted-foreground/30 mb-6"
+          rows={1}
+          className="w-full text-sm text-muted-foreground bg-transparent border-none outline-none focus:outline-none resize-none placeholder:text-muted-foreground/30 mb-6 leading-relaxed"
         />
 
-        <div className="h-px bg-border/60 w-full mb-8" />
+        <div className="h-px bg-border/40 w-full mb-6" />
 
         {/* Onboarding Empty State when no questions exist */}
         {questionCount === 0 && (
-          <EditorEmptyState onInsertField={handleInsertField} />
+          <EditorEmptyState
+            onInsertField={handleInsertField}
+            onFocusEditor={() => editor?.commands.focus()}
+          />
         )}
 
-        {/* Tiptap Canvas */}
-        <div className="notion-editor-canvas min-h-[400px]">
+        {/* Continuous Tiptap Canvas with Floating Block Gutter */}
+        <div className="notion-editor-canvas relative min-h-[400px]">
+          <BlockGutter
+            editor={editor}
+            onInsertField={handleInsertField}
+            onOpenProperties={() => setIsPropertiesOpen(true)}
+          />
           <EditorContent editor={editor} />
         </div>
       </main>
