@@ -8,7 +8,9 @@
     "./auth": "./auth/index.ts",
     "./auth/*": "./auth/*.ts",
     "./email": "./email/index.ts",
-    "./email/*": "./email/*.ts"
+    "./email/*": "./email/*.ts",
+    "./forms": "./forms/index.ts",
+    "./forms/*": "./forms/*.ts"
   },
   "devDependencies": {
     "@formly/eslint-config": "workspace:*",
