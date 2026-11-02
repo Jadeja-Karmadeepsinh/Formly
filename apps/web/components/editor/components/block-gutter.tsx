@@ -30,7 +30,7 @@ import {
 
 interface BlockGutterProps {
   editor: Editor | null;
-  onOpenProperties?: () => void;
+  onOpenProperties?: (fieldData?: any) => void;
   onInsertField: InsertFormFieldCallback;
 }
 
@@ -313,7 +313,22 @@ export function BlockGutter({
           {isQuestionBlock && onOpenProperties && (
             <>
               <DropdownMenuItem
-                onSelect={onOpenProperties}
+                onSelect={() => {
+                  if (!editor || !targetDomNode) {
+                    onOpenProperties();
+                    return;
+                  }
+                  const pos = getTargetPos();
+                  if (pos !== null) {
+                    const resolved = editor.state.doc.resolve(pos);
+                    const node = resolved.nodeAfter;
+                    if (node && node.type.name === "formField") {
+                      onOpenProperties(node.attrs);
+                      return;
+                    }
+                  }
+                  onOpenProperties();
+                }}
                 className="gap-2 cursor-pointer text-xs"
               >
                 <IconSettings className="size-3.5 text-muted-foreground" />

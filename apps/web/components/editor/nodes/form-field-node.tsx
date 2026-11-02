@@ -31,6 +31,13 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import { cn } from "cn";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { getQuestionTypeDefinition } from "../registry/question-registry";
 
 function FormFieldNodeView({
@@ -54,68 +61,104 @@ function FormFieldNodeView({
   const qDef = getQuestionTypeDefinition(type);
   const Icon = qDef.icon;
 
-  const [isEditingDescription, setIsEditingDescription] = React.useState(
-    Boolean(helpText)
-  );
-
   const optionInputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
 
-  // Notify parent of field selection to update Contextual Properties Panel
-  const handleSelectField = React.useCallback(
-    (overrides?: Partial<typeof node.attrs>) => {
-      const onSelectField = (
-        editor?.storage as {
-          formly?: {
-            onSelectField?: (field: {
-              fieldId: string;
-              type: string;
-              label: string;
-              placeholder?: string | null;
-              helpText?: string | null;
-              required: boolean;
-              config: Record<string, unknown>;
-              validationRules: Record<string, unknown>;
-            }) => void;
-          };
-        }
-      )?.formly?.onSelectField;
+  // Tiptap storage callbacks
+  const formlyStorage = (
+    editor?.storage as {
+      formly?: {
+        onOpenSettings?: (field: {
+          fieldId: string;
+          type: string;
+          label: string;
+          placeholder?: string | null;
+          helpText?: string | null;
+          required: boolean;
+          config: Record<string, unknown>;
+          validationRules: Record<string, unknown>;
+        }) => void;
+        onSelectField?: (field: {
+          fieldId: string;
+          type: string;
+          label: string;
+          placeholder?: string | null;
+          helpText?: string | null;
+          required: boolean;
+          config: Record<string, unknown>;
+          validationRules: Record<string, unknown>;
+        }) => void;
+        onFieldInlineUpdate?: (
+          fieldId: string,
+          updates: Record<string, unknown>
+        ) => void;
+        onFieldDeleted?: (id: string) => void;
+      };
+    }
+  )?.formly;
 
-      if (typeof onSelectField === "function" && fieldId) {
-        onSelectField({
-          fieldId,
-          type,
-          label: overrides?.label !== undefined ? overrides.label : label,
-          placeholder:
-            overrides?.placeholder !== undefined
-              ? overrides.placeholder
-              : placeholder,
-          helpText:
-            overrides?.helpText !== undefined
-              ? overrides.helpText
-              : helpText,
-          required:
-            overrides?.required !== undefined ? overrides.required : required,
-          config: overrides?.config !== undefined ? overrides.config : (config || {}),
-          validationRules:
-            overrides?.validationRules !== undefined
-              ? overrides.validationRules
-              : (validationRules || {}),
-        });
+  const getSnapshot = React.useCallback(
+    (overrides?: Partial<typeof node.attrs>) => ({
+      fieldId: fieldId || "",
+      type,
+      label: overrides?.label !== undefined ? overrides.label : (label || ""),
+      placeholder:
+        overrides?.placeholder !== undefined
+          ? overrides.placeholder
+          : (placeholder ?? null),
+      helpText:
+        overrides?.helpText !== undefined
+          ? overrides.helpText
+          : (helpText ?? null),
+      required:
+        overrides?.required !== undefined
+          ? Boolean(overrides.required)
+          : Boolean(required),
+      config:
+        overrides?.config !== undefined
+          ? (overrides.config as Record<string, unknown>)
+          : ((config as Record<string, unknown>) || {}),
+      validationRules:
+        overrides?.validationRules !== undefined
+          ? (overrides.validationRules as Record<string, unknown>)
+          : ((validationRules as Record<string, unknown>) || {}),
+    }),
+    [fieldId, type, label, placeholder, helpText, required, config, validationRules]
+  );
+
+  // Explicit trigger: ONLY opens the settings sidebar when gear is clicked
+  const handleOpenSettings = React.useCallback(
+    (e?: React.MouseEvent) => {
+      e?.stopPropagation();
+      if (formlyStorage?.onOpenSettings && fieldId) {
+        formlyStorage.onOpenSettings(getSnapshot());
       }
     },
-    [editor, fieldId, type, label, placeholder, helpText, required, config, validationRules]
+    [formlyStorage, fieldId, getSnapshot]
+  );
+
+  // Inform parent of field selection/focus (NEVER opens sidebar)
+  const handleSelectField = React.useCallback(() => {
+    if (formlyStorage?.onSelectField && fieldId) {
+      formlyStorage.onSelectField(getSnapshot());
+    }
+  }, [formlyStorage, fieldId, getSnapshot]);
+
+  // Inform parent of inline updates (syncs selectedField if sidebar is open, but NEVER opens sidebar)
+  const handleInlineUpdate = React.useCallback(
+    (updates: Partial<typeof node.attrs>) => {
+      if (formlyStorage?.onFieldInlineUpdate && fieldId) {
+        formlyStorage.onFieldInlineUpdate(
+          fieldId,
+          updates as Record<string, unknown>
+        );
+      }
+    },
+    [formlyStorage, fieldId]
   );
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const onFieldDeleted = (
-      editor?.storage as {
-        formly?: {
-          onFieldDeleted?: (id: string) => void;
-        };
-      }
-    )?.formly?.onFieldDeleted;
-
+    const onFieldDeleted = formlyStorage?.onFieldDeleted;
     if (typeof onFieldDeleted === "function" && fieldId) {
       onFieldDeleted(fieldId);
     }
@@ -143,7 +186,7 @@ function FormFieldNodeView({
       };
       const newConfig = { ...config, options: next };
       updateAttributes({ config: newConfig });
-      handleSelectField({ config: newConfig });
+      handleInlineUpdate({ config: newConfig });
     }
   };
 
@@ -156,7 +199,7 @@ function FormFieldNodeView({
     ];
     const newConfig = { ...config, options: next };
     updateAttributes({ config: newConfig });
-    handleSelectField({ config: newConfig });
+    handleInlineUpdate({ config: newConfig });
 
     // Focus the newly created option input on next tick
     setTimeout(() => {
@@ -170,7 +213,7 @@ function FormFieldNodeView({
     const next = rawOptions.filter((_, i) => i !== idx);
     const newConfig = { ...config, options: next };
     updateAttributes({ config: newConfig });
-    handleSelectField({ config: newConfig });
+    handleInlineUpdate({ config: newConfig });
   };
 
   const handleMoveOption = (
@@ -189,7 +232,7 @@ function FormFieldNodeView({
 
     const newConfig = { ...config, options: next };
     updateAttributes({ config: newConfig });
-    handleSelectField({ config: newConfig });
+    handleInlineUpdate({ config: newConfig });
   };
 
   const handleOptionKeyDown = (
@@ -209,7 +252,7 @@ function FormFieldNodeView({
       const next = rawOptions.filter((_, i) => i !== idx);
       const newConfig = { ...config, options: next };
       updateAttributes({ config: newConfig });
-      handleSelectField({ config: newConfig });
+      handleInlineUpdate({ config: newConfig });
       setTimeout(() => {
         optionInputRefs.current[prevIdx]?.focus();
       }, 50);
@@ -490,7 +533,7 @@ function FormFieldNodeView({
               value={placeholder || ""}
               onChange={(e) => {
                 updateAttributes({ placeholder: e.target.value });
-                handleSelectField({ placeholder: e.target.value });
+                handleInlineUpdate({ placeholder: e.target.value });
               }}
               placeholder="I agree to the terms and conditions"
               className="bg-transparent border-none outline-none focus:outline-none text-xs text-foreground placeholder:text-muted-foreground/50 flex-1"
@@ -631,94 +674,71 @@ function FormFieldNodeView({
           : "hover:bg-accent/15"
       }`}
     >
-      {/* Field Header / Question Title */}
-      <div className="flex items-start justify-between gap-3 mb-1.5">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            {/* Inline Editable Question Title */}
-            <input
-              type="text"
-              value={label || ""}
-              onChange={(e) => {
-                updateAttributes({ label: e.target.value });
-                handleSelectField({ label: e.target.value });
-              }}
-              placeholder="Write your question..."
-              className="w-full font-medium text-sm text-foreground bg-transparent border-none outline-none focus:outline-none placeholder:text-muted-foreground/40 py-0.5"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSelectField();
-              }}
-            />
-
-            {/* Clickable Required Asterisk Toggle */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                const nextReq = !required;
-                updateAttributes({ required: nextReq });
-                handleSelectField({ required: nextReq });
-              }}
-              className={`px-1.5 py-0.5 rounded text-sm font-bold transition-colors cursor-pointer select-none ${
-                required
-                  ? "text-destructive hover:opacity-80"
-                  : "text-muted-foreground/30 hover:text-muted-foreground"
-              }`}
-              title={
-                required
-                  ? "This question is required. Click to make optional."
-                  : "This question is optional. Click to make required."
-              }
-              aria-label={
-                required
-                  ? "This question is required. Click to make optional."
-                  : "This question is optional. Click to make required."
-              }
-            >
-              *
-            </button>
-          </div>
-
-          {/* Inline Editable or Toggleable Description */}
-          {isEditingDescription || helpText ? (
-            <input
-              type="text"
-              value={helpText || ""}
-              onChange={(e) => {
-                updateAttributes({ helpText: e.target.value });
-                handleSelectField({ helpText: e.target.value });
-              }}
-              placeholder="Add a description (optional)"
-              className="w-full text-xs text-muted-foreground bg-transparent border-none outline-none focus:outline-none placeholder:text-muted-foreground/40 mt-0.5 py-0.5"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSelectField();
-              }}
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsEditingDescription(true);
-              }}
-              className="text-[11px] text-muted-foreground/50 hover:text-muted-foreground transition-colors opacity-0 group-hover/field:opacity-100 text-left mt-0.5"
-            >
-              + Add description
-            </button>
-          )}
-        </div>
-
-        {/* Subtle Right Controls: Type Badge, Settings Gear, Delete */}
-        <div className="flex items-center gap-1 shrink-0 opacity-70 group-hover/field:opacity-100 transition-opacity">
-          <Badge
-            variant="outline"
+      {/* Field Header / Question Title Row */}
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {/* Inline Editable Question Title */}
+          <input
+            type="text"
+            value={label || ""}
+            onChange={(e) => {
+              updateAttributes({ label: e.target.value });
+              handleInlineUpdate({ label: e.target.value });
+            }}
+            placeholder="Write your question..."
+            className="w-full font-medium text-sm text-foreground bg-transparent border-none outline-none focus:outline-none placeholder:text-muted-foreground/40 py-0.5"
             onClick={(e) => {
               e.stopPropagation();
               handleSelectField();
             }}
-            className="h-5 px-1.5 text-[10px] font-normal gap-1 text-muted-foreground hover:text-foreground cursor-pointer transition-colors bg-background"
+          />
+
+          {/* Clickable Required Asterisk Toggle with Tooltip & Distinct States */}
+          <TooltipProvider delayDuration={150}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const nextReq = !required;
+                    updateAttributes({ required: nextReq });
+                    handleInlineUpdate({ required: nextReq });
+                  }}
+                  onMouseDown={(e) => {
+                    // Prevent stealing focus from the question title input
+                    e.preventDefault();
+                  }}
+                  className={cn(
+                    "inline-flex items-center justify-center size-6.5 rounded-md text-sm font-bold transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none",
+                    required
+                      ? "text-destructive bg-destructive/10 hover:bg-destructive/20 border border-destructive/30 shadow-2xs"
+                      : "text-muted-foreground/40 hover:text-foreground hover:bg-muted/80 border border-transparent hover:border-border/60"
+                  )}
+                  aria-label={
+                    required
+                      ? "This question is required. Click to make it optional."
+                      : "This question is optional. Click to make it required."
+                  }
+                  aria-pressed={Boolean(required)}
+                >
+                  <span className="text-base leading-none translate-y-[-1px]">*</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs font-normal">
+                {required
+                  ? "This question is required. Click to make it optional."
+                  : "Make this question required"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
+        {/* Subtle Right Controls: Type Badge, Settings Gear (ONLY way to open settings), Delete */}
+        <div className="flex items-center gap-1 shrink-0 opacity-70 group-hover/field:opacity-100 transition-opacity">
+          <Badge
+            variant="outline"
+            className="h-5 px-1.5 text-[10px] font-normal gap-1 text-muted-foreground bg-background select-none"
           >
             <Icon className="size-3" />
             <span>{qDef.label}</span>
@@ -728,12 +748,10 @@ function FormFieldNodeView({
             type="button"
             variant="ghost"
             size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleSelectField();
-            }}
-            className="size-6 text-muted-foreground/70 hover:text-foreground"
+            onClick={handleOpenSettings}
+            className="size-6.5 text-muted-foreground/70 hover:text-foreground cursor-pointer"
             title="Question settings (advanced)"
+            aria-label="Question settings (advanced)"
           >
             <IconSettings className="size-3.5" />
           </Button>
@@ -743,8 +761,9 @@ function FormFieldNodeView({
             variant="ghost"
             size="icon"
             onClick={handleDelete}
-            className="size-6 text-muted-foreground/70 hover:text-destructive"
+            className="size-6.5 text-muted-foreground/70 hover:text-destructive cursor-pointer"
             title="Delete question"
+            aria-label="Delete question"
           >
             <IconTrash className="size-3.5" />
           </Button>

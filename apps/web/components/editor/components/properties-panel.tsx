@@ -173,10 +173,10 @@ export function PropertiesPanel({
             />
           </div>
 
-          {/* Description / Help text */}
+          {/* Description */}
           <div className="space-y-1.5">
             <Label htmlFor="prop_helpText" className="text-xs font-medium">
-              Help Text / Instructions (optional)
+              Description (optional)
             </Label>
             <Textarea
               id="prop_helpText"
@@ -186,7 +186,7 @@ export function PropertiesPanel({
                   helpText: e.target.value || null,
                 })
               }
-              placeholder="Add extra guidance for respondents..."
+              placeholder="Enter optional supporting description or instructions for respondents..."
               rows={2}
               className="text-xs resize-none"
             />

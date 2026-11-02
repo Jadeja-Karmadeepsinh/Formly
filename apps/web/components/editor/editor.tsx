@@ -172,13 +172,33 @@ export function FormEditor({ formId }: FormEditorProps) {
     },
   });
 
-  // Handle selecting a field to open properties panel
-  const handleSelectField = React.useCallback(
+  // Explicit action: Open the settings sidebar for a specific question (Gear button / settings action)
+  const handleOpenSettings = React.useCallback(
     (fieldData: PropertiesFieldData) => {
       setSelectedField(fieldData);
       setIsPropertiesOpen(true);
     },
     []
+  );
+
+  // Question selection / focus: Selects the question block WITHOUT opening the sidebar
+  const handleSelectField = React.useCallback(
+    (fieldData: PropertiesFieldData) => {
+      setSelectedField(fieldData);
+      // NOTE: Does NOT open properties sidebar!
+    },
+    []
+  );
+
+  // Inline update of a question's attributes from the canvas: keeps selectedField in sync if sidebar is open
+  const handleFieldInlineUpdate = React.useCallback(
+    (fieldId: string, updates: Partial<PropertiesFieldData>) => {
+      setSelectedField((prev) =>
+        prev?.fieldId === fieldId ? { ...prev, ...updates } : prev
+      );
+      markDirty();
+    },
+    [markDirty]
   );
 
   // Handle deleting a field from local draft
@@ -214,16 +234,29 @@ export function FormEditor({ formId }: FormEditorProps) {
       (
         editor.storage as {
           formly?: {
+            onOpenSettings?: (data: PropertiesFieldData) => void;
             onSelectField?: (data: PropertiesFieldData) => void;
+            onFieldInlineUpdate?: (
+              fieldId: string,
+              updates: Partial<PropertiesFieldData>
+            ) => void;
             onFieldDeleted?: (id: string) => void;
           };
         }
       ).formly = {
+        onOpenSettings: handleOpenSettings,
         onSelectField: handleSelectField,
+        onFieldInlineUpdate: handleFieldInlineUpdate,
         onFieldDeleted: handleDeleteField,
       };
     }
-  }, [editor, handleSelectField, handleDeleteField]);
+  }, [
+    editor,
+    handleOpenSettings,
+    handleSelectField,
+    handleFieldInlineUpdate,
+    handleDeleteField,
+  ]);
 
   // Insert a new form field into the local draft
   const handleInsertField = React.useCallback(
@@ -254,9 +287,8 @@ export function FormEditor({ formId }: FormEditorProps) {
       markDirty();
       refreshQuestionCount(editor);
 
-      // Auto-focus the newly added question in the properties inspector
+      // Track newly inserted question without automatically opening the settings sidebar
       setSelectedField(newFieldData);
-      setIsPropertiesOpen(true);
     },
     [editor, markDirty, refreshQuestionCount]
   );
@@ -623,7 +655,12 @@ export function FormEditor({ formId }: FormEditorProps) {
           <BlockGutter
             editor={editor}
             onInsertField={handleInsertField}
-            onOpenProperties={() => setIsPropertiesOpen(true)}
+            onOpenProperties={(fieldData) => {
+              if (fieldData) {
+                setSelectedField(fieldData);
+              }
+              setIsPropertiesOpen(true);
+            }}
           />
           <EditorContent editor={editor} />
         </div>
