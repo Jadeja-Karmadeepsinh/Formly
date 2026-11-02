@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { IconLoader, IconPlus } from "@tabler/icons-react";
 import { useCreateForm } from "~/hooks/api/form";
 import { Button } from "~/components/ui/button";
@@ -37,6 +38,7 @@ export function CreateFormDialog({
   onOpenChange: setControlledOpen,
   trigger,
 }: CreateFormDialogProps) {
+  const router = useRouter();
   const [internalOpen, setInternalOpen] = React.useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
@@ -82,7 +84,7 @@ export function CreateFormDialog({
     setValidationError(null);
 
     try {
-      await createFormAsync({
+      const created = await createFormAsync({
         title: cleanTitle,
         description: description.trim() ? description.trim() : null,
         visibility,
@@ -95,6 +97,9 @@ export function CreateFormDialog({
       });
 
       handleOpenChange(false);
+      if (created?.id) {
+        router.push(`/dashboard/forms/${created.id}`);
+      }
     } catch {
       // Error is toasted by hook
     }
