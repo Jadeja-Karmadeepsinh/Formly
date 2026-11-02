@@ -39,7 +39,6 @@ export function EditFormDialog({ form, open, onOpenChange }: EditFormDialogProps
   const [maxSubmissions, setMaxSubmissions] = React.useState("");
   const [expiresAt, setExpiresAt] = React.useState("");
   const [submitButtonText, setSubmitButtonText] = React.useState("Submit");
-  const [allowMultipleSubmissions, setAllowMultipleSubmissions] = React.useState(true);
   const [showProgressBar, setShowProgressBar] = React.useState(false);
   const [validationError, setValidationError] = React.useState<string | null>(null);
 
@@ -68,7 +67,6 @@ export function EditFormDialog({ form, open, onOpenChange }: EditFormDialogProps
 
       const settings = (form.settings ?? {}) as Record<string, unknown>;
       setSubmitButtonText(typeof settings.submitButtonText === "string" ? settings.submitButtonText : "Submit");
-      setAllowMultipleSubmissions(typeof settings.allowMultipleSubmissions === "boolean" ? settings.allowMultipleSubmissions : true);
       setShowProgressBar(typeof settings.showProgressBar === "boolean" ? settings.showProgressBar : false);
       setValidationError(null);
     }
@@ -97,7 +95,6 @@ export function EditFormDialog({ form, open, onOpenChange }: EditFormDialogProps
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         settings: {
           submitButtonText: submitButtonText.trim() || "Submit",
-          allowMultipleSubmissions,
           showProgressBar,
         },
       });
@@ -250,23 +247,6 @@ export function EditFormDialog({ form, open, onOpenChange }: EditFormDialogProps
 
               <div className="flex items-center justify-between rounded-lg border p-2.5">
                 <div className="space-y-0.5">
-                  <Label htmlFor="edit-allow-multiple" className="text-sm font-medium cursor-pointer">
-                    Allow Multiple Submissions
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Allow respondents to submit more than once.
-                  </p>
-                </div>
-                <Switch
-                  id="edit-allow-multiple"
-                  checked={allowMultipleSubmissions}
-                  onCheckedChange={setAllowMultipleSubmissions}
-                  disabled={isPending}
-                />
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border p-2.5">
-                <div className="space-y-0.5">
                   <Label htmlFor="edit-progress-bar" className="text-sm font-medium cursor-pointer">
                     Show Progress Bar
                   </Label>
@@ -303,4 +283,3 @@ export function EditFormDialog({ form, open, onOpenChange }: EditFormDialogProps
     </Dialog>
   );
 }
-
