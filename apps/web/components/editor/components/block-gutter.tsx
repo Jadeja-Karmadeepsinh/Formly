@@ -23,17 +23,15 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "~/components/ui/dropdown-menu";
-import { getSlashMenuItems } from "./slash-command-menu";
+import {
+  getSlashMenuItems,
+  type InsertFormFieldCallback,
+} from "./slash-command-menu";
 
 interface BlockGutterProps {
   editor: Editor | null;
   onOpenProperties?: () => void;
-  onInsertField: (field: {
-    type: string;
-    label: string;
-    placeholder?: string;
-    config?: Record<string, unknown>;
-  }) => void;
+  onInsertField: InsertFormFieldCallback;
 }
 
 export function BlockGutter({

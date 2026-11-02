@@ -6,15 +6,11 @@ import {
   getSlashMenuItems,
   SlashCommandMenu,
   type SlashMenuItem,
+  type InsertFormFieldCallback,
 } from "../components/slash-command-menu";
 
 export interface SlashCommandOptions {
-  onInsertFormField: (field: {
-    type: string;
-    label: string;
-    placeholder?: string;
-    config?: Record<string, unknown>;
-  }) => void;
+  onInsertFormField?: InsertFormFieldCallback;
 }
 
 export const SlashCommand = Extension.create<SlashCommandOptions>({
@@ -131,10 +127,13 @@ export const SlashCommand = Extension.create<SlashCommandOptions>({
                 const currentItems = currentProps?.items;
                 const selectedItem = currentItems?.[selectedIndex];
                 if (selectedItem) {
-                  (props as { command?: (item: SlashMenuItem) => void }).command?.(
-                    selectedItem
-                  );
-                  return true;
+                  const commandFn =
+                    (component?.props as any)?.command ||
+                    (props as any)?.command;
+                  if (typeof commandFn === "function") {
+                    commandFn(selectedItem);
+                    return true;
+                  }
                 }
               }
 

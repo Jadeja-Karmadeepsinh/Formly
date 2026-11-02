@@ -16,6 +16,7 @@ import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { getQuestionTypeDefinition } from "../registry/question-registry";
+import { RankingInteractive } from "./ranking-interactive";
 
 export interface PreviewFieldData {
   fieldId?: string;
@@ -459,19 +460,11 @@ function renderPreviewInput(
           ];
 
       return (
-        <div className="space-y-1.5 max-w-sm">
-          {options.map((opt, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2.5 p-2.5 rounded-lg border border-border/70 bg-card text-xs"
-            >
-              <div className="size-5 rounded bg-muted flex items-center justify-center font-bold text-[11px] text-muted-foreground shrink-0">
-                {i + 1}
-              </div>
-              <span className="flex-1">{opt.label}</span>
-            </div>
-          ))}
-        </div>
+        <RankingInteractive
+          options={options}
+          value={Array.isArray(value) ? value : undefined}
+          onChange={(rankedValues) => onChange(rankedValues)}
+        />
       );
     }
 

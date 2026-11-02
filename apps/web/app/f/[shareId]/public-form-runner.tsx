@@ -19,6 +19,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Label } from "~/components/ui/label";
+import { RankingInteractive } from "~/components/editor/components/ranking-interactive";
 
 interface PublicFormRunnerProps {
   shareId: string;
@@ -528,19 +529,11 @@ function renderPublicFieldInput(
         : [];
 
       return (
-        <div className="space-y-2">
-          {options.map((opt, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-3 p-3 rounded-lg border border-border/70 bg-card text-sm"
-            >
-              <div className="size-6 rounded bg-muted flex items-center justify-center font-bold text-xs text-muted-foreground shrink-0">
-                {i + 1}
-              </div>
-              <span className="flex-1">{opt.label}</span>
-            </div>
-          ))}
-        </div>
+        <RankingInteractive
+          options={options}
+          value={Array.isArray(value) ? value : undefined}
+          onChange={(rankedValues) => onChange(rankedValues)}
+        />
       );
     }
 

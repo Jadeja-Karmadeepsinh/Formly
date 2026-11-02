@@ -25,6 +25,9 @@ import { BlockGutter } from "./components/block-gutter";
 import { FormFieldNode } from "./nodes/form-field-node";
 import { SlashCommand } from "./extensions/slash-command";
 import {
+  type InsertFormFieldPayload,
+} from "./components/slash-command-menu";
+import {
   PropertiesPanel,
   type PropertiesFieldData,
 } from "./components/properties-panel";
@@ -145,14 +148,7 @@ export function FormEditor({ formId }: FormEditorProps) {
       }),
       FormFieldNode,
       SlashCommand.configure({
-        onInsertFormField: (field: {
-          type: string;
-          label: string;
-          placeholder?: string;
-          helpText?: string;
-          config?: Record<string, unknown>;
-          validationRules?: Record<string, unknown>;
-        }) => {
+        onInsertFormField: (field: InsertFormFieldPayload) => {
           handleInsertField(field);
         },
       }),
@@ -231,14 +227,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 
   // Insert a new form field into the local draft
   const handleInsertField = React.useCallback(
-    (field: {
-      type: string;
-      label: string;
-      placeholder?: string;
-      helpText?: string;
-      config?: Record<string, unknown>;
-      validationRules?: Record<string, unknown>;
-    }) => {
+    (field: InsertFormFieldPayload) => {
       if (!editor) return;
 
       const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -477,6 +466,43 @@ export function FormEditor({ formId }: FormEditorProps) {
     updateFormAsync,
   ]);
 
+  // Open Full-Page Preview in a New Browser Tab with Current Local Draft
+  const handleOpenPreview = React.useCallback(() => {
+    if (!editor) return;
+
+    const draftFields: PreviewFieldData[] = [];
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === "formField") {
+        draftFields.push(node.attrs as PreviewFieldData);
+      }
+    });
+
+    const draftData = {
+      title: formTitle || form?.title || "Untitled Form",
+      description: formDescription || form?.description || "",
+      fields: draftFields,
+      timestamp: Date.now(),
+    };
+
+    try {
+      sessionStorage.setItem(
+        `formly_preview_draft_${formId}`,
+        JSON.stringify(draftData)
+      );
+    } catch (e) {
+      console.error("Failed to store preview draft in sessionStorage", e);
+    }
+
+    window.open(`/dashboard/forms/${formId}/preview`, "_blank");
+  }, [
+    editor,
+    formTitle,
+    formDescription,
+    form?.title,
+    form?.description,
+    formId,
+  ]);
+
   // Global Keyboard Shortcuts (Ctrl/Cmd + S to save, Ctrl/Cmd + P to preview)
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -486,12 +512,12 @@ export function FormEditor({ formId }: FormEditorProps) {
         handleSaveChanges();
       } else if (isMod && e.key.toLowerCase() === "p") {
         e.preventDefault();
-        setIsPreviewOpen(true);
+        handleOpenPreview();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleSaveChanges]);
+  }, [handleSaveChanges, handleOpenPreview]);
 
   // Extract preview fields from current editor state
   const getPreviewFields = (): PreviewFieldData[] => {
@@ -554,7 +580,7 @@ export function FormEditor({ formId }: FormEditorProps) {
         onUndo={() => editor?.commands.undo()}
         onRedo={() => editor?.commands.redo()}
         onSave={handleSaveChanges}
-        onOpenPreview={() => setIsPreviewOpen(true)}
+        onOpenPreview={handleOpenPreview}
         onOpenPublish={() => setIsPublishOpen(true)}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
       />

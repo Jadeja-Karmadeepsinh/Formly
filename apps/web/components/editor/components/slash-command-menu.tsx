@@ -18,6 +18,19 @@ import {
   type QuestionTypeDefinition,
 } from "../registry/question-registry";
 
+export interface InsertFormFieldPayload {
+  type: string;
+  label: string;
+  placeholder?: string | null;
+  helpText?: string | null;
+  required?: boolean;
+  config?: Record<string, unknown>;
+  validationRules?: Record<string, unknown>;
+  fieldId?: string;
+}
+
+export type InsertFormFieldCallback = (field: InsertFormFieldPayload) => void;
+
 export interface SlashMenuItem {
   title: string;
   description: string;
@@ -28,14 +41,7 @@ export interface SlashMenuItem {
 }
 
 export const getSlashMenuItems = (
-  onInsertFormField: (field: {
-    type: string;
-    label: string;
-    placeholder?: string;
-    helpText?: string;
-    config?: Record<string, unknown>;
-    validationRules?: Record<string, unknown>;
-  }) => void
+  onInsertFormField?: InsertFormFieldCallback
 ): SlashMenuItem[] => {
   // 1. Build question items dynamically from central Question Registry
   const questionItems: SlashMenuItem[] = QUESTION_TYPES_LIST.map((qDef) => ({
@@ -44,27 +50,41 @@ export const getSlashMenuItems = (
     category: "form",
     icon: qDef.icon,
     keywords: qDef.keywords,
-    command: (editor, range) => {
-      (editor as {
-        chain: () => {
-          focus: () => {
-            deleteRange: (r: unknown) => { run: () => void };
-          };
-        };
-      })
-        .chain()
-        .focus()
-        .deleteRange(range)
-        .run();
-
-      onInsertFormField({
+    command: (editor: unknown, range: { from: number; to: number }) => {
+      const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      const fieldData = {
+        fieldId: tempId,
         type: qDef.type,
         label: qDef.defaultLabel,
-        placeholder: qDef.defaultPlaceholder,
-        helpText: qDef.defaultHelpText,
-        config: qDef.defaultConfig,
-        validationRules: qDef.defaultValidationRules,
-      });
+        placeholder: qDef.defaultPlaceholder || null,
+        helpText: qDef.defaultHelpText || null,
+        required: false,
+        config: qDef.defaultConfig || {},
+        validationRules: qDef.defaultValidationRules || {},
+      };
+
+      const ed = editor as {
+        chain: () => {
+          focus: () => {
+            deleteRange: (r: unknown) => {
+              insertContent: (content: unknown) => { run: () => void };
+            };
+          };
+        };
+      };
+
+      ed.chain()
+        .focus()
+        .deleteRange(range)
+        .insertContent({
+          type: "formField",
+          attrs: fieldData,
+        })
+        .run();
+
+      if (typeof onInsertFormField === "function") {
+        onInsertFormField(fieldData);
+      }
     },
   }));
 
@@ -361,7 +381,16 @@ export const SlashCommandMenu = React.forwardRef<
                     itemRefs.current[currIndex] = el;
                   }}
                   type="button"
-                  onClick={() => command(item)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    command(item);
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    command(item);
+                  }}
                   className={`flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors cursor-pointer ${
                     isSelected
                       ? "bg-accent text-accent-foreground"
@@ -401,7 +430,16 @@ export const SlashCommandMenu = React.forwardRef<
                     itemRefs.current[currIndex] = el;
                   }}
                   type="button"
-                  onClick={() => command(item)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    command(item);
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    command(item);
+                  }}
                   className={`flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors cursor-pointer ${
                     isSelected
                       ? "bg-accent text-accent-foreground"
