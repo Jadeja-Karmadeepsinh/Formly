@@ -10,11 +10,13 @@ import {
   unique,
   uuid,
   varchar,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 import { formStatusEnum, formVisibilityEnum } from "./form-enums";
 import type { FormSettings } from "./form-types";
 import { formTemplatesTable } from "./form-templates";
+import { formVersionsTable } from "./form-versions";
 import { themesTable } from "./themes";
 import { usersTable } from "./user";
 
@@ -36,6 +38,10 @@ export const formsTable = pgTable(
     themeId: uuid("theme_id").references(() => themesTable.id, {
       onDelete: "set null",
     }),
+    publishedVersionId: uuid("published_version_id").references(
+      (): AnyPgColumn => formVersionsTable.id,
+      { onDelete: "set null" },
+    ),
     settings: jsonb("settings").$type<FormSettings>().notNull().default({}),
     sourceTemplateId: uuid("source_template_id").references(
       () => formTemplatesTable.id,
@@ -64,6 +70,7 @@ export const formsTable = pgTable(
       table.visibility,
       table.publishedAt,
     ),
+    index("forms_published_version_id_idx").on(table.publishedVersionId),
     index("forms_theme_id_idx").on(table.themeId),
     index("forms_source_template_id_idx").on(table.sourceTemplateId),
     index("forms_deleted_at_idx").on(table.deletedAt),

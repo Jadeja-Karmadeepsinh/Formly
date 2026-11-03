@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { syncFieldItemSchema, type SyncFormFieldsInput } from "../form-field/model";
 
 export const formVisibilityEnum = z.enum(["public", "unlisted"]);
 export type FormVisibility = z.infer<typeof formVisibilityEnum>;
@@ -119,3 +120,49 @@ export const updateFormInputSchema = z.object({
 
 export type UpdateFormInput = z.infer<typeof updateFormInputSchema>;
 
+// ==========================================
+// Versioning & Complete Draft Save Schemas
+// ==========================================
+
+export const saveFormDraftInputSchema = z.object({
+  formId: z.string().uuid("Invalid form ID"),
+  expectedVersion: z.number().int().positive().optional(),
+  title: z
+    .string()
+    .trim()
+    .min(1, "Title is required")
+    .max(200, "Title cannot exceed 200 characters")
+    .optional(),
+  description: z
+    .string()
+    .trim()
+    .max(2000, "Description cannot exceed 2000 characters")
+    .nullable()
+    .optional(),
+  settings: z.record(z.string(), z.any()).optional(),
+  fields: z.array(syncFieldItemSchema),
+});
+
+export type SaveFormDraftInput = z.infer<typeof saveFormDraftInputSchema>;
+
+export const listFormVersionsInputSchema = z.object({
+  formId: z.string().uuid("Invalid form ID"),
+});
+
+export type ListFormVersionsInput = z.infer<typeof listFormVersionsInputSchema>;
+
+export const getFormVersionInputSchema = z.object({
+  formId: z.string().uuid("Invalid form ID"),
+  versionId: z.string().uuid("Invalid version ID").optional(),
+  versionNumber: z.number().int().positive().optional(),
+});
+
+export type GetFormVersionInput = z.infer<typeof getFormVersionInputSchema>;
+
+export const restoreFormVersionInputSchema = z.object({
+  formId: z.string().uuid("Invalid form ID"),
+  versionId: z.string().uuid("Invalid version ID"),
+  expectedVersion: z.number().int().positive().optional(),
+});
+
+export type RestoreFormVersionInput = z.infer<typeof restoreFormVersionInputSchema>;

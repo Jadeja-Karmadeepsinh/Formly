@@ -26,12 +26,13 @@ export const formVersionsTable = pgTable(
     versionNumber: integer("version_number").notNull(),
     title: varchar("title", { length: 200 }).notNull(),
     description: text("description"),
-    // Snapshot of the theme selection at the time of publication.
+    // Snapshot of the theme selection at the time of publication or save.
     themeId: uuid("theme_id").references(() => themesTable.id, {
       onDelete: "set null",
     }),
     settings: jsonb("settings").$type<FormSettings>().notNull().default({}),
-    publishedAt: timestamp("published_at", { withTimezone: true })
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
@@ -48,6 +49,10 @@ export const formVersionsTable = pgTable(
     index("form_versions_form_id_published_at_idx").on(
       table.formId,
       table.publishedAt,
+    ),
+    index("form_versions_form_id_created_at_idx").on(
+      table.formId,
+      table.createdAt,
     ),
     check(
       "form_versions_version_number_positive_check",

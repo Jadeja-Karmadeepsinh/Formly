@@ -4,6 +4,7 @@ import {
   formStatusEnum,
   formVisibilityEnum,
   updateFormInputSchema,
+  saveFormDraftInputSchema,
 } from "@formly/services/form/model";
 import { formFieldOutputModel } from "../form-field/model";
 
@@ -32,6 +33,7 @@ export const formOutputModel = z.object({
   visibility: formVisibilityEnum,
   maxSubmissions: z.number().nullable(),
   themeId: z.string().nullable(),
+  publishedVersionId: z.string().uuid().nullable().optional(),
   settings: z.record(z.string(), z.any()),
   sourceTemplateId: z.string().nullable(),
   publishedAt: z.date().nullable(),
@@ -63,3 +65,83 @@ export const publicFormDetailOutputModel = z.object({
 });
 export type PublicFormDetailOutput = z.infer<typeof publicFormDetailOutputModel>;
 
+// ==========================================
+// Form Versioning Models
+// ==========================================
+
+export const formVersionOutputModel = z.object({
+  id: z.string().uuid(),
+  formId: z.string().uuid(),
+  versionNumber: z.number().int(),
+  title: z.string(),
+  description: z.string().nullable(),
+  themeId: z.string().nullable(),
+  settings: z.record(z.string(), z.any()),
+  publishedAt: z.date().nullable(),
+  createdAt: z.date(),
+});
+export type FormVersionOutput = z.infer<typeof formVersionOutputModel>;
+
+export const formVersionElementOutputModel = z.object({
+  id: z.string().uuid(),
+  formVersionId: z.string().uuid(),
+  sourceElementId: z.string().uuid().nullable(),
+  kind: z.enum(["question", "content"]),
+  type: z.string(),
+  label: z.string().nullable(),
+  content: z.string().nullable(),
+  helpText: z.string().nullable(),
+  placeholder: z.string().nullable(),
+  required: z.boolean(),
+  sortOrder: z.number().int(),
+  config: z.record(z.string(), z.any()),
+  validationRules: z.record(z.string(), z.any()),
+  createdAt: z.date(),
+});
+export type FormVersionElementOutput = z.infer<typeof formVersionElementOutputModel>;
+
+export const saveFormDraftProcedureInputModel = saveFormDraftInputSchema;
+export type SaveFormDraftProcedureInput = z.infer<typeof saveFormDraftProcedureInputModel>;
+
+export const saveFormDraftOutputModel = z.object({
+  form: formOutputModel,
+  fields: z.array(formFieldOutputModel),
+  version: formVersionOutputModel,
+  isNoOp: z.boolean(),
+});
+export type SaveFormDraftOutput = z.infer<typeof saveFormDraftOutputModel>;
+
+export const listFormVersionsProcedureInputModel = z.object({
+  formId: z.string().uuid("Invalid form ID"),
+});
+export type ListFormVersionsProcedureInput = z.infer<typeof listFormVersionsProcedureInputModel>;
+
+export const listFormVersionsOutputModel = z.array(formVersionOutputModel);
+export type ListFormVersionsOutput = z.infer<typeof listFormVersionsOutputModel>;
+
+export const getFormVersionProcedureInputModel = z.object({
+  formId: z.string().uuid("Invalid form ID"),
+  versionId: z.string().uuid("Invalid version ID").optional(),
+  versionNumber: z.number().int().positive().optional(),
+});
+export type GetFormVersionProcedureInput = z.infer<typeof getFormVersionProcedureInputModel>;
+
+export const getFormVersionOutputModel = z.object({
+  version: formVersionOutputModel,
+  elements: z.array(formVersionElementOutputModel),
+});
+export type GetFormVersionOutput = z.infer<typeof getFormVersionOutputModel>;
+
+export const restoreFormVersionProcedureInputModel = z.object({
+  formId: z.string().uuid("Invalid form ID"),
+  versionId: z.string().uuid("Invalid version ID"),
+  expectedVersion: z.number().int().positive().optional(),
+});
+export type RestoreFormVersionProcedureInput = z.infer<typeof restoreFormVersionProcedureInputModel>;
+
+export const restoreFormVersionOutputModel = z.object({
+  form: formOutputModel,
+  fields: z.array(formFieldOutputModel),
+  version: formVersionOutputModel,
+});
+export type RestoreFormVersionOutput = z.infer<typeof restoreFormVersionOutputModel>;

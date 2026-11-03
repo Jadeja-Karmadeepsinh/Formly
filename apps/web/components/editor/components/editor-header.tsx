@@ -10,6 +10,7 @@ import {
   IconDeviceFloppy,
   IconEye,
   IconHelp,
+  IconHistory,
   IconLoader,
   IconShare,
   IconWorld,
@@ -26,11 +27,13 @@ interface EditorHeaderProps {
   status?: string;
   saveStatus: SaveStatus;
   isDirty: boolean;
+  currentVersionNumber?: number;
   canUndo?: boolean;
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
   onSave: () => void;
+  onOpenHistory?: () => void;
   onOpenPreview: () => void;
   onOpenPublish: () => void;
   onOpenShortcuts: () => void;
@@ -41,11 +44,13 @@ export function EditorHeader({
   status = "draft",
   saveStatus,
   isDirty,
+  currentVersionNumber,
   canUndo = false,
   canRedo = false,
   onUndo,
   onRedo,
   onSave,
+  onOpenHistory,
   onOpenPreview,
   onOpenPublish,
   onOpenShortcuts,
@@ -91,7 +96,7 @@ export function EditorHeader({
 
   return (
     <header className="sticky top-0 z-30 flex h-13 w-full items-center justify-between border-b bg-background/95 px-4 backdrop-blur-md">
-      {/* Left: Back Link, Title Breadcrumb, Status Badge */}
+      {/* Left: Back Link, Title Breadcrumb, Status & Version Badges */}
       <div className="flex items-center gap-3 min-w-0">
         <Link
           href="/dashboard"
@@ -119,6 +124,17 @@ export function EditorHeader({
           >
             {status}
           </Badge>
+
+          {currentVersionNumber !== undefined && (
+            <button
+              type="button"
+              onClick={onOpenHistory}
+              className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-border/80 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              title="Click to view version history"
+            >
+              v{currentVersionNumber}
+            </button>
+          )}
         </div>
 
         <div className="ml-2 pl-3 border-l border-border/60 hidden md:block">
@@ -126,7 +142,7 @@ export function EditorHeader({
         </div>
       </div>
 
-      {/* Right: Undo, Redo, Preview, Save Changes, Publish */}
+      {/* Right: Undo, Redo, Version History, Preview, Save Changes, Publish */}
       <div className="flex items-center gap-1.5 sm:gap-2">
         {/* Undo / Redo */}
         <div className="flex items-center border rounded-lg p-0.5 bg-background hidden sm:flex">
@@ -165,6 +181,21 @@ export function EditorHeader({
         >
           <IconHelp className="size-4" />
         </Button>
+
+        {/* Version History Button */}
+        {onOpenHistory && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={onOpenHistory}
+            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            title="Version History"
+          >
+            <IconHistory className="size-3.5" />
+            <span className="hidden sm:inline">History</span>
+          </Button>
+        )}
 
         {/* Preview Button */}
         <Button

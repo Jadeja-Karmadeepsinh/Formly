@@ -12,6 +12,14 @@ import {
   listFormsOutputModel,
   publicFormDetailOutputModel,
   updateFormProcedureInputModel,
+  saveFormDraftProcedureInputModel,
+  saveFormDraftOutputModel,
+  listFormVersionsProcedureInputModel,
+  listFormVersionsOutputModel,
+  getFormVersionProcedureInputModel,
+  getFormVersionOutputModel,
+  restoreFormVersionProcedureInputModel,
+  restoreFormVersionOutputModel,
 } from "./model";
 
 const TAGS = ["Forms"];
@@ -192,5 +200,163 @@ export const formsRouter = router({
       }
       return result as any;
     }),
-});
 
+  // ==========================================
+  // Form Versioning & Draft Save Procedures
+  // ==========================================
+
+  saveFormDraft: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/saveFormDraft"),
+        tags: TAGS,
+        protect: true,
+      },
+    })
+    .input(saveFormDraftProcedureInputModel)
+    .output(saveFormDraftOutputModel)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const result = await formService.saveFormDraft(ctx.user.id, input);
+        return result as any;
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          if (error.message.includes("CONCURRENCY_CONFLICT")) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: error.message,
+            });
+          }
+          if (error.message.includes("not found")) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: error.message,
+            });
+          }
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: error.message,
+          });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to save form draft",
+        });
+      }
+    }),
+
+  listFormVersions: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/listFormVersions/{formId}"),
+        tags: TAGS,
+        protect: true,
+      },
+    })
+    .input(listFormVersionsProcedureInputModel)
+    .output(listFormVersionsOutputModel)
+    .query(async ({ ctx, input }) => {
+      try {
+        const versions = await formService.listFormVersions(
+          ctx.user.id,
+          input.formId
+        );
+        return versions as any;
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.includes("not found")) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: error.message,
+          });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to list form versions",
+        });
+      }
+    }),
+
+  getFormVersionById: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/getFormVersionById"),
+        tags: TAGS,
+        protect: true,
+      },
+    })
+    .input(getFormVersionProcedureInputModel)
+    .output(getFormVersionOutputModel)
+    .query(async ({ ctx, input }) => {
+      try {
+        const detail = await formService.getFormVersionById(
+          ctx.user.id,
+          input.formId,
+          input.versionId,
+          input.versionNumber
+        );
+        if (!detail) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Form version not found",
+          });
+        }
+        return detail as any;
+      } catch (error: unknown) {
+        if (error instanceof TRPCError) throw error;
+        if (error instanceof Error && error.message.includes("not found")) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: error.message,
+          });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to get form version",
+        });
+      }
+    }),
+
+  restoreFormVersion: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/restoreFormVersion"),
+        tags: TAGS,
+        protect: true,
+      },
+    })
+    .input(restoreFormVersionProcedureInputModel)
+    .output(restoreFormVersionOutputModel)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const result = await formService.restoreFormVersion(ctx.user.id, input);
+        return result as any;
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          if (error.message.includes("CONCURRENCY_CONFLICT")) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: error.message,
+            });
+          }
+          if (error.message.includes("not found")) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: error.message,
+            });
+          }
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: error.message,
+          });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to restore form version",
+        });
+      }
+    }),
+});
