@@ -12,11 +12,12 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Link from "@tiptap/extension-link";
 import { toast } from "sonner";
-import { useForm, useUpdateForm } from "~/hooks/api/form";
 import {
-  useFormFields,
-  useSyncFormFields,
-} from "~/hooks/api/form-field";
+  useForm,
+  useSaveFormDraft,
+  useFormVersions,
+} from "~/hooks/api/form";
+import { useFormFields } from "~/hooks/api/form-field";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import { EditorHeader, type SaveStatus } from "./components/editor-header";
@@ -38,6 +39,7 @@ import {
 } from "./components/preview-modal";
 import { ShortcutsDialog } from "./components/shortcuts-dialog";
 import { EditorEmptyState } from "./components/empty-state";
+import { VersionHistoryDialog } from "./components/version-history-dialog";
 
 interface FormEditorProps {
   formId: string;
@@ -48,14 +50,16 @@ export function FormEditor({ formId }: FormEditorProps) {
     formId
   );
   const { fields, isLoading: isFieldsLoading } = useFormFields(formId);
-
-  const { updateFormAsync } = useUpdateForm();
-  const { syncFormFieldsAsync } = useSyncFormFields(formId);
+  const { versions } = useFormVersions(formId);
+  const { saveFormDraftAsync } = useSaveFormDraft();
 
   // Manual save state
   const [saveStatus, setSaveStatus] = React.useState<SaveStatus>("saved");
   const [isDirty, setIsDirty] = React.useState<boolean>(false);
   const [lastSavedAt, setLastSavedAt] = React.useState<Date | null>(null);
+  const [currentVersionNumber, setCurrentVersionNumber] = React.useState<
+    number | undefined
+  >(undefined);
 
   // Undo / Redo tracking
   const [canUndo, setCanUndo] = React.useState<boolean>(false);
@@ -73,11 +77,19 @@ export function FormEditor({ formId }: FormEditorProps) {
   const [isPublishOpen, setIsPublishOpen] = React.useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = React.useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
 
   // Field count tracker for validation & empty state
   const [questionCount, setQuestionCount] = React.useState<number>(0);
 
   const isInitialLoadedRef = React.useRef(false);
+
+  // Track latest version number
+  React.useEffect(() => {
+    if (versions.length > 0 && currentVersionNumber === undefined) {
+      setCurrentVersionNumber(versions[0]?.versionNumber);
+    }
+  }, [versions, currentVersionNumber]);
 
   // Sync form initial metadata
   React.useEffect(() => {
@@ -147,61 +159,61 @@ export function FormEditor({ formId }: FormEditorProps) {
         },
       }),
       FormFieldNode,
-      SlashCommand.configure({
-        onInsertFormField: (field: InsertFormFieldPayload) => {
-          handleInsertField(field);
-        },
-      }),
+      SlashCommand,
     ],
     editorProps: {
       attributes: {
         class:
-          "prose prose-neutral dark:prose-invert max-w-none focus:outline-none min-h-[400px] text-base leading-relaxed",
+          "prose prose-sm sm:prose-base dark:prose-invert max-w-none focus:outline-none min-h-[300px] leading-relaxed",
       },
     },
-    onTransaction: ({ editor: ed }) => {
+    onUpdate: ({ editor: ed }) => {
+      markDirty();
       setCanUndo(ed.can().undo());
       setCanRedo(ed.can().redo());
-    },
-    onUpdate: ({ editor: ed }) => {
-      if (!isInitialLoadedRef.current) return;
-      markDirty();
       refreshQuestionCount(ed);
+    },
+    onSelectionUpdate: ({ editor: ed }) => {
       setCanUndo(ed.can().undo());
       setCanRedo(ed.can().redo());
     },
   });
 
-  // Explicit action: Open the settings sidebar for a specific question (Gear button / settings action)
-  const handleOpenSettings = React.useCallback(
-    (fieldData: PropertiesFieldData) => {
-      setSelectedField(fieldData);
-      setIsPropertiesOpen(true);
-    },
-    []
-  );
+  // Explicit handlers passed into Tiptap storage for NodeViews
+  const handleOpenSettings = React.useCallback((data: PropertiesFieldData) => {
+    setSelectedField(data);
+    setIsPropertiesOpen(true);
+  }, []);
 
-  // Question selection / focus: Selects the question block WITHOUT opening the sidebar
-  const handleSelectField = React.useCallback(
-    (fieldData: PropertiesFieldData) => {
-      setSelectedField(fieldData);
-      // NOTE: Does NOT open properties sidebar!
-    },
-    []
-  );
+  const handleSelectField = React.useCallback((data: PropertiesFieldData) => {
+    setSelectedField(data);
+  }, []);
 
-  // Inline update of a question's attributes from the canvas: keeps selectedField in sync if sidebar is open
   const handleFieldInlineUpdate = React.useCallback(
     (fieldId: string, updates: Partial<PropertiesFieldData>) => {
+      if (!editor) return;
+
+      editor.commands.command(({ tr, state }) => {
+        state.doc.descendants((node, pos) => {
+          if (node.type.name === "formField" && node.attrs.fieldId === fieldId) {
+            tr.setNodeMarkup(pos, undefined, {
+              ...node.attrs,
+              ...updates,
+            });
+            return false;
+          }
+        });
+        return true;
+      });
+
       setSelectedField((prev) =>
-        prev?.fieldId === fieldId ? { ...prev, ...updates } : prev
+        prev && prev.fieldId === fieldId ? { ...prev, ...updates } : prev
       );
       markDirty();
     },
-    [markDirty]
+    [editor, markDirty]
   );
 
-  // Handle deleting a field from local draft
   const handleDeleteField = React.useCallback(
     (fieldId: string) => {
       if (!editor) return;
@@ -220,12 +232,10 @@ export function FormEditor({ formId }: FormEditorProps) {
         setSelectedField(null);
         setIsPropertiesOpen(false);
       }
-
       markDirty();
       refreshQuestionCount(editor);
-      toast.info("Question removed from draft");
     },
-    [editor, selectedField, markDirty, refreshQuestionCount]
+    [editor, selectedField?.fieldId, markDirty, refreshQuestionCount]
   );
 
   // Attach storage handlers for NodeViews
@@ -286,8 +296,6 @@ export function FormEditor({ formId }: FormEditorProps) {
 
       markDirty();
       refreshQuestionCount(editor);
-
-      // Track newly inserted question without automatically opening the settings sidebar
       setSelectedField(newFieldData);
     },
     [editor, markDirty, refreshQuestionCount]
@@ -438,32 +446,35 @@ export function FormEditor({ formId }: FormEditorProps) {
         }
       });
 
-      // 2. Perform transactional batch sync of fields and form document metadata
-      const [savedFields] = await Promise.all([
-        syncFormFieldsAsync({
-          formId,
-          fields: fieldsToSync,
-        }),
-        updateFormAsync({
-          id: formId,
-          title: formTitle.trim() || "Untitled Form",
-          description: formDescription.trim() || null,
-          settings: {
-            ...(typeof form?.settings === "object" && form.settings !== null
-              ? form.settings
-              : {}),
-            documentContent: editor.getJSON(),
-          },
-        }),
-      ]);
+      // 2. Perform aggregate transactional save of fields and form document metadata
+      const result = await saveFormDraftAsync({
+        formId,
+        expectedVersion: currentVersionNumber,
+        title: formTitle.trim() || "Untitled Form",
+        description: formDescription.trim() || null,
+        settings: {
+          ...(typeof form?.settings === "object" && form.settings !== null
+            ? form.settings
+            : {}),
+          documentContent: editor.getJSON(),
+        },
+        fields: fieldsToSync,
+      });
+
+      if (result.isNoOp) {
+        toast.info("No changes to save");
+        setIsDirty(false);
+        setSaveStatus("saved");
+        return true;
+      }
 
       // 3. Update in-editor node IDs with the persisted DB IDs
-      if (Array.isArray(savedFields)) {
+      if (Array.isArray(result.fields)) {
         let fieldIndex = 0;
         editor.commands.command(({ tr, state }) => {
           state.doc.descendants((node, pos) => {
             if (node.type.name === "formField") {
-              const matchedDbField = savedFields[fieldIndex];
+              const matchedDbField = result.fields[fieldIndex];
               if (matchedDbField && node.attrs.fieldId !== matchedDbField.id) {
                 tr.setNodeMarkup(pos, undefined, {
                   ...node.attrs,
@@ -477,15 +488,23 @@ export function FormEditor({ formId }: FormEditorProps) {
         });
       }
 
+      setCurrentVersionNumber(result.version.versionNumber);
       setIsDirty(false);
       setSaveStatus("saved");
       setLastSavedAt(new Date());
-      toast.success("All changes saved successfully");
+      toast.success(`Saved Version ${result.version.versionNumber}`);
       return true;
     } catch (err: unknown) {
       setSaveStatus("error");
       const msg = err instanceof Error ? err.message : "Failed to save changes";
-      toast.error(msg);
+      if (msg.includes("CONCURRENCY_CONFLICT")) {
+        toast.error(
+          "Form has been modified in another session. Please reload to see the latest version.",
+          { duration: 6000 }
+        );
+      } else {
+        toast.error(msg);
+      }
       return false;
     }
   }, [
@@ -494,9 +513,57 @@ export function FormEditor({ formId }: FormEditorProps) {
     formTitle,
     formDescription,
     form?.settings,
-    syncFormFieldsAsync,
-    updateFormAsync,
+    currentVersionNumber,
+    saveFormDraftAsync,
   ]);
+
+  // Handle Restoration from Version History
+  const handleRestored = React.useCallback(
+    (restoredForm: any, restoredFields: any[], newVersionNumber: number) => {
+      if (!editor) return;
+
+      setFormTitle(restoredForm.title || "");
+      setFormDescription(restoredForm.description || "");
+      setCurrentVersionNumber(newVersionNumber);
+
+      const docContent = restoredForm.settings?.documentContent;
+      if (docContent && docContent.content) {
+        editor.commands.setContent(docContent, { emitUpdate: false });
+      } else if (restoredFields && restoredFields.length > 0) {
+        const content: JSONContent[] = [];
+        if (restoredForm.description) {
+          content.push({
+            type: "paragraph",
+            content: [{ type: "text", text: restoredForm.description }],
+          });
+        }
+        for (const f of restoredFields) {
+          content.push({
+            type: "formField",
+            attrs: {
+              fieldId: f.id,
+              kind: f.kind,
+              type: f.type,
+              label: f.label,
+              helpText: f.helpText,
+              placeholder: f.placeholder,
+              required: f.required,
+              config: f.config || {},
+              validationRules: f.validationRules || {},
+            },
+          });
+        }
+        editor.commands.setContent({ type: "doc", content }, { emitUpdate: false });
+      }
+
+      refreshQuestionCount(editor);
+      setIsDirty(false);
+      setSaveStatus("saved");
+      setLastSavedAt(new Date());
+      toast.success(`Restored as Version ${newVersionNumber}`);
+    },
+    [editor, refreshQuestionCount]
+  );
 
   // Open Full-Page Preview in a New Browser Tab with Current Local Draft
   const handleOpenPreview = React.useCallback(() => {
@@ -599,7 +666,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      {/* Tally-style Header with Undo/Redo, Manual Save & Publish */}
+      {/* Tally-style Header with Undo/Redo, Version History, Manual Save & Publish */}
       <EditorHeader
         formId={formId}
         title={formTitle || form.title}
@@ -607,11 +674,13 @@ export function FormEditor({ formId }: FormEditorProps) {
         status={formStatus}
         saveStatus={saveStatus}
         isDirty={isDirty}
+        currentVersionNumber={currentVersionNumber}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={() => editor?.commands.undo()}
         onRedo={() => editor?.commands.redo()}
         onSave={handleSaveChanges}
+        onOpenHistory={() => setIsHistoryOpen(true)}
         onOpenPreview={handleOpenPreview}
         onOpenPublish={() => setIsPublishOpen(true)}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
@@ -702,6 +771,16 @@ export function FormEditor({ formId }: FormEditorProps) {
       <ShortcutsDialog
         open={isShortcutsOpen}
         onOpenChange={setIsShortcutsOpen}
+      />
+
+      {/* Version History Dialog */}
+      <VersionHistoryDialog
+        open={isHistoryOpen}
+        onOpenChange={setIsHistoryOpen}
+        formId={formId}
+        publishedVersionId={form.publishedVersionId}
+        currentVersionNumber={currentVersionNumber}
+        onRestored={handleRestored}
       />
     </div>
   );
