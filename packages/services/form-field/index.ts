@@ -1,7 +1,9 @@
-import { and, asc, db, eq, inArray, isNull, max } from "@formly/database";
+import { and, asc, db, desc, eq, inArray, isNull, max } from "@formly/database";
 import {
   formElementsTable,
   formsTable,
+  formVersionsTable,
+  formVersionElementsTable,
   type FormElementConfig,
   type FormValidationRules,
 } from "@formly/database/schema";
@@ -22,8 +24,8 @@ export default class FormFieldService {
   /**
    * Helper to verify form ownership and non-deleted state.
    */
-  private async getOwnedForm(userId: string, formId: string) {
-    const [form] = await db
+  private async getOwnedForm(userId: string, formId: string, tx: any = db) {
+    const [form] = await tx
       .select({ id: formsTable.id })
       .from(formsTable)
       .where(
@@ -36,6 +38,89 @@ export default class FormFieldService {
       .limit(1);
 
     return form || null;
+  }
+
+  /**
+   * Captures an immutable snapshot into form_versions and form_version_elements
+   * whenever a form's fields are mutated outside of saveFormDraft.
+   * If the form is currently published, automatically promotes the new version.
+   */
+  private async snapshotFormState(
+    tx: any,
+    formId: string
+  ): Promise<void> {
+    const [form] = await tx
+      .select()
+      .from(formsTable)
+      .where(eq(formsTable.id, formId))
+      .for("update");
+
+    if (!form) return;
+
+    const [existingLatestVersion] = await tx
+      .select()
+      .from(formVersionsTable)
+      .where(eq(formVersionsTable.formId, form.id))
+      .orderBy(desc(formVersionsTable.versionNumber))
+      .limit(1);
+
+    const isPublished = form.status === "published";
+    const now = new Date();
+    const nextVersionNumber = existingLatestVersion
+      ? existingLatestVersion.versionNumber + 1
+      : 1;
+
+    const [newVersion] = await tx
+      .insert(formVersionsTable)
+      .values({
+        formId: form.id,
+        versionNumber: nextVersionNumber,
+        title: form.title,
+        description: form.description,
+        themeId: form.themeId,
+        settings: form.settings,
+        createdAt: now,
+        publishedAt: isPublished ? now : null,
+      })
+      .returning();
+
+    if (!newVersion) return;
+
+    if (isPublished) {
+      await tx
+        .update(formsTable)
+        .set({
+          publishedVersionId: newVersion.id,
+          updatedAt: now,
+        })
+        .where(eq(formsTable.id, form.id));
+    }
+
+    const currentElements = await tx
+      .select()
+      .from(formElementsTable)
+      .where(eq(formElementsTable.formId, form.id))
+      .orderBy(asc(formElementsTable.sortOrder));
+
+    if (currentElements.length > 0) {
+      await tx.insert(formVersionElementsTable).values(
+        currentElements.map((el: FormElement) => ({
+          formVersionId: newVersion.id,
+          sourceElementId: el.id,
+          kind: el.kind,
+          type: el.type,
+          label: el.label,
+          content: el.content,
+          helpText: el.helpText,
+          placeholder: el.placeholder,
+          required: el.required,
+          sortOrder: el.sortOrder,
+          config: el.config,
+          validationRules: el.validationRules,
+          createdAt: el.createdAt,
+        }))
+      );
+    }
   }
 
   /**
@@ -67,44 +152,48 @@ export default class FormFieldService {
       }
     }
 
-    const form = await this.getOwnedForm(userId, formId);
-    if (!form) {
-      throw new Error("Form not found or you do not have permission to modify it.");
-    }
+    return await db.transaction(async (tx) => {
+      const form = await this.getOwnedForm(userId, formId, tx);
+      if (!form) {
+        throw new Error("Form not found or you do not have permission to modify it.");
+      }
 
-    let sortOrder = validated.sortOrder;
-    if (sortOrder === undefined) {
-      const [maxResult] = await db
-        .select({ maxOrder: max(formElementsTable.sortOrder) })
-        .from(formElementsTable)
-        .where(eq(formElementsTable.formId, formId));
+      let sortOrder = validated.sortOrder;
+      if (sortOrder === undefined) {
+        const [maxResult] = await tx
+          .select({ maxOrder: max(formElementsTable.sortOrder) })
+          .from(formElementsTable)
+          .where(eq(formElementsTable.formId, formId));
 
-      sortOrder =
-        maxResult && maxResult.maxOrder !== null ? maxResult.maxOrder + 1 : 0;
-    }
+        sortOrder =
+          maxResult && maxResult.maxOrder !== null ? maxResult.maxOrder + 1 : 0;
+      }
 
-    const [created] = await db
-      .insert(formElementsTable)
-      .values({
-        formId,
-        kind: validated.kind,
-        type: validated.type,
-        label: validated.label ?? null,
-        content: validated.content ?? null,
-        helpText: validated.helpText ?? null,
-        placeholder: validated.placeholder ?? null,
-        required: validated.required,
-        sortOrder,
-        config: validated.config as FormElementConfig,
-        validationRules: validated.validationRules as FormValidationRules,
-      })
-      .returning();
+      const [created] = await tx
+        .insert(formElementsTable)
+        .values({
+          formId,
+          kind: validated.kind,
+          type: validated.type,
+          label: validated.label ?? null,
+          content: validated.content ?? null,
+          helpText: validated.helpText ?? null,
+          placeholder: validated.placeholder ?? null,
+          required: validated.required,
+          sortOrder,
+          config: validated.config as FormElementConfig,
+          validationRules: validated.validationRules as FormValidationRules,
+        })
+        .returning();
 
-    if (!created) {
-      throw new Error("Failed to create form field.");
-    }
+      if (!created) {
+        throw new Error("Failed to create form field.");
+      }
 
-    return created;
+      await this.snapshotFormState(tx, formId);
+
+      return created;
+    });
   }
 
   /**
@@ -164,76 +253,92 @@ export default class FormFieldService {
   ): Promise<FormElement | null> {
     const validated = updateFormFieldInputSchema.parse(input);
 
-    const form = await this.getOwnedForm(userId, formId);
-    if (!form) {
-      return null;
-    }
+    return await db.transaction(async (tx) => {
+      const form = await this.getOwnedForm(userId, formId, tx);
+      if (!form) {
+        return null;
+      }
 
-    const existing = await this.getFormFieldById(userId, formId, fieldId);
-    if (!existing) {
-      return null;
-    }
-
-    const updates: Partial<typeof formElementsTable.$inferInsert> = {
-      updatedAt: new Date(),
-    };
-
-    if (validated.type !== undefined) {
-      updates.type = validated.type;
-    }
-    if (validated.label !== undefined) {
-      updates.label = validated.label;
-    }
-    if (validated.content !== undefined) {
-      updates.content = validated.content;
-    }
-    if (validated.helpText !== undefined) {
-      updates.helpText = validated.helpText;
-    }
-    if (validated.placeholder !== undefined) {
-      updates.placeholder = validated.placeholder;
-    }
-    if (validated.required !== undefined) {
-      // Content blocks must never be marked required per DB constraint
-      updates.required = existing.kind === "content" ? false : validated.required;
-    }
-    if (validated.sortOrder !== undefined) {
-      updates.sortOrder = validated.sortOrder;
-    }
-    if (validated.config !== undefined) {
-      const existingConfig =
-        typeof existing.config === "object" && existing.config !== null
-          ? (existing.config as Record<string, unknown>)
-          : {};
-      updates.config = {
-        ...existingConfig,
-        ...validated.config,
-      } as FormElementConfig;
-    }
-    if (validated.validationRules !== undefined) {
-      const existingRules =
-        typeof existing.validationRules === "object" &&
-        existing.validationRules !== null
-          ? (existing.validationRules as Record<string, unknown>)
-          : {};
-      updates.validationRules = {
-        ...existingRules,
-        ...validated.validationRules,
-      } as FormValidationRules;
-    }
-
-    const [updated] = await db
-      .update(formElementsTable)
-      .set(updates)
-      .where(
-        and(
-          eq(formElementsTable.id, fieldId),
-          eq(formElementsTable.formId, formId)
+      const [existing] = await tx
+        .select()
+        .from(formElementsTable)
+        .where(
+          and(
+            eq(formElementsTable.id, fieldId),
+            eq(formElementsTable.formId, formId)
+          )
         )
-      )
-      .returning();
+        .limit(1);
 
-    return updated || null;
+      if (!existing) {
+        return null;
+      }
+
+      const updates: Partial<typeof formElementsTable.$inferInsert> = {
+        updatedAt: new Date(),
+      };
+
+      if (validated.type !== undefined) {
+        updates.type = validated.type;
+      }
+      if (validated.label !== undefined) {
+        updates.label = validated.label;
+      }
+      if (validated.content !== undefined) {
+        updates.content = validated.content;
+      }
+      if (validated.helpText !== undefined) {
+        updates.helpText = validated.helpText;
+      }
+      if (validated.placeholder !== undefined) {
+        updates.placeholder = validated.placeholder;
+      }
+      if (validated.required !== undefined) {
+        // Content blocks must never be marked required per DB constraint
+        updates.required = existing.kind === "content" ? false : validated.required;
+      }
+      if (validated.sortOrder !== undefined) {
+        updates.sortOrder = validated.sortOrder;
+      }
+      if (validated.config !== undefined) {
+        const existingConfig =
+          typeof existing.config === "object" && existing.config !== null
+            ? (existing.config as Record<string, unknown>)
+            : {};
+        updates.config = {
+          ...existingConfig,
+          ...validated.config,
+        } as FormElementConfig;
+      }
+      if (validated.validationRules !== undefined) {
+        const existingRules =
+          typeof existing.validationRules === "object" &&
+          existing.validationRules !== null
+            ? (existing.validationRules as Record<string, unknown>)
+            : {};
+        updates.validationRules = {
+          ...existingRules,
+          ...validated.validationRules,
+        } as FormValidationRules;
+      }
+
+      const [updated] = await tx
+        .update(formElementsTable)
+        .set(updates)
+        .where(
+          and(
+            eq(formElementsTable.id, fieldId),
+            eq(formElementsTable.formId, formId)
+          )
+        )
+        .returning();
+
+      if (updated) {
+        await this.snapshotFormState(tx, formId);
+      }
+
+      return updated || null;
+    });
   }
 
   /**
@@ -244,22 +349,29 @@ export default class FormFieldService {
     formId: string,
     fieldId: string
   ): Promise<boolean> {
-    const form = await this.getOwnedForm(userId, formId);
-    if (!form) {
-      return false;
-    }
+    return await db.transaction(async (tx) => {
+      const form = await this.getOwnedForm(userId, formId, tx);
+      if (!form) {
+        return false;
+      }
 
-    const result = await db
-      .delete(formElementsTable)
-      .where(
-        and(
-          eq(formElementsTable.id, fieldId),
-          eq(formElementsTable.formId, formId)
+      const result = await tx
+        .delete(formElementsTable)
+        .where(
+          and(
+            eq(formElementsTable.id, fieldId),
+            eq(formElementsTable.formId, formId)
+          )
         )
-      )
-      .returning({ id: formElementsTable.id });
+        .returning({ id: formElementsTable.id });
 
-    return result.length > 0;
+      if (result.length > 0) {
+        await this.snapshotFormState(tx, formId);
+        return true;
+      }
+
+      return false;
+    });
   }
 
   /**
@@ -272,28 +384,28 @@ export default class FormFieldService {
   ): Promise<FormElement[]> {
     const validated = reorderFormFieldsInputSchema.parse(input);
 
-    const form = await this.getOwnedForm(userId, formId);
-    if (!form) {
-      throw new Error("Form not found or you do not have permission to modify it.");
-    }
+    return await db.transaction(async (tx) => {
+      const form = await this.getOwnedForm(userId, formId, tx);
+      if (!form) {
+        throw new Error("Form not found or you do not have permission to modify it.");
+      }
 
-    // Verify all requested fields exist and belong to this form
-    const existing = await db
-      .select({ id: formElementsTable.id })
-      .from(formElementsTable)
-      .where(
-        and(
-          eq(formElementsTable.formId, formId),
-          inArray(formElementsTable.id, validated.fieldIds)
-        )
-      );
+      // Verify all requested fields exist and belong to this form
+      const existing = await tx
+        .select({ id: formElementsTable.id })
+        .from(formElementsTable)
+        .where(
+          and(
+            eq(formElementsTable.formId, formId),
+            inArray(formElementsTable.id, validated.fieldIds)
+          )
+        );
 
-    if (existing.length !== validated.fieldIds.length) {
-      throw new Error("Some field IDs were not found in this form.");
-    }
+      if (existing.length !== validated.fieldIds.length) {
+        throw new Error("Some field IDs were not found in this form.");
+      }
 
-    // Update each field's sortOrder in a transaction
-    await db.transaction(async (tx) => {
+      // Update each field's sortOrder in a transaction
       for (let i = 0; i < validated.fieldIds.length; i++) {
         const fieldId = validated.fieldIds[i];
         if (!fieldId) continue;
@@ -311,9 +423,15 @@ export default class FormFieldService {
             )
           );
       }
-    });
 
-    return await this.listFormFields(userId, formId);
+      await this.snapshotFormState(tx, formId);
+
+      return await tx
+        .select()
+        .from(formElementsTable)
+        .where(eq(formElementsTable.formId, formId))
+        .orderBy(asc(formElementsTable.sortOrder));
+    });
   }
 
   /**
@@ -329,12 +447,12 @@ export default class FormFieldService {
   ): Promise<FormElement[]> {
     const validated = syncFormFieldsInputSchema.parse(input);
 
-    const form = await this.getOwnedForm(userId, formId);
-    if (!form) {
-      throw new Error("Form not found or you do not have permission to modify it.");
-    }
-
     return await db.transaction(async (tx) => {
+      const form = await this.getOwnedForm(userId, formId, tx);
+      if (!form) {
+        throw new Error("Form not found or you do not have permission to modify it.");
+      }
+
       // 1. Get all current DB element IDs for this form
       const existingElements = await tx
         .select({ id: formElementsTable.id })
@@ -407,6 +525,8 @@ export default class FormFieldService {
           });
         }
       }
+
+      await this.snapshotFormState(tx, formId);
 
       // 4. Return all updated elements in sortOrder
       return await tx

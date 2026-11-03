@@ -715,7 +715,7 @@ export default class FormService {
       }
 
       // 7. Update formsTable
-      const [updatedForm] = await tx
+      let [updatedForm] = await tx
         .update(formsTable)
         .set({
           title: incomingTitle,
@@ -811,6 +811,8 @@ export default class FormService {
 
       // 9. Create new Version snapshot
       const nextVersionNumber = activeLatestVersion.versionNumber + 1;
+      const isFormAlreadyPublished = form.status === "published";
+      const now = new Date();
 
       const [newVersion] = await tx
         .insert(formVersionsTable)
@@ -821,13 +823,30 @@ export default class FormService {
           description: updatedForm.description,
           themeId: updatedForm.themeId,
           settings: updatedForm.settings,
-          createdAt: new Date(),
-          publishedAt: null, // Draft save does not publish
+          createdAt: now,
+          publishedAt: isFormAlreadyPublished ? now : null,
         })
         .returning();
 
       if (!newVersion) {
         throw new Error("Failed to create new version snapshot");
+      }
+
+      // If form was already published, automatically promote the new version as published!
+      if (isFormAlreadyPublished) {
+        const [promotedForm] = await tx
+          .update(formsTable)
+          .set({
+            publishedVersionId: newVersion.id,
+            publishedAt: form.publishedAt || now,
+            updatedAt: now,
+          })
+          .where(eq(formsTable.id, form.id))
+          .returning();
+
+        if (promotedForm) {
+          updatedForm = promotedForm;
+        }
       }
 
       // 10. Snapshot persisted elements
@@ -994,7 +1013,7 @@ export default class FormService {
         .orderBy(asc(formVersionElementsTable.sortOrder));
 
       // 4. Update mutable formsTable
-      const [restoredForm] = await tx
+      let [restoredForm] = await tx
         .update(formsTable)
         .set({
           title: targetVersion.title,
@@ -1040,6 +1059,8 @@ export default class FormService {
 
       // 6. Create Version N+1
       const nextVersionNumber = (latestVersion?.versionNumber || 0) + 1;
+      const isFormAlreadyPublished = form.status === "published";
+      const now = new Date();
 
       const [newVersion] = await tx
         .insert(formVersionsTable)
@@ -1050,13 +1071,30 @@ export default class FormService {
           description: restoredForm.description,
           themeId: restoredForm.themeId,
           settings: restoredForm.settings,
-          createdAt: new Date(),
-          publishedAt: null, // Restored draft is not automatically published
+          createdAt: now,
+          publishedAt: isFormAlreadyPublished ? now : null,
         })
         .returning();
 
       if (!newVersion) {
         throw new Error("Failed to create snapshot for restored version");
+      }
+
+      // If form was already published, promote the restored version as published!
+      if (isFormAlreadyPublished) {
+        const [promotedForm] = await tx
+          .update(formsTable)
+          .set({
+            publishedVersionId: newVersion.id,
+            publishedAt: form.publishedAt || now,
+            updatedAt: now,
+          })
+          .where(eq(formsTable.id, form.id))
+          .returning();
+
+        if (promotedForm) {
+          restoredForm = promotedForm;
+        }
       }
 
       // 7. Snapshot elements for new Version N+1

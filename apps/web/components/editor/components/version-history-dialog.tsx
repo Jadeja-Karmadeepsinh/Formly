@@ -2,15 +2,14 @@
 
 import * as React from "react";
 import {
+  IconAlertCircle,
   IconCheck,
   IconClock,
-  IconDeviceFloppy,
   IconHistory,
   IconLoader,
   IconRotateClockwise2,
   IconWorld,
-  IconAlertCircle,
-  IconLayersSubtract,
+  IconFileText,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import {
@@ -44,15 +43,52 @@ interface VersionHistoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   formId: string;
+  formStatus?: string;
   publishedVersionId?: string | null;
   currentVersionNumber?: number;
   onRestored?: (restoredForm: any, restoredFields: any[], newVersionNumber: number) => void;
+}
+
+function formatRelativeTimestamp(dateInput: string | Date | null | undefined): string {
+  if (!dateInput) return "Unknown date";
+  const date = new Date(dateInput);
+  const now = new Date();
+
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday =
+    date.getDate() === yesterday.getDate() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getFullYear() === yesterday.getFullYear();
+
+  const timeStr = date.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  if (isToday) {
+    return `Today at ${timeStr}`;
+  }
+  if (isYesterday) {
+    return `Yesterday at ${timeStr}`;
+  }
+  return `${date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })} at ${timeStr}`;
 }
 
 export function VersionHistoryDialog({
   open,
   onOpenChange,
   formId,
+  formStatus = "draft",
   publishedVersionId,
   currentVersionNumber,
   onRestored,
@@ -113,18 +149,20 @@ export function VersionHistoryDialog({
     }
   };
 
+  const latestVersionNumber = versions[0]?.versionNumber || 1;
   const isCurrentDraft =
     selectedVersion?.versionNumber === currentVersionNumber;
   const isSelectedPublished =
     selectedVersion?.id === publishedVersionId ||
     Boolean(selectedVersion?.publishedAt);
+  const isFormCurrentlyPublished = formStatus === "published";
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl h-[85vh] max-h-[750px] p-0 flex flex-col gap-0 overflow-hidden">
           {/* Header */}
-          <DialogHeader className="p-4 sm:p-6 border-b shrink-0">
+          <DialogHeader className="p-4 sm:p-6 border-b shrink-0 bg-card">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <DialogTitle className="text-xl font-bold flex items-center gap-2">
@@ -142,8 +180,11 @@ export function VersionHistoryDialog({
           <div className="flex-1 flex overflow-hidden min-h-0">
             {/* Left: Versions Timeline */}
             <div className="w-72 sm:w-80 border-r bg-muted/20 flex flex-col shrink-0">
-              <div className="px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b bg-muted/30">
-                Snapshots ({versions.length})
+              <div className="px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b bg-muted/30 flex items-center justify-between">
+                <span>Snapshots</span>
+                <span className="text-[11px] font-mono font-medium text-foreground">
+                  {versions.length}
+                </span>
               </div>
 
               <ScrollArea className="flex-1">
@@ -161,19 +202,38 @@ export function VersionHistoryDialog({
                     versions.map((ver) => {
                       const isSelected = ver.id === selectedVersionId;
                       const isLatest = ver.versionNumber === currentVersionNumber;
-                      const isPublished =
+                      const isVerPublished =
                         ver.id === publishedVersionId || Boolean(ver.publishedAt);
+                      const isBaseline = ver.versionNumber === 1;
 
-                      const date = new Date(ver.createdAt);
-                      const formattedDate = date.toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      });
-                      const formattedTime = date.toLocaleTimeString(undefined, {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
+                      let badgeText = "HISTORICAL";
+                      let badgeVariant: "default" | "secondary" | "outline" = "outline";
+                      let badgeClassName = "text-[10px] h-4.5 px-1.5 font-normal text-muted-foreground";
+                      let subtitleText = "Historical snapshot";
+
+                      if (isVerPublished && isLatest) {
+                        badgeText = "CURRENT · PUBLISHED";
+                        badgeVariant = "outline";
+                        badgeClassName =
+                          "text-[10px] h-4.5 px-1.5 font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/30";
+                        subtitleText = "Latest saved & live version";
+                      } else if (isLatest && !isVerPublished) {
+                        badgeText = "CURRENT DRAFT";
+                        badgeVariant = "secondary";
+                        badgeClassName = "text-[10px] h-4.5 px-1.5 font-medium";
+                        subtitleText = "Active editable draft";
+                      } else if (isVerPublished) {
+                        badgeText = "PUBLISHED";
+                        badgeVariant = "outline";
+                        badgeClassName =
+                          "text-[10px] h-4.5 px-1.5 font-medium text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
+                        subtitleText = "Previously published snapshot";
+                      } else if (isBaseline) {
+                        badgeText = "INITIAL";
+                        badgeVariant = "outline";
+                        badgeClassName = "text-[10px] h-4.5 px-1.5 font-medium text-muted-foreground";
+                        subtitleText = "Initial baseline";
+                      }
 
                       return (
                         <button
@@ -182,7 +242,7 @@ export function VersionHistoryDialog({
                           onClick={() => handleSelectVersion(ver)}
                           className={`w-full text-left p-3 rounded-xl border transition-all text-xs flex flex-col gap-1.5 ${
                             isSelected
-                              ? "bg-primary/10 border-primary/40 shadow-xs"
+                              ? "bg-primary/10 border-primary/40 shadow-xs ring-1 ring-primary/20"
                               : "hover:bg-muted/60 border-transparent"
                           }`}
                         >
@@ -190,36 +250,24 @@ export function VersionHistoryDialog({
                             <span className="font-semibold text-sm text-foreground">
                               Version {ver.versionNumber}
                             </span>
-                            <div className="flex items-center gap-1">
-                              {isLatest && (
-                                <Badge
-                                  variant="secondary"
-                                  className="text-[10px] h-4.5 px-1.5 font-normal"
-                                >
-                                  Current
-                                </Badge>
-                              )}
-                              {isPublished && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] h-4.5 px-1.5 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-normal flex items-center gap-1"
-                                >
-                                  <IconWorld className="size-2.5" />
-                                  Published
-                                </Badge>
-                              )}
-                            </div>
+                            <Badge
+                              variant={badgeVariant}
+                              className={badgeClassName}
+                            >
+                              {isVerPublished && <IconWorld className="size-2.5 mr-1 inline" />}
+                              {badgeText}
+                            </Badge>
                           </div>
 
                           <div className="text-muted-foreground text-[11px] flex items-center gap-1">
-                            <IconClock className="size-3" />
-                            <span>
-                              {formattedDate} at {formattedTime}
+                            <IconClock className="size-3 shrink-0" />
+                            <span className="truncate">
+                              {formatRelativeTimestamp(ver.createdAt)}
                             </span>
                           </div>
 
-                          <div className="text-foreground/80 font-medium truncate">
-                            {ver.title || "Untitled Form"}
+                          <div className="text-[11px] text-muted-foreground/80 truncate">
+                            {subtitleText}
                           </div>
                         </button>
                       );
@@ -241,33 +289,28 @@ export function VersionHistoryDialog({
                   {/* Top Bar for Selected Version */}
                   <div className="p-4 sm:p-5 border-b bg-muted/10 flex items-center justify-between gap-4 shrink-0">
                     <div className="space-y-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-bold text-lg text-foreground">
                           Version {selectedVersion.versionNumber}
                         </h3>
-                        {isCurrentDraft && (
+                        {selectedVersion.versionNumber === currentVersionNumber && (
                           <Badge variant="secondary" className="text-xs">
-                            Current Draft
+                            Active Version
                           </Badge>
                         )}
                         {isSelectedPublished && (
                           <Badge
                             variant="outline"
-                            className="text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                            className="text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30 flex items-center gap-1"
                           >
-                            Published Version
+                            <IconWorld className="size-3" />
+                            Live Snapshot
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Saved on{" "}
-                        {new Date(selectedVersion.createdAt).toLocaleString(
-                          undefined,
-                          {
-                            dateStyle: "long",
-                            timeStyle: "short",
-                          }
-                        )}
+                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <IconClock className="size-3.5 text-muted-foreground" />
+                        Saved on {formatRelativeTimestamp(selectedVersion.createdAt)}
                       </p>
                     </div>
 
@@ -285,7 +328,7 @@ export function VersionHistoryDialog({
                         <IconRotateClockwise2 className="size-4" />
                       )}
                       <span>
-                        {isCurrentDraft ? "Active Draft" : "Restore this version"}
+                        {isCurrentDraft ? "Current Version" : "Restore this version"}
                       </span>
                     </Button>
                   </div>
@@ -294,8 +337,8 @@ export function VersionHistoryDialog({
                   <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-xs text-amber-700 dark:text-amber-300 flex items-center gap-2 shrink-0">
                     <IconAlertCircle className="size-4 shrink-0" />
                     <span>
-                      Viewing read-only snapshot. Restoring this version creates a new
-                      draft without overwriting historical records.
+                      Viewing read-only snapshot. Restoring this version will create Version{" "}
+                      {latestVersionNumber + 1} without altering past history records.
                     </span>
                   </div>
 
@@ -305,7 +348,7 @@ export function VersionHistoryDialog({
                       {/* Form Metadata */}
                       <div className="space-y-2 border-b pb-4">
                         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                          {selectedVersion.title}
+                          {selectedVersion.title || "Untitled Form"}
                         </h1>
                         {selectedVersion.description ? (
                           <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
@@ -313,7 +356,7 @@ export function VersionHistoryDialog({
                           </p>
                         ) : (
                           <p className="text-xs italic text-muted-foreground">
-                            No description
+                            No description provided
                           </p>
                         )}
                       </div>
@@ -321,7 +364,8 @@ export function VersionHistoryDialog({
                       {/* Elements List */}
                       <div className="space-y-4">
                         <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                          <span>
+                          <span className="flex items-center gap-1.5">
+                            <IconFileText className="size-3.5" />
                             Questions & Blocks ({selectedElements.length})
                           </span>
                         </div>
@@ -335,7 +379,7 @@ export function VersionHistoryDialog({
                             {selectedElements.map((el, idx) => (
                               <div
                                 key={el.id}
-                                className="p-4 rounded-xl border bg-card/60 space-y-2 text-xs"
+                                className="p-4 rounded-xl border bg-card/60 space-y-2 text-xs shadow-xs"
                               >
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="flex items-center gap-2 min-w-0">
@@ -343,7 +387,7 @@ export function VersionHistoryDialog({
                                       #{idx + 1}
                                     </span>
                                     <span className="font-semibold text-foreground text-sm truncate">
-                                      {el.label || el.content || "(Untitled)"}
+                                      {el.label || el.content || "(Untitled block)"}
                                     </span>
                                     {el.required && (
                                       <span className="text-destructive font-bold">
@@ -353,7 +397,7 @@ export function VersionHistoryDialog({
                                   </div>
                                   <Badge
                                     variant="outline"
-                                    className="capitalize text-[10px] shrink-0"
+                                    className="capitalize text-[10px] shrink-0 font-normal"
                                   >
                                     {el.type.replace(/_/g, " ")}
                                   </Badge>
@@ -368,16 +412,16 @@ export function VersionHistoryDialog({
                                 {/* Options preview if present in config */}
                                 {Array.isArray(
                                   (el.config as any)?.options
-                                ) && (
+                                ) && (el.config as any).options.length > 0 && (
                                   <div className="pt-2 pl-4 border-l-2 space-y-1">
                                     {(el.config as any).options.map(
                                       (opt: any, oIdx: number) => (
                                         <div
                                           key={opt.id || oIdx}
-                                          className="text-muted-foreground flex items-center gap-1.5"
+                                          className="text-muted-foreground flex items-center gap-1.5 text-[11px]"
                                         >
-                                          <span className="size-1.5 rounded-full bg-muted-foreground/60" />
-                                          <span>{opt.label || opt.value}</span>
+                                          <span className="size-1.5 rounded-full bg-muted-foreground/60 shrink-0" />
+                                          <span className="truncate">{opt.label || opt.value}</span>
                                         </div>
                                       )
                                     )}
@@ -412,16 +456,28 @@ export function VersionHistoryDialog({
               <p>
                 This will restore the title, description, settings, and questions
                 from <strong>Version {selectedVersion?.versionNumber}</strong> as
-                your new live form draft.
+                your active form state.
               </p>
-              <p className="text-xs text-muted-foreground">
-                • Your current version history remains completely safe and immutable.
-                <br />
-                • A new version snapshot (Version {(versions[0]?.versionNumber || 0) + 1})
-                will be created.
-                <br />
-                • The restored form will not be automatically published.
-              </p>
+              <div className="p-3 rounded-lg border bg-muted/40 text-xs text-muted-foreground space-y-1.5">
+                <p>
+                  • A new snapshot (<strong>Version {latestVersionNumber + 1}</strong>)
+                  will be created based on Version {selectedVersion?.versionNumber}.
+                </p>
+                <p>
+                  • Your existing version history remains completely safe and immutable.
+                </p>
+                {isFormCurrentlyPublished ? (
+                  <p className="text-emerald-600 dark:text-emerald-400 font-medium">
+                    • Note: Because this form is currently published, restoring this version
+                    will immediately make it live for public respondents.
+                  </p>
+                ) : (
+                  <p>
+                    • The restored version will become your active draft and will not be live
+                    until you publish it.
+                  </p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -443,4 +499,3 @@ export function VersionHistoryDialog({
     </>
   );
 }
-

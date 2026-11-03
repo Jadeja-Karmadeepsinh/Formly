@@ -778,7 +778,8 @@ export function FormEditor({ formId }: FormEditorProps) {
         open={isHistoryOpen}
         onOpenChange={setIsHistoryOpen}
         formId={formId}
-        publishedVersionId={form.publishedVersionId}
+        formStatus={form?.status}
+        publishedVersionId={form?.publishedVersionId}
         currentVersionNumber={currentVersionNumber}
         onRestored={handleRestored}
       />

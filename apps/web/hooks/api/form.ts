@@ -110,6 +110,9 @@ export function usePublishForm() {
         utils.forms.listFormsByUserId.invalidate(),
         utils.forms.getFormById.invalidate({ id: published.id }),
         utils.forms.listFormVersions.invalidate({ formId: published.id }),
+        published.shareId
+          ? utils.forms.getPublicFormByShareId.invalidate({ shareId: published.shareId })
+          : Promise.resolve(),
       ]);
       toast.success("Form published successfully");
     },
@@ -138,6 +141,9 @@ export function useUnpublishForm() {
         utils.forms.listFormsByUserId.invalidate(),
         utils.forms.getFormById.invalidate({ id: unpublished.id }),
         utils.forms.listFormVersions.invalidate({ formId: unpublished.id }),
+        unpublished.shareId
+          ? utils.forms.getPublicFormByShareId.invalidate({ shareId: unpublished.shareId })
+          : Promise.resolve(),
       ]);
       toast.success("Form unpublished (moved to draft)");
     },
@@ -216,6 +222,9 @@ export function useSaveFormDraft() {
         utils.formFields.listFormFields.invalidate({ formId: result.form.id }),
         utils.forms.listFormVersions.invalidate({ formId: result.form.id }),
         utils.forms.listFormsByUserId.invalidate(),
+        result.form.shareId
+          ? utils.forms.getPublicFormByShareId.invalidate({ shareId: result.form.shareId })
+          : Promise.resolve(),
       ]);
     },
   });
@@ -286,6 +295,9 @@ export function useRestoreFormVersion() {
         utils.formFields.listFormFields.invalidate({ formId: result.form.id }),
         utils.forms.listFormVersions.invalidate({ formId: result.form.id }),
         utils.forms.listFormsByUserId.invalidate(),
+        result.form.shareId
+          ? utils.forms.getPublicFormByShareId.invalidate({ shareId: result.form.shareId })
+          : Promise.resolve(),
       ]);
       toast.success(`Restored to Version ${result.version.versionNumber}`);
     },
