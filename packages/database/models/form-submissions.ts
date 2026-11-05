@@ -19,10 +19,10 @@ export const formSubmissionsTable = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     formId: uuid("form_id").notNull(),
     formVersionId: uuid("form_version_id").notNull(),
-    startedAt: timestamp("started_at", { withTimezone: true }),
-    submittedAt: timestamp("submitted_at", { withTimezone: true })
+    startedAt: timestamp("started_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }),
     countryCode: varchar("country_code", { length: 2 }),
     browserName: varchar("browser_name", { length: 100 }),
     browserVersion: varchar("browser_version", { length: 50 }),
@@ -50,9 +50,13 @@ export const formSubmissionsTable = pgTable(
       table.formVersionId,
       table.submittedAt,
     ),
+    index("form_submissions_form_started_at_idx").on(
+      table.formId,
+      table.startedAt,
+    ),
     check(
       "form_submissions_started_before_submitted_check",
-      sql`${table.startedAt} IS NULL OR ${table.startedAt} <= ${table.submittedAt}`,
+      sql`${table.submittedAt} IS NULL OR ${table.startedAt} <= ${table.submittedAt}`,
     ),
     check(
       "form_submissions_device_type_check",
@@ -60,3 +64,6 @@ export const formSubmissionsTable = pgTable(
     ),
   ],
 );
+
+export type FormSubmission = typeof formSubmissionsTable.$inferSelect;
+export type NewFormSubmission = typeof formSubmissionsTable.$inferInsert;

@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import {
-  IconCheck,
   IconCircleCheck,
   IconClock,
   IconLoader,
@@ -12,6 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { usePublicForm } from "~/hooks/api/form";
+import { useStartSubmission, useCompleteSubmission } from "~/hooks/api/form-submission";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -32,6 +32,46 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [submissionId, setSubmissionId] = React.useState<string | null>(null);
+
+  const { startSubmissionAsync } = useStartSubmission();
+  const { completeSubmissionAsync } = useCompleteSubmission();
+
+  const hasStartedRef = React.useRef(false);
+
+  // Initialize submission attempt
+  const initAttempt = React.useCallback(async () => {
+    if (!form || form.status !== "published") return;
+
+    try {
+      const storageKey = `formly_attempt_${shareId}`;
+      let clientAttemptId =
+        typeof window !== "undefined" ? sessionStorage.getItem(storageKey) : null;
+
+      if (!clientAttemptId) {
+        clientAttemptId = crypto.randomUUID();
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(storageKey, clientAttemptId);
+        }
+      }
+
+      const res = await startSubmissionAsync({
+        shareId,
+        clientAttemptId,
+      });
+
+      setSubmissionId(res.submissionId);
+    } catch (err: any) {
+      console.warn("Failed to initialize submission attempt:", err.message);
+    }
+  }, [form, shareId, startSubmissionAsync]);
+
+  React.useEffect(() => {
+    if (form && form.status === "published" && !hasStartedRef.current) {
+      hasStartedRef.current = true;
+      void initAttempt();
+    }
+  }, [form, initAttempt]);
 
   const handleAnswerChange = (fieldId: string, value: any) => {
     setAnswers((prev) => ({ ...prev, [fieldId]: value }));
@@ -69,18 +109,67 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
       toast.error("Please answer all required questions");
       // Scroll to first error
       const firstErrorId = Object.keys(newErrors)[0];
-      const el = document.getElementById(`field-${firstErrorId}`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (firstErrorId) {
+        const el = document.getElementById(`field-${firstErrorId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
       }
       return;
     }
 
+    // 2. Ensure attempt is started
+    let activeSubmissionId = submissionId;
+    if (!activeSubmissionId) {
+      try {
+        const storageKey = `formly_attempt_${shareId}`;
+        let clientAttemptId =
+          typeof window !== "undefined" ? sessionStorage.getItem(storageKey) : null;
+        if (!clientAttemptId) {
+          clientAttemptId = crypto.randomUUID();
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem(storageKey, clientAttemptId);
+          }
+        }
+        const res = await startSubmissionAsync({
+          shareId,
+          clientAttemptId,
+        });
+        activeSubmissionId = res.submissionId;
+        setSubmissionId(res.submissionId);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to start submission session");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
-    // Simulate submission delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+
+    try {
+      // Format answers payload
+      const formattedAnswers = Object.entries(answers)
+        .filter(([, val]) => val !== undefined && val !== null && val !== "")
+        .map(([fieldId, val]) => ({
+          formVersionElementId: fieldId,
+          value: val,
+        }));
+
+      await completeSubmissionAsync({
+        submissionId: activeSubmissionId,
+        answers: formattedAnswers,
+      });
+
+      // Clear storage for this attempt
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(`formly_attempt_${shareId}`);
+      }
+
+      setIsSubmitted(true);
+    } catch {
+      // toast is automatically displayed by onError in hook
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -140,6 +229,9 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
   }
 
   if (isSubmitted) {
+    const customMessage = (form.settings as any)?.customSuccessMessage;
+    const allowMultiple = (form.settings as any)?.allowMultipleSubmissions ?? true;
+
     return (
       <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center p-4 text-center">
         <div className="w-full max-w-md bg-card border rounded-2xl p-8 md:p-10 shadow-sm space-y-5 animate-in fade-in zoom-in-95 duration-200">
@@ -148,22 +240,34 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
           </div>
           <h2 className="text-2xl font-bold tracking-tight">Response Recorded!</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Thank you for completing <span className="font-semibold text-foreground">{form.title}</span>. Your submission has been securely recorded.
+            {customMessage || (
+              <>
+                Thank you for completing <span className="font-semibold text-foreground">{form.title}</span>. Your submission has been securely recorded.
+              </>
+            )}
           </p>
-          <div className="pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setAnswers({});
-                setIsSubmitted(false);
-              }}
-              className="text-xs"
-            >
-              Submit another response
-            </Button>
-          </div>
+          {allowMultiple && (
+            <div className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setAnswers({});
+                  setIsSubmitted(false);
+                  setSubmissionId(null);
+                  hasStartedRef.current = false;
+                  if (typeof window !== "undefined") {
+                    sessionStorage.removeItem(`formly_attempt_${shareId}`);
+                  }
+                  void initAttempt();
+                }}
+                className="text-xs"
+              >
+                Submit another response
+              </Button>
+            </div>
+          )}
           <div className="pt-4 border-t text-[11px] text-muted-foreground/60">
             Powered by Formly
           </div>
@@ -171,6 +275,8 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
       </div>
     );
   }
+
+  const submitBtnText = (form.settings as any)?.submitButtonText || "Submit Response";
 
   return (
     <div className="min-h-screen bg-muted/20 flex flex-col items-center py-10 md:py-16 px-4">
@@ -248,7 +354,7 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
                 className="w-full sm:w-auto px-8 font-medium h-10 gap-2"
               >
                 {isSubmitting && <IconLoader className="size-4 animate-spin" />}
-                <span>Submit Response</span>
+                <span>{submitBtnText}</span>
               </Button>
 
               <span className="text-[11px] text-muted-foreground/60 hidden sm:inline">
@@ -547,4 +653,3 @@ function renderPublicFieldInput(
       );
   }
 }
-
