@@ -114,7 +114,7 @@ export function FormPreviewModal({
 
         {/* Scrollable Viewport */}
         <div className="flex-1 overflow-y-auto bg-muted/15 p-6 md:p-12 flex justify-center">
-          <div className={`w-full ${getContainerWidth()} transition-all duration-200 bg-card border rounded-2xl p-6 md:p-10 shadow-xs h-fit space-y-8`}>
+          <div className={`w-full ${getContainerWidth()} transition-all duration-200 bg-card border rounded-xl p-6 md:p-10 shadow-xs h-fit space-y-8`}>
             {/* Header */}
             <div className="border-b pb-6 space-y-2">
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">

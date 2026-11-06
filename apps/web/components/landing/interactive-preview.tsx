@@ -40,7 +40,7 @@ export function HeroInteractivePreview() {
   };
 
   return (
-    <div className="relative mx-auto w-full max-w-5xl rounded-2xl border border-border/80 bg-card/95 shadow-2xl backdrop-blur-xs overflow-hidden transition-all duration-300">
+    <div className="relative mx-auto w-full max-w-5xl rounded-xl border border-border/80 bg-card/95 shadow-2xl backdrop-blur-xs overflow-hidden transition-all duration-300">
       {/* Top Application Header Bar */}
       <div className="flex flex-wrap items-center justify-between border-b border-border/70 bg-muted/30 px-3.5 py-2.5 sm:px-5">
         <div className="flex items-center gap-2">

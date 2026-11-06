@@ -187,7 +187,7 @@ export function VersionHistoryDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           showCloseButton={false}
-          className="w-full h-dvh max-w-none rounded-none border-0 top-0 left-0 translate-x-0 translate-y-0 sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:h-[85dvh] sm:max-h-[750px] sm:max-w-2xl lg:max-w-3xl sm:rounded-2xl sm:border p-0 gap-0 flex flex-col bg-background shadow-2xl overflow-hidden"
+          className="w-full h-dvh max-w-none rounded-none border-0 top-0 left-0 translate-x-0 translate-y-0 sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:h-[85dvh] sm:max-h-[750px] sm:max-w-2xl lg:max-w-3xl sm:rounded-xl sm:border p-0 gap-0 flex flex-col bg-background shadow-2xl overflow-hidden"
         >
           {/* ================================================================= */}
           {/* 1. Header (Fixed, non-scrolling)                                   */}

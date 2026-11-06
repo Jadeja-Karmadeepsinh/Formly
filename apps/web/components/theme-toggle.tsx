@@ -35,14 +35,14 @@ export function ThemeToggle({ className }: { className?: string }) {
       variant="ghost"
       size="icon"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className={cn("size-8 text-muted-foreground hover:text-foreground", className)}
+      className={cn("size-8 text-muted-foreground hover:text-foreground active:scale-90 transition-all duration-300 cursor-pointer", className)}
       aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
       title={isDark ? "Switch to light theme" : "Switch to dark theme"}
     >
       {isDark ? (
-        <Sun className="size-4 transition-transform duration-200" />
+        <Sun className="size-4 transition-transform duration-300 rotate-0 hover:rotate-45" />
       ) : (
-        <Moon className="size-4 transition-transform duration-200" />
+        <Moon className="size-4 transition-transform duration-300 rotate-0 hover:-rotate-12" />
       )}
     </Button>
   );

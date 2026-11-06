@@ -11,7 +11,7 @@ export function LandingCTASection() {
   return (
     <section className="py-20 sm:py-28 lg:py-32 border-t border-border/50">
       <div className="container mx-auto max-w-5xl px-4 sm:px-6">
-        <div className="relative rounded-3xl border border-border/80 bg-card p-8 sm:p-14 lg:p-20 text-center shadow-lg overflow-hidden">
+        <div className="relative rounded-xl border border-border/80 bg-card p-8 sm:p-14 lg:p-20 text-center shadow-lg overflow-hidden">
           {/* Subtle background architectural grid */}
           <div
             className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"
@@ -20,7 +20,7 @@ export function LandingCTASection() {
 
           {/* Formly Symbol Mark Lockup */}
           <div className="flex justify-center mb-6">
-            <div className="size-12 rounded-2xl border border-border/80 bg-muted/30 flex items-center justify-center text-foreground shadow-2xs">
+            <div className="size-12 rounded-xl border border-border/80 bg-muted/30 flex items-center justify-center text-foreground shadow-2xs">
               <FormlySymbol size={24} />
             </div>
           </div>

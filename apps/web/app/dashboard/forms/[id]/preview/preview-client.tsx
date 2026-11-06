@@ -193,8 +193,8 @@ export function FormPreviewClient({ formId }: FormPreviewClientProps) {
         <div className="max-w-2xl w-full mx-auto p-8 space-y-6">
           <Skeleton className="h-10 w-2/3" />
           <Skeleton className="h-5 w-full" />
-          <Skeleton className="h-28 w-full rounded-2xl" />
-          <Skeleton className="h-28 w-full rounded-2xl" />
+          <Skeleton className="h-28 w-full rounded-xl" />
+          <Skeleton className="h-28 w-full rounded-xl" />
         </div>
       </div>
     );
@@ -323,7 +323,7 @@ export function FormPreviewClient({ formId }: FormPreviewClientProps) {
       {/* Main Viewport Container */}
       <main className="flex-1 overflow-y-auto p-4 sm:p-8 md:p-12 flex justify-center items-start">
         <div
-          className={`w-full ${getContainerWidth()} transition-all duration-200 bg-card border rounded-2xl p-6 sm:p-10 shadow-xs space-y-8 my-auto`}
+          className={`w-full ${getContainerWidth()} transition-all duration-200 bg-card border rounded-xl p-6 sm:p-10 shadow-xs space-y-8 my-auto`}
         >
           {/* Form Header */}
           <div className="border-b pb-6 space-y-2">
