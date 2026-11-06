@@ -19,6 +19,14 @@ export function AnalyticsView() {
   const [selectedFormId, setSelectedFormId] = React.useState<string | undefined>(initialFormId);
   const [dateRange, setDateRange] = React.useState<"7d" | "30d" | "90d" | "all">("30d");
 
+  // Keep state synced with URL query parameter
+  React.useEffect(() => {
+    const urlFormId = searchParams?.get("formId") || undefined;
+    if (urlFormId !== selectedFormId) {
+      setSelectedFormId(urlFormId);
+    }
+  }, [searchParams]);
+
   // Calculate ISO dates for range
   const { startDate, endDate } = React.useMemo(() => {
     if (dateRange === "all") {
@@ -59,12 +67,8 @@ export function AnalyticsView() {
     }
   };
 
-  const selectedForm = React.useMemo(() => {
-    return forms.find((f) => f.id === selectedFormId);
-  }, [forms, selectedFormId]);
-
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-7 max-w-6xl mx-auto pb-12">
       {/* 1. Executive Header */}
       <AnalyticsHeader
         forms={forms}
@@ -76,7 +80,7 @@ export function AnalyticsView() {
         onRefresh={() => refetch()}
       />
 
-      {/* 2. Key Metrics Row */}
+      {/* 2. Key Metrics Row (At a Glance) */}
       <AnalyticsMetrics
         overview={overview}
         isLoading={isAnalyticsLoading}
@@ -88,17 +92,21 @@ export function AnalyticsView() {
         isLoading={isAnalyticsLoading}
       />
 
-      {/* 4. Form Breakdown OR Question Insights */}
-      {selectedFormId ? (
-        <QuestionInsightsSection formId={selectedFormId} />
-      ) : (
-        <FormsPerformanceTable
-          formsPerformance={formsPerformance}
-          onSelectForm={(id) => handleSelectFormId(id)}
-        />
-      )}
+      {/* 4. Form Performance Ranked Breakdown */}
+      <FormsPerformanceTable
+        formsPerformance={formsPerformance}
+        onSelectForm={(id) => handleSelectFormId(id)}
+        selectedFormId={selectedFormId}
+      />
 
-      {/* 5. Technology Breakdown (Devices, Browsers, Geo) */}
+      {/* 5. Question-Level Insights (Exploration or Form Deep Dive) */}
+      <QuestionInsightsSection
+        formId={selectedFormId}
+        forms={forms}
+        onSelectFormId={handleSelectFormId}
+      />
+
+      {/* 6. Technology & Audience Breakdown */}
       <TechnologyBreakdown
         deviceBreakdown={overview?.deviceBreakdown ?? []}
         browserBreakdown={overview?.browserBreakdown ?? []}
@@ -107,4 +115,3 @@ export function AnalyticsView() {
     </div>
   );
 }
-

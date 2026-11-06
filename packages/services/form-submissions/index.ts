@@ -1102,6 +1102,49 @@ export class FormSubmissionService {
       .groupBy(sql`to_char(${formSubmissionsTable.startedAt}, 'YYYY-MM-DD')`)
       .orderBy(sql`to_char(${formSubmissionsTable.startedAt}, 'YYYY-MM-DD')`);
 
+    // Map existing counts by date string
+    const timeSeriesMap = new Map(timeSeriesRows.map((r) => [String(r.date), r]));
+
+    // Determine target start and end dates to guarantee a continuous timeline
+    const now = new Date();
+    const targetEnd = input.endDate ? new Date(input.endDate) : now;
+    let targetStart: Date;
+
+    const firstRow = timeSeriesRows[0];
+    if (input.startDate) {
+      targetStart = new Date(input.startDate);
+    } else if (firstRow?.date) {
+      const earliestDateStr = String(firstRow.date);
+      const earliest = new Date(earliestDateStr);
+      const sevenDaysAgo = new Date(targetEnd);
+      sevenDaysAgo.setDate(targetEnd.getDate() - 6);
+      targetStart = earliest < sevenDaysAgo ? earliest : sevenDaysAgo;
+    } else {
+      const sevenDaysAgo = new Date(targetEnd);
+      sevenDaysAgo.setDate(targetEnd.getDate() - 6);
+      targetStart = sevenDaysAgo;
+    }
+
+    // Build contiguous daily series so charts always have full readable date baselines
+    const filledTimeSeries: Array<{ date: string; started: number; completed: number }> = [];
+    const curDate = new Date(targetStart);
+    curDate.setUTCHours(0, 0, 0, 0);
+    const endUtc = new Date(targetEnd);
+    endUtc.setUTCHours(23, 59, 59, 999);
+
+    let dayCounter = 0;
+    while (curDate.getTime() <= endUtc.getTime() && dayCounter < 366) {
+      const dateStr = curDate.toISOString().slice(0, 10);
+      const existing = timeSeriesMap.get(dateStr);
+      filledTimeSeries.push({
+        date: dateStr,
+        started: existing ? Number(existing.started) : 0,
+        completed: existing ? Number(existing.completed) : 0,
+      });
+      curDate.setUTCDate(curDate.getUTCDate() + 1);
+      dayCounter++;
+    }
+
     // D. Performance per form
     const formStatsRows = await db
       .select({
@@ -1156,11 +1199,7 @@ export class FormSubmissionService {
         osBreakdown: osBreakdown.map((b) => ({ key: String(b.key), count: Number(b.count) })),
         countryBreakdown: countryBreakdown.map((b) => ({ key: String(b.key), count: Number(b.count) })),
       },
-      timeSeries: timeSeriesRows.map((t) => ({
-        date: String(t.date),
-        started: Number(t.started),
-        completed: Number(t.completed),
-      })),
+      timeSeries: filledTimeSeries,
       formsPerformance,
     };
   }

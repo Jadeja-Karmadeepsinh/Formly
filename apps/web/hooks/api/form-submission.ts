@@ -244,11 +244,11 @@ export function useAnalytics(
  * Creator Hook: Fetches question-level distributions and response statistics for a specific form.
  */
 export function useQuestionInsights(
-  formId: string,
+  formId?: string,
   options?: { enabled?: boolean }
 ) {
   const query = trpc.formSubmissions.getQuestionInsights.useQuery(
-    { formId },
+    { formId: formId || "" },
     {
       enabled: Boolean(formId) && (options?.enabled ?? true),
       staleTime: 60 * 1000,

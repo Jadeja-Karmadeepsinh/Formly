@@ -6,3 +6,4 @@ export * from "./forms-performance-table";
 export * from "./question-insights-section";
 export * from "./technology-breakdown";
 
+export * from "./metric-explainer";
