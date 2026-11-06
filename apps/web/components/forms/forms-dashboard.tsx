@@ -11,6 +11,7 @@ import {
   Plus,
   RotateCw,
   Search,
+  Sparkles,
   X,
 } from "lucide-react";
 import { type FormItem, useForms } from "~/hooks/api/form";
@@ -143,11 +144,16 @@ export function FormsDashboard() {
       {/* 1. Executive Welcome & Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-[28px] font-semibold tracking-tight text-foreground">
-            {greeting}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-[28px] font-semibold tracking-tight text-foreground">
+              {greeting}
+            </h1>
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-muted text-muted-foreground border border-border/60">
+              Workspace
+            </span>
+          </div>
           <p className="mt-1 text-sm text-muted-foreground font-normal">
-            Here is an overview of your forms, response activity, and public links.
+            Manage your document forms, inspect live responses, and distribute shareable links.
           </p>
         </div>
 
@@ -159,7 +165,7 @@ export function FormsDashboard() {
               setStarterDescription("");
               setIsCreateOpen(true);
             }}
-            className="gap-2 rounded-lg text-xs font-medium px-3.5 h-9 shadow-2xs active:scale-[0.98] transition-all"
+            className="gap-2 rounded-lg text-xs font-medium px-3.5 h-9 shadow-2xs active:scale-[0.98] transition-all cursor-pointer"
           >
             <Plus className="size-4" />
             <span>Create Form</span>
@@ -170,7 +176,7 @@ export function FormsDashboard() {
         </div>
       </div>
 
-      {/* 2. Overview Metrics Bar */}
+      {/* 2. Overview Metrics Command Rail */}
       <FormsMetrics forms={forms} isLoading={isLoading} />
 
       {/* 3. Forms Workspace Section */}
@@ -178,7 +184,7 @@ export function FormsDashboard() {
         {/* Section Header with Controls */}
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pt-2">
           {/* Status Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none bg-muted/40 p-1 rounded-xl border border-border/60">
             {(["all", "published", "draft", "closed", "archived"] as const).map((status) => {
               const count = counts[status];
               const isSelected = statusFilter === status;
@@ -189,16 +195,16 @@ export function FormsDashboard() {
                   onClick={() => setStatusFilter(status)}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize cursor-pointer shrink-0 ${
                     isSelected
-                      ? "bg-foreground text-background shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                      ? "bg-background text-foreground shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                   }`}
                 >
                   <span>{status}</span>
                   <span
                     className={`inline-flex items-center justify-center rounded-full px-1.5 text-[10px] tabular-nums font-mono ${
                       isSelected
-                        ? "bg-background/20 text-background"
-                        : "bg-muted text-muted-foreground"
+                        ? "bg-muted text-foreground font-medium"
+                        : "bg-muted/60 text-muted-foreground"
                     }`}
                   >
                     {count}
@@ -237,7 +243,7 @@ export function FormsDashboard() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8.5 text-xs gap-1.5 rounded-lg border-border/60 text-muted-foreground hover:text-foreground px-2.5"
+                  className="h-8.5 text-xs gap-1.5 rounded-lg border-border/60 text-muted-foreground hover:text-foreground px-2.5 cursor-pointer"
                   title="Sort forms"
                 >
                   <ArrowUpDown className="size-3.5" />
@@ -315,10 +321,10 @@ export function FormsDashboard() {
               size="icon"
               onClick={() => refetch()}
               disabled={isFetching}
-              className="size-8.5 rounded-lg border-border/60 text-muted-foreground hover:text-foreground"
+              className="size-8.5 rounded-lg border-border/60 text-muted-foreground hover:text-foreground cursor-pointer"
               title="Refresh forms"
             >
-              <RotateCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
+              <RotateCw className={`size-3.5 ${isFetching ? "animate-spin text-primary" : ""}`} />
             </Button>
           </div>
         </div>
@@ -361,7 +367,7 @@ export function FormsDashboard() {
               variant="outline"
               size="sm"
               onClick={() => refetch()}
-              className="gap-2 mt-2 text-xs rounded-lg"
+              className="gap-2 mt-2 text-xs rounded-lg cursor-pointer"
             >
               <RotateCw className="size-3.5" />
               Try Again
@@ -402,7 +408,7 @@ export function FormsDashboard() {
                 setSearchQuery("");
                 setStatusFilter("all");
               }}
-              className="text-xs rounded-lg mt-2"
+              className="text-xs rounded-lg mt-2 cursor-pointer"
             >
               Clear Search & Filters
             </Button>
@@ -411,23 +417,107 @@ export function FormsDashboard() {
 
         {/* Form List / Grid Content */}
         {!isLoading && !isError && filteredForms.length > 0 && (
-          <div
-            className={
-              viewMode === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1"
-                : "flex flex-col gap-2.5 pt-1"
-            }
-          >
-            {filteredForms.map((form) => (
-              <FormRow
-                key={form.id}
-                form={form}
-                viewMode={viewMode}
-                onEdit={(f) => setEditingForm(f)}
-                onDelete={(f) => setDeletingForm(f)}
-                onViewSubmissions={(f) => setSubmissionsForm(f)}
-              />
-            ))}
+          viewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
+              {filteredForms.map((form) => (
+                <FormRow
+                  key={form.id}
+                  form={form}
+                  viewMode="grid"
+                  onEdit={(f) => setEditingForm(f)}
+                  onDelete={(f) => setDeletingForm(f)}
+                  onViewSubmissions={(f) => setSubmissionsForm(f)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="panel-highlight rounded-xl border border-border/80 bg-card overflow-hidden shadow-xs divide-y divide-border/60">
+              {/* Table Column Header */}
+              <div className="hidden lg:grid grid-cols-12 gap-4 px-5 py-2.5 bg-muted/30 border-b border-border/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground select-none">
+                <div className="col-span-5">Form Name & Topic</div>
+                <div className="col-span-2">Status</div>
+                <div className="col-span-2">Visibility</div>
+                <div className="col-span-2">Share Link</div>
+                <div className="col-span-1 text-right">Actions</div>
+              </div>
+              <div className="divide-y divide-border/50">
+                {filteredForms.map((form) => (
+                  <FormRow
+                    key={form.id}
+                    form={form}
+                    viewMode="list"
+                    onEdit={(f) => setEditingForm(f)}
+                    onDelete={(f) => setDeletingForm(f)}
+                    onViewSubmissions={(f) => setSubmissionsForm(f)}
+                  />
+                ))}
+              </div>
+            </div>
+          )
+        )}
+
+        {/* Curated Templates Quick-Starter Rail */}
+        {!isLoading && !isError && forms.length > 0 && (
+          <div className="mt-8 pt-6 border-t border-border/60 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xs uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
+                  <Sparkles className="size-3.5 text-primary" />
+                  <span>Quick Start Templates</span>
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Launch a pre-configured form structure with standard industry questions.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                {
+                  title: "Customer Feedback",
+                  desc: "CSAT, Net Promoter Score, and qualitative product impressions.",
+                  badge: "Customer Success",
+                },
+                {
+                  title: "Event Registration",
+                  desc: "Attendee names, dietary preferences, and session selection.",
+                  badge: "Operations",
+                },
+                {
+                  title: "Job Application",
+                  desc: "Candidate contact info, experience summary, and portfolio link.",
+                  badge: "Hiring",
+                },
+                {
+                  title: "Contact Inquiries",
+                  desc: "Clean inquiry capture for inbound leads and service requests.",
+                  badge: "Sales & Support",
+                },
+              ].map((template) => (
+                <button
+                  key={template.title}
+                  type="button"
+                  onClick={() => handleSelectStarter(template.title, template.desc)}
+                  className="panel-highlight flex flex-col justify-between p-4 rounded-xl border border-border/70 bg-card hover:bg-muted/20 hover:border-foreground/20 active:scale-[0.98] transition-all text-left cursor-pointer group shadow-2xs"
+                >
+                  <div>
+                    <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block mb-1">
+                      {template.badge}
+                    </span>
+                    <h4 className="font-semibold text-xs text-foreground group-hover:text-primary transition-colors">
+                      {template.title}
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                      {template.desc}
+                    </p>
+                  </div>
+                  <div className="mt-3 flex items-center gap-1 text-[11px] font-medium text-foreground group-hover:underline">
+                    <span>Use Template</span>
+                    <Plus className="size-3" />
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
