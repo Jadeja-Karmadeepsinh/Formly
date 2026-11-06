@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function SignupPage() {
   return (
-    <div className="relative flex min-h-svh flex-col items-center justify-center gap-6 bg-muted/30 p-6 md:p-10 selection:bg-foreground selection:text-background animate-fade-in-blur">
+    <div className="relative flex min-h-svh flex-col items-center justify-center gap-6 bg-muted/30 p-6 md:p-10 selection:bg-foreground selection:text-background">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <Link
           href="/"

@@ -280,7 +280,7 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
 
   return (
     <div className="min-h-screen bg-muted/20 flex flex-col items-center py-10 md:py-16 px-4">
-      <div className="w-full max-w-2xl bg-card border rounded-xl p-6 sm:p-10 shadow-sm animate-fade-in-blur">
+      <div className="w-full max-w-2xl bg-card border rounded-xl p-6 sm:p-10 shadow-sm">
         {/* Form Header */}
         <div className="border-b pb-6 mb-8 space-y-2.5">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">

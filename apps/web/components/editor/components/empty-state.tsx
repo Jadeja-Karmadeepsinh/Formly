@@ -36,7 +36,7 @@ export function EditorEmptyState({ onInsertField, onFocusEditor }: EmptyStatePro
   ].filter(Boolean);
 
   return (
-    <div className="rounded-xl border border-dashed border-border/80 bg-muted/15 p-6 sm:p-8 my-6 text-center animate-in fade-in duration-200">
+    <div className="rounded-xl border border-dashed border-border/80 bg-muted/15 p-6 sm:p-8 my-6 text-center">
       <div className="mx-auto flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary mb-3">
         <IconSparkles className="size-5" />
       </div>
