@@ -12,13 +12,16 @@ import {
   Radio,
   Star,
   Type,
+  BarChart3,
+  CheckCircle2,
 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Kbd } from "./frame";
 
 export function HeroInteractivePreview() {
-  const [viewMode, setViewMode] = React.useState<"editor" | "respondent">("editor");
+  const [activeTab, setActiveTab] = React.useState<"editor" | "respondent" | "responses">("editor");
 
   // Interactive respondent state
   const [nameInput, setNameInput] = React.useState("");
@@ -40,320 +43,423 @@ export function HeroInteractivePreview() {
   };
 
   return (
-    <div className="relative mx-auto w-full max-w-5xl rounded-xl border border-border/80 bg-card/95 shadow-2xl backdrop-blur-xs overflow-hidden transition-all duration-300">
-      {/* Top Application Header Bar */}
-      <div className="flex flex-wrap items-center justify-between border-b border-border/70 bg-muted/30 px-3.5 py-2.5 sm:px-5">
-        <div className="flex items-center gap-2">
-          {/* Window dots */}
-          <div className="hidden sm:flex items-center gap-1.5 pr-2">
-            <span className="size-2.5 rounded-full bg-border" />
-            <span className="size-2.5 rounded-full bg-border" />
-            <span className="size-2.5 rounded-full bg-border" />
+    <div className="relative mx-auto w-full max-w-5xl">
+      {/* Subtle radial backdrop glow */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-4 -z-10 rounded-2xl bg-foreground/[0.03] blur-2xl"
+      />
+
+      {/* Main Framed Window */}
+      <div className="relative rounded-lg border border-border/80 bg-card panel-highlight overflow-hidden shadow-xl">
+        {/* Title Bar */}
+        <div className="flex flex-wrap items-center justify-between border-b border-border/80 bg-muted/30 px-3.5 py-2 sm:px-4">
+          <div className="flex items-center gap-3">
+            {/* Window control dots */}
+            <div className="flex items-center gap-1.5" aria-hidden="true">
+              <span className="size-2.5 rounded-full border border-border/60 bg-muted-foreground/20" />
+              <span className="size-2.5 rounded-full border border-border/60 bg-muted-foreground/20" />
+              <span className="size-2.5 rounded-full border border-border/60 bg-muted-foreground/20" />
+            </div>
+
+            {/* Document Breadcrumb & Share ID */}
+            <div className="flex items-center gap-2 text-xs">
+              <span className="font-semibold text-foreground">
+                Customer Onboarding Survey
+              </span>
+              <span className="text-muted-foreground/40 hidden sm:inline">/</span>
+              <span className="rounded border border-border/60 bg-background/80 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground hidden sm:inline">
+                formly.app/f/k7a9vL2m
+              </span>
+              <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                v2 published
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-medium">
-            <span className="font-semibold text-foreground">Customer Experience Survey</span>
-            <span className="text-muted-foreground/60 hidden sm:inline">/</span>
-            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-mono text-muted-foreground hidden sm:inline">
-              formly.app/f/k7a9vL2m
-            </span>
+          {/* Mode Switcher Tabs */}
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-md border border-border/80 bg-background/90 p-0.5 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setActiveTab("editor")}
+                className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                  activeTab === "editor"
+                    ? "bg-foreground text-background shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <FileEdit className="size-3" />
+                <span>Editor</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("respondent")}
+                className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                  activeTab === "respondent"
+                    ? "bg-foreground text-background shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Eye className="size-3" />
+                <span>Live Form</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("responses")}
+                className={`hidden sm:inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                  activeTab === "responses"
+                    ? "bg-foreground text-background shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <BarChart3 className="size-3" />
+                <span>Responses</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border/80 bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {copiedLink ? (
+                <Check className="size-3 text-emerald-500" />
+              ) : (
+                <Copy className="size-3" />
+              )}
+              <span className="hidden sm:inline">{copiedLink ? "Copied" : "Share"}</span>
+            </button>
           </div>
         </div>
 
-        {/* Mode Switcher & Controls */}
-        <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-lg border border-border/80 bg-background/80 p-0.5 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setViewMode("editor")}
-              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                viewMode === "editor"
-                  ? "bg-foreground text-background shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <FileEdit className="size-3.5" />
-              <span>Document Editor</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("respondent")}
-              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                viewMode === "respondent"
-                  ? "bg-foreground text-background shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Eye className="size-3.5" />
-              <span>Live Form</span>
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleCopyLink}
-            aria-label="Copy public link"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-border/80 bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {copiedLink ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
-            <span>{copiedLink ? "Copied" : "Share"}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Preview Container */}
-      <div className="min-h-[460px] p-5 sm:p-8 md:p-12">
-        {viewMode === "editor" ? (
-          /* ======================================================== */
-          /* 1. DOCUMENT-BASED FORM BUILDER VIEW                       */
-          /* ======================================================== */
-          <div className="mx-auto max-w-2xl space-y-7 animate-in fade-in duration-200">
-            {/* Form Title & Description Header */}
-            <div className="group relative space-y-2 border-b border-border/40 pb-5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Document Canvas
-                </span>
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                  Published · Version 2
-                </span>
+        {/* Content View 1: Document Editor View */}
+        {activeTab === "editor" && (
+          <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_220px] min-h-[460px] divide-y lg:divide-y-0 lg:divide-x divide-border/80">
+            {/* Left Rail: Block Outline */}
+            <div className="hidden lg:flex flex-col bg-muted/10 p-3 space-y-3">
+              <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
+                <span>Structure (03)</span>
+                <Plus className="size-3 cursor-pointer hover:text-foreground" />
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Customer Feedback & Experience
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Tell us about your recent experience so our product team can tailor the workflow to your needs.
-              </p>
-            </div>
-
-            {/* Question 1: Short Text Block */}
-            <div className="group relative rounded-lg border border-transparent p-3 sm:p-4 transition-all hover:border-border/60 hover:bg-muted/15">
-              <div className="absolute -left-3 top-4 hidden group-hover:flex items-center gap-1 text-muted-foreground/60 sm:-left-7">
-                <GripVertical className="size-4" />
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-muted-foreground">01</span>
-                  <label className="text-sm font-semibold text-foreground">
-                    What is your organization or role?
-                  </label>
-                  <span className="text-destructive text-xs" title="Required">
-                    *
-                  </span>
+              <div className="space-y-1 text-xs font-medium">
+                <div className="flex items-center gap-2 px-2 py-1.5 rounded bg-muted/60 text-foreground border border-border/60">
+                  <Type className="size-3 text-muted-foreground" />
+                  <span className="truncate">01. Full Name</span>
                 </div>
-                <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
-                  <Type className="size-2.5 mr-1" />
-                  Short text
-                </Badge>
+                <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground cursor-pointer">
+                  <Radio className="size-3 text-muted-foreground" />
+                  <span className="truncate">02. Frequency</span>
+                </div>
+                <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground cursor-pointer">
+                  <Star className="size-3 text-muted-foreground" />
+                  <span className="truncate">03. Rating</span>
+                </div>
               </div>
-              <div className="rounded-md border border-border/80 bg-background/50 px-3 py-2 text-xs text-muted-foreground">
-                e.g. Head of Product, Stripe
+
+              <div className="pt-4 mt-auto border-t border-border/60">
+                <div className="text-[10px] font-mono text-muted-foreground">
+                  <div>Engine: Tiptap v3</div>
+                  <div>Sync: Local + Cloud</div>
+                </div>
               </div>
             </div>
 
-            {/* Question 2: Multiple Choice Pills */}
-            <div className="group relative rounded-lg border border-border/40 bg-muted/10 p-3 sm:p-4 transition-all">
-              <div className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-muted-foreground">02</span>
-                  <label className="text-sm font-semibold text-foreground">
-                    How frequently do you publish new forms?
-                  </label>
-                </div>
-                <Badge variant="outline" className="text-[10px] font-normal text-muted-foreground">
-                  <Radio className="size-2.5 mr-1" />
-                  Single choice
-                </Badge>
+            {/* Center Canvas: Document Editor */}
+            <div className="p-5 sm:p-8 space-y-6 bg-background">
+              {/* Document Header */}
+              <div className="space-y-1.5 pb-3 border-b border-border/60">
+                <h3 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
+                  Customer Onboarding Survey
+                </h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Please share your background so we can configure your workspace accurately.
+                </p>
               </div>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                {["Every day", "Once or twice a week", "A few times a month"].map((option, i) => (
-                  <div
-                    key={option}
-                    className={`rounded-md border p-2.5 text-xs transition-colors cursor-pointer ${
-                      i === 1
-                        ? "border-foreground bg-foreground/5 font-medium text-foreground"
-                        : "border-border/80 bg-background/60 text-muted-foreground hover:border-foreground/40"
-                    }`}
-                  >
-                    <span className="font-mono text-[10px] mr-1.5 opacity-60">[{String.fromCharCode(65 + i)}]</span>
-                    {option}
+
+              {/* Question Block 01 */}
+              <div className="group relative rounded-lg border border-border/80 bg-card p-4 transition-all hover:border-foreground/20">
+                <div className="flex items-center justify-between pb-2">
+                  <div className="flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
+                    <GripVertical className="size-3.5 opacity-40 group-hover:opacity-100 cursor-grab" />
+                    <span className="font-semibold text-foreground">Q1</span>
+                    <span>·</span>
+                    <span>Short Text</span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Inline Slash Command Prompt & Popover Simulation */}
-            <div className="relative pt-2">
-              <div className="flex items-center gap-2 rounded-md border border-dashed border-border/80 bg-background/40 px-3 py-2 text-xs text-muted-foreground">
-                <Plus className="size-3.5 text-muted-foreground/70" />
-                <span>Type</span>
-                <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-foreground font-semibold">
-                  /
-                </kbd>
-                <span>to insert a question or content block...</span>
-              </div>
-
-              {/* Popover Card */}
-              <div className="mt-2 rounded-xl border border-border bg-popover p-1.5 shadow-lg w-full max-w-xs text-popover-foreground">
-                <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Insert Element
+                  <Badge variant="outline" className="text-[10px] font-mono py-0 h-4">
+                    Required
+                  </Badge>
                 </div>
-                <div className="space-y-0.5 text-xs">
-                  <div className="flex items-center gap-2.5 rounded-md bg-muted px-2 py-1.5 font-medium text-foreground">
-                    <Star className="size-3.5" />
-                    <div className="flex flex-col">
-                      <span>Rating Scale</span>
-                      <span className="text-[10px] text-muted-foreground font-normal">
-                        Score 1 to 5 or 1 to 10
-                      </span>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-foreground">
+                    What is your work email or company domain?
+                  </div>
+                  <div className="h-9 w-full rounded border border-border/80 bg-muted/20 px-3 flex items-center text-xs text-muted-foreground">
+                    jane@acme-corp.com
+                  </div>
+                </div>
+              </div>
+
+              {/* Question Block 02 */}
+              <div className="group relative rounded-lg border border-border/80 bg-card p-4 transition-all hover:border-foreground/20">
+                <div className="flex items-center justify-between pb-2">
+                  <div className="flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
+                    <GripVertical className="size-3.5 opacity-40 group-hover:opacity-100 cursor-grab" />
+                    <span className="font-semibold text-foreground">Q2</span>
+                    <span>·</span>
+                    <span>Single Choice</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-foreground">
+                    How frequently do you plan to collect responses?
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div className="flex items-center gap-2 rounded border border-foreground/30 bg-muted/40 px-3 py-2 text-xs font-medium text-foreground">
+                      <Kbd>A</Kbd>
+                      <span>Every week</span>
+                    </div>
+                    <div className="flex items-center gap-2 rounded border border-border/80 bg-background px-3 py-2 text-xs text-muted-foreground">
+                      <Kbd>B</Kbd>
+                      <span>Monthly</span>
+                    </div>
+                    <div className="flex items-center gap-2 rounded border border-border/80 bg-background px-3 py-2 text-xs text-muted-foreground">
+                      <Kbd>C</Kbd>
+                      <span>Ad-hoc / Once</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-muted-foreground hover:bg-muted/50 hover:text-foreground">
-                    <ChevronDown className="size-3.5" />
-                    <span>Dropdown Select</span>
+                </div>
+              </div>
+
+              {/* Slash Command Insertion Demo Bar */}
+              <div className="relative rounded-md border border-dashed border-border/80 bg-muted/20 p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="font-mono text-foreground font-semibold">/</span>
+                  <span>Type <Kbd>/</Kbd> to insert rating, dropdown, or file upload...</span>
+                </div>
+                <span className="hidden sm:inline-flex text-[10px] font-mono text-muted-foreground">
+                  18 block types
+                </span>
+              </div>
+            </div>
+
+            {/* Right Inspector Panel */}
+            <div className="hidden lg:flex flex-col bg-muted/10 p-4 space-y-4 text-xs">
+              <div className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
+                Block Inspector
+              </div>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-medium text-muted-foreground">
+                    Question Type
+                  </label>
+                  <div className="rounded border border-border/80 bg-background px-2.5 py-1.5 font-medium text-foreground flex items-center justify-between">
+                    <span>Short Text</span>
+                    <ChevronDown className="size-3 text-muted-foreground" />
                   </div>
-                  <div className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-muted-foreground hover:bg-muted/50 hover:text-foreground">
-                    <Type className="size-3.5" />
-                    <span>Paragraph Text</span>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-medium text-muted-foreground">
+                    Validation Rule
+                  </label>
+                  <div className="rounded border border-border/80 bg-background px-2.5 py-1.5 text-foreground flex items-center justify-between">
+                    <span>Email format</span>
+                    <CheckCircle2 className="size-3 text-emerald-500" />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-border/60">
+                  <span className="text-[11px] font-medium text-foreground">Required field</span>
+                  <div className="h-4 w-7 rounded-full bg-foreground p-0.5 flex items-center justify-end">
+                    <span className="size-3 rounded-full bg-background" />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[11px] font-medium text-muted-foreground">Description</span>
+                  <div className="h-4 w-7 rounded-full bg-muted p-0.5 flex items-center justify-start border border-border">
+                    <span className="size-3 rounded-full bg-muted-foreground/40" />
                   </div>
                 </div>
               </div>
+
+              <div className="pt-4 mt-auto border-t border-border/60 text-[11px] text-muted-foreground space-y-1">
+                <div className="font-medium text-foreground">Immutable Snapshot</div>
+                <p className="text-[10px] leading-relaxed">
+                  Edits never alter live respondent submissions until published.
+                </p>
+              </div>
             </div>
           </div>
-        ) : (
-          /* ======================================================== */
-          /* 2. LIVE RESPONDENT EXPERIENCE VIEW                        */
-          /* ======================================================== */
-          <div className="mx-auto max-w-xl space-y-6 animate-in fade-in duration-200">
+        )}
+
+        {/* Content View 2: Live Form (Respondent) View */}
+        {activeTab === "respondent" && (
+          <div className="p-6 sm:p-10 max-w-2xl mx-auto min-h-[460px] flex flex-col justify-center">
             {isSubmitted ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-                <div className="size-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-                  <Check className="size-6 stroke-[2.5]" />
+              <div className="text-center py-10 space-y-4">
+                <div className="size-12 mx-auto rounded-full border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                  <Check className="size-6" />
                 </div>
-                <div className="space-y-1">
-                  <h4 className="text-xl font-bold tracking-tight text-foreground">
-                    Thank you for your feedback!
-                  </h4>
-                  <p className="text-sm text-muted-foreground max-w-sm">
-                    Your response has been recorded directly into the project&apos;s tabular submissions workspace.
-                  </p>
-                </div>
+                <h4 className="text-xl font-semibold text-foreground">
+                  Response Recorded Successfully
+                </h4>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  Thank you! Your submission has been captured with strict cryptographic record integrity.
+                </p>
                 <Button
-                  variant="outline"
                   size="sm"
+                  variant="outline"
                   onClick={handleResetResponse}
                   className="mt-2 text-xs"
                 >
-                  Fill out another response
+                  Submit another test response
                 </Button>
               </div>
             ) : (
-              <>
-                <div className="space-y-1.5 border-b border-border/40 pb-4">
-                  <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                    Customer Feedback & Experience
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    Please take a moment to answer these three questions. All inputs are live and interactive!
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-xl font-semibold text-foreground">
+                    Customer Onboarding Survey
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Try filling out this live form demo below.
                   </p>
                 </div>
 
-                {/* Input 1 */}
+                {/* Field 1 */}
                 <div className="space-y-2">
-                  <label className="text-xs sm:text-sm font-medium text-foreground flex items-center gap-1.5">
-                    <span>1. What is your role or organization?</span>
-                    <span className="text-destructive text-xs">*</span>
+                  <label className="text-sm font-medium text-foreground flex items-center gap-1">
+                    What is your work email?
+                    <span className="text-destructive">*</span>
                   </label>
                   <input
-                    type="text"
+                    type="email"
+                    placeholder="name@company.com"
                     value={nameInput}
                     onChange={(e) => setNameInput(e.target.value)}
-                    placeholder="e.g. Senior Frontend Engineer"
-                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-foreground focus:outline-none focus:ring-1 focus:ring-foreground transition-colors"
+                    className="w-full h-10 px-3 rounded-md border border-border/80 bg-background text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
 
-                {/* Input 2 */}
+                {/* Field 2 */}
                 <div className="space-y-2">
-                  <label className="text-xs sm:text-sm font-medium text-foreground">
-                    2. How often do you publish new forms?
+                  <label className="text-sm font-medium text-foreground">
+                    How frequently do you collect form responses?
                   </label>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div className="grid grid-cols-3 gap-2">
                     {[
-                      { id: "daily", label: "Every day" },
-                      { id: "weekly", label: "Every week" },
+                      { id: "weekly", label: "Weekly" },
                       { id: "monthly", label: "Monthly" },
-                    ].map((item) => (
+                      { id: "quarterly", label: "Quarterly" },
+                    ].map((opt) => (
                       <button
-                        key={item.id}
+                        key={opt.id}
                         type="button"
-                        onClick={() => setFrequency(item.id)}
-                        className={`rounded-md border p-2.5 text-xs text-left transition-all ${
-                          frequency === item.id
-                            ? "border-foreground bg-foreground text-background font-medium shadow-xs"
-                            : "border-border/80 bg-background text-foreground hover:bg-muted/40"
+                        onClick={() => setFrequency(opt.id)}
+                        className={`h-9 px-3 rounded-md border text-xs font-medium transition-all ${
+                          frequency === opt.id
+                            ? "border-foreground bg-foreground text-background font-semibold"
+                            : "border-border/80 bg-background text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        {item.label}
+                        {opt.label}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Input 3 */}
+                {/* Field 3 */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs sm:text-sm font-medium text-foreground">
-                      3. Rate your document form-building experience
-                    </label>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {rating !== null ? `${rating} / 5` : "Select"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-1.5">
-                    {[1, 2, 3, 4, 5].map((star) => (
+                  <label className="text-sm font-medium text-foreground">
+                    How important is document-first editing to you?
+                  </label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((val) => (
                       <button
-                        key={star}
+                        key={val}
                         type="button"
-                        onClick={() => setRating(star)}
-                        className={`flex-1 rounded-md border py-2.5 text-xs font-semibold transition-all ${
-                          rating === star
-                            ? "border-foreground bg-foreground text-background shadow-xs"
-                            : "border-border/80 bg-background text-foreground hover:bg-muted/40"
+                        onClick={() => setRating(val)}
+                        className={`size-9 rounded-md border text-xs font-medium transition-all ${
+                          rating === val
+                            ? "border-foreground bg-foreground text-background font-semibold"
+                            : "border-border/80 bg-background text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        {star}
+                        {val}
                       </button>
                     ))}
                   </div>
-                  <div className="flex justify-between text-[11px] text-muted-foreground px-0.5">
-                    <span>1 (Clunky)</span>
-                    <span>5 (Effortless)</span>
-                  </div>
                 </div>
 
-                {/* Submit Action */}
-                <div className="pt-2">
-                  <Button
-                    onClick={() => setIsSubmitted(true)}
-                    className="w-full sm:w-auto px-6 h-10 text-xs font-medium gap-1.5"
-                  >
-                    Submit response
-                  </Button>
-                </div>
-              </>
+                <Button
+                  onClick={() => setIsSubmitted(true)}
+                  className="w-full h-10 text-sm font-medium"
+                >
+                  Submit Form
+                </Button>
+              </div>
             )}
           </div>
         )}
-      </div>
 
-      {/* Subtle Bottom Status Bar */}
-      <div className="flex items-center justify-between border-t border-border/50 bg-muted/20 px-4 py-2 text-[11px] text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <span className="size-1.5 rounded-full bg-emerald-500" />
-          <span>Real-time Formly document engine simulation</span>
+        {/* Content View 3: Responses Table */}
+        {activeTab === "responses" && (
+          <div className="p-6 sm:p-8 min-h-[460px] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border/80">
+              <div>
+                <h4 className="text-base font-semibold text-foreground">
+                  Submissions (248 records)
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Snapshot: Version 2 · 94% completion rate
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" className="h-7 text-xs">
+                  Export CSV
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded border border-border/80 overflow-hidden text-xs">
+              <div className="grid grid-cols-4 bg-muted/40 px-3 py-2 font-mono font-medium text-muted-foreground border-b border-border/80">
+                <span>RESPONDENT</span>
+                <span>FREQUENCY</span>
+                <span>SCORE</span>
+                <span>SUBMITTED AT</span>
+              </div>
+              {[
+                { email: "alex@linear.app", freq: "Weekly", score: "5 / 5", time: "2 mins ago" },
+                { email: "sarah@stripe.com", freq: "Monthly", score: "5 / 5", time: "18 mins ago" },
+                { email: "david@vercel.com", freq: "Weekly", score: "4 / 5", time: "1 hour ago" },
+                { email: "elena@figma.com", freq: "Quarterly", score: "5 / 5", time: "3 hours ago" },
+                { email: "marcus@notion.so", freq: "Weekly", score: "5 / 5", time: "Yesterday" },
+              ].map((row, i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-4 px-3 py-2.5 border-b border-border/60 last:border-0 items-center hover:bg-muted/20"
+                >
+                  <span className="font-medium text-foreground">{row.email}</span>
+                  <span className="text-muted-foreground">{row.freq}</span>
+                  <span className="font-mono text-foreground">{row.score}</span>
+                  <span className="font-mono text-muted-foreground text-[11px]">{row.time}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bottom Window Status Bar */}
+        <div className="flex items-center justify-between border-t border-border/80 bg-muted/20 px-3.5 py-1.5 text-[11px] font-mono text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <span className="size-1.5 rounded-full bg-emerald-500" />
+            <span>Interactive Formly Engine Simulation</span>
+          </div>
+          <span className="hidden sm:inline">Press Esc or click tabs to explore</span>
         </div>
-        <span className="hidden sm:inline">Zero page refreshes · Keyboard accessible</span>
       </div>
     </div>
   );

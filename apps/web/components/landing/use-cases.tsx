@@ -1,103 +1,120 @@
-"use client";
-
 import * as React from "react";
+import { SectionHeader, Crosshair } from "./frame";
 import { Badge } from "~/components/ui/badge";
 
 const USE_CASES = [
   {
-    title: "Product & Customer Feedback",
-    category: "Product & Growth",
-    description:
-      "Collect actionable bug reports, feature requests, and satisfaction scores with intuitive rating scales and open text fields.",
-    questions: ["How satisfied are you with the latest release?", "What feature should we prioritize next?"],
-    sampleTag: "Rating + Long text",
+    category: "CUSTOMER RESEARCH",
+    title: "Product Feedback & CSAT",
+    description: "Measure customer satisfaction, feature demand, and usability feedback with structured rating scales.",
+    fields: ["Rating Scale (1-10)", "Multi-line Feedback", "Work Email"],
+    example: "How would you rate your onboarding experience?",
   },
   {
-    title: "Event & Workshop Registration",
-    category: "Operations & Community",
-    description:
-      "Gather attendee details, dietary preferences, and session selections with clean single-choice pills and validation.",
-    questions: ["Which session track will you attend?", "Do you have any dietary restrictions?"],
-    sampleTag: "Single select + Short text",
+    category: "INTERNAL OPERATIONS",
+    title: "Team IT & Access Requests",
+    description: "Streamline internal hardware requests, software access provisioning, and equipment ordering.",
+    fields: ["Dropdown Selection", "Short Text", "Single Choice"],
+    example: "Which system or hardware do you need access to?",
   },
   {
-    title: "Team Requests & Project Intake",
-    category: "Internal Workflows",
-    description:
-      "Streamline creative briefs, IT support tickets, and feature intake without messy email threads or lost spreadsheets.",
-    questions: ["Project deadline and target launch date", "Attach brief or describe scope"],
-    sampleTag: "Date picker + Textarea",
+    category: "COMMUNITY & EVENTS",
+    title: "Event RSVP & Registration",
+    description: "Collect attendee headcounts, dietary requirements, and session preferences without friction.",
+    fields: ["Attendee Name", "Email Address", "Dietary Radios"],
+    example: "Will you attend our live launch keynote in person?",
   },
   {
-    title: "User Research & Concept Testing",
-    category: "Design & UX",
-    description:
-      "Run targeted questionnaires with respondents. Review qualitative answers side-by-side in your tabular response dashboard.",
-    questions: ["Rank the usability of the new checkout flow", "What caused the most friction?"],
-    sampleTag: "Likert scale + Open feedback",
+    category: "TALENT & RECRUITING",
+    title: "Candidate Screening Surveys",
+    description: "Gather background experience, portfolio URLs, and availability before scheduling screening interviews.",
+    fields: ["URL Input", "Experience Scale", "Availability Date"],
+    example: "Link your GitHub or personal portfolio site",
   },
-] as const;
+  {
+    category: "LEAD GENERATION",
+    title: "Contact & Demo Inquiries",
+    description: "Capture high-intent inbound sales leads with zero drop-off, routing key responses directly to your team.",
+    fields: ["Company Domain", "Team Size Radio", "Needs Description"],
+    example: "How many team members will use Formly?",
+  },
+  {
+    category: "PRODUCT ENGINEERING",
+    title: "Bug & Issue Reports",
+    description: "Collect clean diagnostic information from beta testers, including steps to reproduce and environment.",
+    fields: ["Bug Severity Choice", "Steps to Reproduce", "App Version"],
+    example: "Describe what went wrong and expected behavior",
+  },
+];
 
 export function LandingUseCases() {
   return (
-    <section id="use-cases" className="border-t border-border/50 bg-muted/15 py-20 sm:py-28 lg:py-32">
-      <div className="container mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center space-y-3 mb-16 sm:mb-20">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Practical Applications
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground text-balance">
-            Built for any team that values clear answers.
-          </h2>
-          <p className="text-sm sm:text-base text-muted-foreground text-pretty leading-relaxed">
-            From product research to event signups, Formly provides the structure you need without unnecessary complexity.
-          </p>
+    <div id="templates" className="relative w-full">
+      <Crosshair position="top-left" />
+      <Crosshair position="top-right" />
+
+      {/* Section Header with Count Badge */}
+      <div className="px-4 sm:px-8 py-12 sm:py-16 border-b border-border/80 bg-background flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <SectionHeader
+          index="04"
+          eyebrow="Practical Applications"
+          title="Designed for forms that teams rely on daily."
+          description="From internal team operations to customer feedback. Create whatever your organization needs in minutes."
+        />
+
+        {/* Count Badge */}
+        <div className="shrink-0">
+          <Badge
+            variant="outline"
+            className="font-mono text-xs px-3 py-1 bg-muted/30 border-border/80 text-foreground"
+          >
+            Use Cases (06)
+          </Badge>
         </div>
+      </div>
 
-        {/* 4 Focused Use Cases in a 2x2 Grid */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:gap-8">
-          {USE_CASES.map((uc) => (
-            <div
-              key={uc.title}
-              className="flex flex-col justify-between rounded-xl border border-border/70 bg-card p-6 sm:p-7 shadow-2xs transition-all duration-200 hover:border-foreground/30 hover:shadow-xs"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
-                    {uc.category}
-                  </span>
-                  <Badge variant="outline" className="text-[10px] text-muted-foreground font-normal">
-                    {uc.sampleTag}
-                  </Badge>
-                </div>
-
-                <h3 className="text-lg font-bold text-foreground tracking-tight">
-                  {uc.title}
-                </h3>
-
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  {uc.description}
-                </p>
+      {/* Lined Grid: 3 columns desktop, 2 tablet, 1 mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y md:divide-y-0 divide-border/80 md:[&>*]:border-b md:[&>*]:border-border/80 lg:[&>*:nth-child(3n)]:border-r-0 md:[&>*:not(:nth-child(2n))]:border-r lg:[&>*:not(:nth-child(3n))]:border-r">
+        {USE_CASES.map((uc, i) => (
+          <div
+            key={i}
+            className="group p-6 sm:p-7 flex flex-col justify-between hover:bg-muted/15 transition-colors"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
+                <span>{uc.category}</span>
+                <span className="font-mono text-[10px] text-muted-foreground/60">0{i + 1}</span>
               </div>
 
-              {/* Realistic Mini Preview Box */}
-              <div className="mt-6 rounded-lg border border-border/60 bg-muted/20 p-3.5 space-y-2">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
-                  Example Questions
-                </span>
-                {uc.questions.map((q, idx) => (
-                  <div key={q} className="flex items-start gap-2 text-xs text-foreground">
-                    <span className="font-mono text-muted-foreground text-[11px] mt-0.5">
-                      {idx + 1}.
-                    </span>
-                    <span className="font-medium">{q}</span>
-                  </div>
+              <h3 className="text-base font-semibold tracking-tight text-foreground group-hover:text-foreground">
+                {uc.title}
+              </h3>
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {uc.description}
+              </p>
+            </div>
+
+            {/* Example Field Tags & Mock Question */}
+            <div className="mt-6 pt-4 border-t border-border/60 space-y-2.5">
+              <div className="rounded border border-border/60 bg-muted/20 px-2.5 py-1.5 text-[11px] text-foreground font-medium truncate">
+                &ldquo;{uc.example}&rdquo;
+              </div>
+
+              <div className="flex flex-wrap gap-1">
+                {uc.fields.map((f, fi) => (
+                  <span
+                    key={fi}
+                    className="font-mono text-[10px] rounded bg-muted/40 border border-border/60 px-1.5 py-0.5 text-muted-foreground"
+                  >
+                    {f}
+                  </span>
                 ))}
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
-    </section>
+    </div>
   );
 }

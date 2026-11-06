@@ -1,60 +1,77 @@
-"use client";
-
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
-
+import { ArrowRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { Crosshair } from "./frame";
 import { FormlySymbol } from "~/components/formly-logo";
 
 export function LandingCTASection() {
   return (
-    <section className="py-20 sm:py-28 lg:py-32 border-t border-border/50">
-      <div className="container mx-auto max-w-5xl px-4 sm:px-6">
-        <div className="relative rounded-xl border border-border/80 bg-card p-8 sm:p-14 lg:p-20 text-center shadow-lg overflow-hidden">
-          {/* Subtle background architectural grid */}
-          <div
-            className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"
-            aria-hidden="true"
-          />
+    <div className="relative w-full border-b border-border/80 bg-background overflow-hidden py-16 sm:py-24 lg:py-28">
+      {/* Corner Crosshairs */}
+      <Crosshair position="top-left" />
+      <Crosshair position="top-right" />
+      <Crosshair position="bottom-left" />
+      <Crosshair position="bottom-right" />
 
-          {/* Formly Symbol Mark Lockup */}
-          <div className="flex justify-center mb-6">
-            <div className="size-12 rounded-xl border border-border/80 bg-muted/30 flex items-center justify-center text-foreground shadow-2xs">
-              <FormlySymbol size={24} />
-            </div>
+      {/* Subtle radial glow */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center"
+      >
+        <div className="h-64 w-96 rounded-full bg-foreground/[0.03] blur-3xl" />
+      </div>
+
+      <div className="px-4 sm:px-8 text-center max-w-3xl mx-auto space-y-6">
+        {/* Formly Symbol Mark */}
+        <div className="flex justify-center">
+          <div className="size-10 rounded-md border border-border/80 bg-muted/30 flex items-center justify-center text-foreground">
+            <FormlySymbol size={20} />
           </div>
+        </div>
 
-          {/* Core Conversion Copy */}
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground text-balance">
-            Your next great form starts here.
-          </h2>
+        {/* Heading */}
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-[-0.03em] text-foreground text-balance">
+          Your next great form takes under two minutes.
+        </h2>
 
-          <p className="mx-auto mt-4 max-w-xl text-sm sm:text-base text-muted-foreground text-pretty leading-relaxed">
-            Bring your questions, ideas, and responses together with Formly. Build fluid, beautiful forms on a calm, document-first canvas.
-          </p>
+        {/* Supporting description */}
+        <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-[50ch] mx-auto text-pretty">
+          Join builders creating thoughtful surveys, event registrations, and internal requests without the clutter of legacy software.
+        </p>
 
-          {/* Action CTAs */}
-          <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-3.5">
-            <Link href="/signup">
-              <Button size="lg" className="h-11 px-7 text-sm font-medium gap-2 shadow-xs">
-                Start building free
-                <ArrowRight className="size-4" />
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button size="lg" variant="outline" className="h-11 px-6 text-sm font-medium">
-                Sign in
-              </Button>
-            </Link>
-          </div>
+        {/* Actions */}
+        <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+          <Link href="/signup">
+            <Button
+              size="lg"
+              className="h-10 px-6 text-sm font-medium gap-2 shadow-xs active:scale-[0.98] transition-all"
+            >
+              Start building, it&apos;s free
+              <ArrowRight className="size-4 opacity-80" />
+            </Button>
+          </Link>
 
-          <p className="mt-6 text-xs text-muted-foreground">
-            Free to start · No credit card required · Instant setup
-          </p>
+          <Link href="/login">
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-10 px-5 text-sm font-medium border-border/80 active:scale-[0.98] transition-all"
+            >
+              Sign in to dashboard
+            </Button>
+          </Link>
+        </div>
+
+        {/* Trust Line */}
+        <div className="pt-4 font-mono text-[11px] text-muted-foreground flex items-center justify-center gap-3">
+          <span>Free to start</span>
+          <span className="opacity-40">•</span>
+          <span>No credit card required</span>
+          <span className="opacity-40">•</span>
+          <span>Instant setup</span>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
-

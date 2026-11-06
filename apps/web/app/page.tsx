@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
+import { PageFrame } from "~/components/landing/frame";
 import { LandingNavbar } from "~/components/landing/navbar";
 import { LandingHero } from "~/components/landing/hero";
+import { LandingCredibilityStrip } from "~/components/landing/credibility-strip";
 import { LandingPhilosophy } from "~/components/landing/philosophy";
 import { LandingFeatures } from "~/components/landing/features";
 import { LandingProductShowcase } from "~/components/landing/product-showcase";
@@ -33,41 +35,44 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground selection:bg-foreground selection:text-background font-sans antialiased">
-      {/* 1. Navigation Bar */}
+    <PageFrame>
+      {/* 1. Engineered Hairline Navigation */}
       <LandingNavbar />
 
-      <main className="flex-1">
-        {/* 2. Hero Section with Interactive Live Form Builder & Runner Demo */}
+      <main className="w-full">
+        {/* 2. Hero with Document-First Promise & Interactive Window Preview */}
         <LandingHero />
 
-        {/* 3. Product Philosophy & Architectural Principles */}
+        {/* 3. Technology & Architecture Credibility Strip */}
+        <LandingCredibilityStrip />
+
+        {/* 4. Architectural Principles */}
         <LandingPhilosophy />
 
-        {/* 4. Core Features with Distinct Visual Treatments */}
+        {/* 5. Core Feature Lined Bento Grid */}
         <LandingFeatures />
 
-        {/* 5. Complete Product Showcase (Editor, History, Submissions, Preview) */}
+        {/* 6. Deep-Dive Alternating Workflow Demonstrations */}
         <LandingProductShowcase />
 
-        {/* 6. How It Works (01 Create, 02 Share, 03 Collect) */}
+        {/* 7. 3-Step Process & Platform Performance Metrics */}
         <LandingHowItWorks />
 
-        {/* 7. Practical Use Cases */}
+        {/* 8. Practical Use Cases with Count Badge */}
         <LandingUseCases />
 
-        {/* 8. Product Differentiation (Traditional vs The Formly Way) */}
+        {/* 9. Architectural Comparison Table */}
         <LandingDifferentiation />
 
-        {/* 9. Accessible Frequently Asked Questions */}
+        {/* 10. Frequently Asked Questions Hairline Accordion */}
         <LandingFAQ />
 
-        {/* 10. Final Conversion Call-to-Action */}
+        {/* 11. Final Call-to-Action */}
         <LandingCTASection />
       </main>
 
-      {/* 11. Refined Footer */}
+      {/* 12. Multi-Column Engineered Lined Footer */}
       <LandingFooter />
-    </div>
+    </PageFrame>
   );
 }

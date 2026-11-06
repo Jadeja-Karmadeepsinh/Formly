@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { SectionHeader, Crosshair } from "./frame";
 import {
   Accordion,
   AccordionContent,
@@ -10,70 +11,77 @@ import {
 
 const FAQS = [
   {
-    question: "What is Formly?",
+    question: "What does 'document-first form builder' mean?",
     answer:
-      "Formly is a modern, document-first SaaS form builder. It combines the fluid writing experience of tools like Notion and Tally with strict relational data integrity, allowing you to create beautiful forms simply by typing.",
+      "Unlike traditional builders where you drag individual widget cards into an abstract column structure, Formly operates like a continuous text document (similar to Notion or Google Docs). You write headings, paragraphs, and questions inline on the page, using slash commands (/) to insert interactive inputs anywhere.",
   },
   {
-    question: "How do I create and edit questions?",
+    question: "How does immutable snapshot versioning protect my data?",
     answer:
-      "Open any form in your dashboard and start typing on the clean document canvas. Type '/' to open the slash-command menu, select a question or content type, and write your question directly on the page.",
+      "Whenever you hit Publish, Formly takes a permanent cryptographic snapshot of your form's schema in PostgreSQL. If you change a question, add new options, or delete a field next month, previously collected responses remain permanently linked to the exact version the respondent saw. Your historic data is never silently corrupted.",
   },
   {
-    question: "How does Formly's versioning system work?",
+    question: "Can I edit a form after respondents have already submitted answers?",
     answer:
-      "Whenever you save changes or publish a form, Formly captures an immutable version snapshot in PostgreSQL. If you update or delete a question next week, previously submitted answers remain permanently linked to the exact snapshot the respondent saw.",
+      "Yes, completely safely. When you edit a published form, your changes remain in a private draft state. Active respondents continue seeing the current published snapshot without disruption. When your new edits are ready, you publish Version 2, which becomes the active target for future respondents.",
   },
   {
-    question: "How do respondents access and fill out my forms?",
+    question: "What types of questions and elements are supported?",
     answer:
-      "When you publish a form, you receive a clean, 16-character public link (such as formly.app/f/your-share-id). Respondents can complete the form on mobile, tablet, or desktop browsers without needing to register or download anything.",
+      "Formly supports 18 distinct block types: Short Text, Long Paragraphs, Single Choice (Radio), Multiple Selection (Checkboxes), Dropdown Menus, Linear Rating Scales (1–10), Star Ratings, Dates, Times, Email Addresses, Phone Numbers, Numeric Inputs, Website URLs, as well as Document Headings, Helper Text, and Horizontal Dividers.",
   },
   {
-    question: "What types of form fields are supported?",
+    question: "How do respondents access and submit my forms?",
     answer:
-      "Formly supports 18 distinct element types across questions and layout content: Short Text, Long Text, Multiple Choice, Single Select, Dropdown, Linear Rating Scales, Star Ratings, Dates, Times, Email, Phone, Numbers, Website URLs, Checkboxes, as well as Headings, Paragraphs, and Dividers.",
+      "Every published form receives a fast, unique shareable link (such as formly.app/f/your-id). Respondents can complete the form on mobile, tablet, or desktop browsers without registering an account. The runtime is privacy-first, lightweight, and loads in milliseconds.",
   },
   {
-    question: "Can I manage and export collected responses?",
+    question: "How do responses and analytics work?",
     answer:
-      "Yes. Every submitted response is captured in real-time in your project's tabular submissions workspace. You can view all answers chronologically and inspect individual respondent submissions.",
+      "Every submission is recorded in real-time in your dashboard. You can inspect individual respondent answers chronologically or view aggregated analytics (submission volume over time, completion rates, average completion duration, and per-question drop-off metrics). You can also export submissions to CSV anytime.",
   },
 ] as const;
 
 export function LandingFAQ() {
   return (
-    <section id="faq" className="border-t border-border/50 bg-muted/10 py-20 sm:py-28 lg:py-32">
-      <div className="container mx-auto max-w-4xl px-4 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center space-y-3 mb-12 sm:mb-16">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Frequently Asked Questions
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground text-balance">
-            Everything you need to know.
-          </h2>
-          <p className="text-sm text-muted-foreground text-pretty leading-relaxed">
-            Clear, honest answers about Formly's capabilities and design.
-          </p>
-        </div>
+    <div id="faq" className="relative w-full">
+      <Crosshair position="top-left" />
+      <Crosshair position="top-right" />
 
-        {/* Accessible FAQ Accordion */}
-        <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-8 shadow-xs">
-          <Accordion type="single" collapsible className="w-full">
-            {FAQS.map((faq, index) => (
-              <AccordionItem key={faq.question} value={`item-${index}`} className="border-border/60">
-                <AccordionTrigger className="text-sm sm:text-base font-semibold text-foreground hover:no-underline py-4 text-left">
-                  {faq.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-xs sm:text-sm text-muted-foreground leading-relaxed pt-1 pb-4">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
+      {/* Section Header */}
+      <div className="px-4 sm:px-8 py-12 sm:py-16 border-b border-border/80 bg-background">
+        <SectionHeader
+          index="06"
+          eyebrow="Frequently Asked Questions"
+          title="Clear answers to practical questions."
+          description="Everything you need to know about Formly's architecture, versioning model, and respondent privacy."
+        />
       </div>
-    </section>
+
+      {/* Lined Accordion Grid */}
+      <div className="w-full border-b border-border/80 bg-background">
+        <Accordion type="single" collapsible className="w-full">
+          {FAQS.map((faq, index) => (
+            <AccordionItem
+              key={index}
+              value={`item-${index}`}
+              className="border-b border-border/80 px-4 sm:px-8 last:border-b-0 hover:bg-muted/10 transition-colors"
+            >
+              <AccordionTrigger className="text-sm sm:text-base font-semibold text-foreground hover:no-underline py-5 text-left">
+                <span className="flex items-center gap-3">
+                  <span className="font-mono text-xs text-muted-foreground font-normal">
+                    0{index + 1}
+                  </span>
+                  <span>{faq.question}</span>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-8 pr-4 pb-5 pt-1">
+                {faq.answer}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </div>
+    </div>
   );
 }
-
