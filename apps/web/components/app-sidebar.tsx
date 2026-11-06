@@ -123,7 +123,7 @@ export function AppSidebar({
           <Button
             size="sm"
             onClick={onOpenCreateForm}
-            className="w-full justify-between h-8.5 rounded-lg text-xs font-medium shadow-xs"
+            className="w-full justify-between h-8.5 rounded-lg text-xs font-medium shadow-xs active:scale-[0.98] transition-all"
           >
             <span className="flex items-center gap-1.5">
               <Plus className="size-3.5" />

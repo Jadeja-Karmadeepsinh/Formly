@@ -56,7 +56,7 @@ export function AnalyticsMetrics({ overview, isLoading }: AnalyticsMetricsProps)
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Metric 1: Total Completed Submissions (Primary Business Metric) */}
-        <Card className="border-border/70 bg-card shadow-2xs transition-all hover:border-primary/40 relative overflow-hidden group">
+        <Card className="panel-highlight border-border/80 bg-card shadow-2xs transition-all hover:border-foreground/20 relative overflow-hidden group">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary/80" />
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between gap-1">
@@ -84,7 +84,7 @@ export function AnalyticsMetrics({ overview, isLoading }: AnalyticsMetricsProps)
         </Card>
 
         {/* Metric 2: Form Starts (Sessions) */}
-        <Card className="border-border/60 bg-card/75 shadow-2xs transition-all hover:border-border">
+        <Card className="panel-highlight border-border/80 bg-card shadow-2xs transition-all hover:border-foreground/20">
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between gap-1">
               <span className="text-xs font-medium text-muted-foreground">
@@ -114,7 +114,7 @@ export function AnalyticsMetrics({ overview, isLoading }: AnalyticsMetricsProps)
         </Card>
 
         {/* Metric 3: Completion Rate */}
-        <Card className="border-border/60 bg-card/75 shadow-2xs transition-all hover:border-border">
+        <Card className="panel-highlight border-border/80 bg-card shadow-2xs transition-all hover:border-foreground/20">
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between gap-1">
               <span className="text-xs font-medium text-muted-foreground">
@@ -149,7 +149,7 @@ export function AnalyticsMetrics({ overview, isLoading }: AnalyticsMetricsProps)
         </Card>
 
         {/* Metric 4: Average Duration */}
-        <Card className="border-border/60 bg-card/75 shadow-2xs transition-all hover:border-border">
+        <Card className="panel-highlight border-border/80 bg-card shadow-2xs transition-all hover:border-foreground/20">
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between gap-1">
               <span className="text-xs font-medium text-muted-foreground">

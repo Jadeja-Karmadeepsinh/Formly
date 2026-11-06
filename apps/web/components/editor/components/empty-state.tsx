@@ -71,7 +71,7 @@ export function EditorEmptyState({ onInsertField, onFocusEditor }: EmptyStatePro
                   validationRules: q.defaultValidationRules,
                 })
               }
-              className="flex flex-col items-center gap-2 p-3 rounded-xl border border-border/70 bg-card hover:bg-accent/40 hover:border-primary/40 transition-all text-xs group cursor-pointer shadow-2xs"
+              className="panel-highlight flex flex-col items-center gap-2 p-3 rounded-xl border border-border/70 bg-card hover:bg-accent/40 hover:border-foreground/30 active:scale-[0.97] transition-all text-xs group cursor-pointer shadow-2xs"
             >
               <div className="size-8 rounded-lg bg-muted/70 flex items-center justify-center text-muted-foreground group-hover:text-primary group-hover:bg-primary/10 transition-colors">
                 <Icon className="size-4" />

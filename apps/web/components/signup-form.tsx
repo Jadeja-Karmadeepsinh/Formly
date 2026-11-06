@@ -248,7 +248,7 @@ export function SignupForm({
         </div>
       )}
 
-      <Card className="border-border/80 bg-card/95 shadow-xs backdrop-blur-xs">
+      <Card className="rounded-xl border border-border/80 bg-card panel-highlight shadow-sm">
         {isVerificationPending ? (
           /* ================= VERIFICATION PENDING STATE ================= */
           <div className="animate-in fade-in-50 duration-200">
@@ -483,7 +483,7 @@ export function SignupForm({
                       <Button
                         type="submit"
                         disabled={isAnyPending}
-                        className="w-full font-medium transition-all"
+                        className="w-full h-10 font-medium active:scale-[0.98] transition-all"
                       >
                         {isSignUpPending ? (
                           <>

@@ -157,7 +157,7 @@ export function FormRow({
   // ==========================================
   if (viewMode === "grid") {
     return (
-      <div className="group relative flex flex-col justify-between rounded-xl border border-border/60 bg-card p-4 sm:p-5 transition-all hover:border-border hover:shadow-xs hover:bg-card/90">
+      <div className="panel-highlight group relative flex flex-col justify-between rounded-xl border border-border/80 bg-card p-4 sm:p-5 transition-all hover:border-foreground/20 hover:shadow-sm">
         <div>
           {/* Header row: Status + Visibility + Menu */}
           <div className="flex items-center justify-between gap-2 mb-3">
@@ -290,14 +290,14 @@ export function FormRow({
               variant="outline"
               size="sm"
               onClick={() => onViewSubmissions(form)}
-              className="h-7 text-xs px-2.5 rounded-lg text-muted-foreground hover:text-foreground font-medium"
+              className="h-7 text-xs px-2.5 rounded-lg text-muted-foreground hover:text-foreground font-medium active:scale-[0.98] transition-all"
             >
               Responses
             </Button>
             <Button
               size="sm"
               asChild
-              className="h-7 text-xs px-2.5 rounded-lg shadow-2xs"
+              className="h-7 text-xs px-2.5 rounded-lg shadow-2xs active:scale-[0.98] transition-all"
             >
               <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
             </Button>
@@ -311,7 +311,7 @@ export function FormRow({
   // List / Table View Mode (Editorial Row)
   // ==========================================
   return (
-    <div className="group flex items-center justify-between gap-4 p-3.5 sm:px-4 rounded-xl border border-border/50 bg-card hover:bg-muted/20 hover:border-border transition-all">
+    <div className="panel-highlight group flex items-center justify-between gap-4 p-3.5 sm:px-4 rounded-xl border border-border/70 bg-card hover:bg-muted/25 hover:border-foreground/20 transition-all shadow-2xs">
       {/* Title & Info */}
       <div className="flex items-center gap-3.5 min-w-0 flex-1">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-muted/30 text-muted-foreground group-hover:text-foreground group-hover:border-border transition-colors">
@@ -397,7 +397,7 @@ export function FormRow({
           variant="outline"
           size="sm"
           onClick={() => onViewSubmissions(form)}
-          className="hidden lg:inline-flex h-7.5 text-xs px-2.5 rounded-lg text-muted-foreground hover:text-foreground font-medium"
+          className="hidden lg:inline-flex h-7.5 text-xs px-2.5 rounded-lg text-muted-foreground hover:text-foreground font-medium active:scale-[0.98] transition-all"
         >
           Responses
         </Button>
@@ -405,7 +405,7 @@ export function FormRow({
         <Button
           size="sm"
           asChild
-          className="h-7.5 text-xs px-3 rounded-lg shadow-2xs"
+          className="h-7.5 text-xs px-3 rounded-lg shadow-2xs active:scale-[0.98] transition-all"
         >
           <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
         </Button>

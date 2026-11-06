@@ -259,7 +259,7 @@ export function ResponseDetailSheet({
           ) : (
             <>
               {/* Metadata Grid */}
-              <div className="rounded-xl border border-border/60 bg-muted/15 p-4 space-y-3">
+              <div className="panel-highlight rounded-xl border border-border/80 bg-muted/15 p-4 space-y-3">
                 <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">
                   Submission Metadata
                 </h4>
@@ -317,7 +317,7 @@ export function ResponseDetailSheet({
                     {submission.answers.map((ans, idx) => (
                       <div
                         key={ans.id}
-                        className="rounded-xl border border-border/60 bg-card p-3.5 sm:p-4 space-y-2 shadow-2xs"
+                        className="panel-highlight rounded-xl border border-border/80 bg-card p-3.5 sm:p-4 space-y-2 shadow-2xs"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <span className="text-xs font-medium text-foreground">

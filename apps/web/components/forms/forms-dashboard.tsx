@@ -159,7 +159,7 @@ export function FormsDashboard() {
               setStarterDescription("");
               setIsCreateOpen(true);
             }}
-            className="gap-2 rounded-lg text-xs font-medium px-3.5 h-9 shadow-2xs"
+            className="gap-2 rounded-lg text-xs font-medium px-3.5 h-9 shadow-2xs active:scale-[0.98] transition-all"
           >
             <Plus className="size-4" />
             <span>Create Form</span>

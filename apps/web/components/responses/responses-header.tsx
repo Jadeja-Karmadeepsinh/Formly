@@ -41,7 +41,7 @@ export function ResponsesHeader({
           size="sm"
           onClick={onExport}
           disabled={isExporting}
-          className="h-9 text-xs rounded-lg border-border/60 gap-1.5 shadow-2xs hover:bg-muted font-medium"
+          className="h-9 text-xs rounded-lg border-border/60 gap-1.5 shadow-2xs hover:bg-muted font-medium active:scale-[0.98] transition-all"
         >
           {isExporting ? (
             <Loader2 className="size-3.5 animate-spin" />

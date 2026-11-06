@@ -234,7 +234,7 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
 
     return (
       <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-full max-w-md bg-card border rounded-xl p-8 md:p-10 shadow-sm space-y-5 animate-in fade-in zoom-in-95 duration-200">
+        <div className="panel-highlight w-full max-w-md bg-card border border-border/80 rounded-xl p-8 md:p-10 shadow-sm space-y-5 animate-in fade-in zoom-in-95 duration-200">
           <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             <IconCircleCheck className="size-10" />
           </div>
@@ -280,7 +280,7 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
 
   return (
     <div className="min-h-screen bg-muted/20 flex flex-col items-center py-10 md:py-16 px-4">
-      <div className="w-full max-w-2xl bg-card border rounded-xl p-6 sm:p-10 shadow-sm">
+      <div className="panel-highlight w-full max-w-2xl bg-card border border-border/80 rounded-xl p-6 sm:p-10 shadow-sm">
         {/* Form Header */}
         <div className="border-b pb-6 mb-8 space-y-2.5">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
@@ -351,7 +351,7 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full sm:w-auto px-8 font-medium h-10 gap-2"
+                className="w-full sm:w-auto px-8 font-medium h-10 gap-2 active:scale-[0.98] transition-all cursor-pointer shadow-xs"
               >
                 {isSubmitting && <IconLoader className="size-4 animate-spin" />}
                 <span>{submitBtnText}</span>

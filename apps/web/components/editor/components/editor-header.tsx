@@ -152,7 +152,7 @@ export function EditorHeader({
             size="icon"
             disabled={!canUndo}
             onClick={onUndo}
-            className="size-7 text-muted-foreground hover:text-foreground disabled:opacity-30"
+            className="size-7 text-muted-foreground hover:text-foreground disabled:opacity-30 active:scale-95 transition-all"
             title={`Undo (${modKey}+Z)`}
           >
             <IconArrowBackUp className="size-3.5" />
@@ -163,7 +163,7 @@ export function EditorHeader({
             size="icon"
             disabled={!canRedo}
             onClick={onRedo}
-            className="size-7 text-muted-foreground hover:text-foreground disabled:opacity-30"
+            className="size-7 text-muted-foreground hover:text-foreground disabled:opacity-30 active:scale-95 transition-all"
             title={`Redo (${modKey}+Shift+Z)`}
           >
             <IconArrowForwardUp className="size-3.5" />
@@ -189,7 +189,7 @@ export function EditorHeader({
             size="sm"
             variant="ghost"
             onClick={onOpenHistory}
-            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground active:scale-[0.98] transition-all"
             title="Version History"
           >
             <IconHistory className="size-3.5" />
@@ -203,7 +203,7 @@ export function EditorHeader({
           size="sm"
           variant="outline"
           onClick={onOpenPreview}
-          className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground active:scale-[0.98] transition-all"
           title={`Preview Form (${modKey}+P)`}
         >
           <IconEye className="size-3.5" />
@@ -217,7 +217,7 @@ export function EditorHeader({
           variant={isDirty ? "default" : "outline"}
           disabled={saveStatus === "saving" || !isDirty}
           onClick={onSave}
-          className={`h-8 gap-1.5 text-xs transition-all ${
+          className={`h-8 gap-1.5 text-xs transition-all active:scale-[0.98] ${
             isDirty
               ? "bg-primary text-primary-foreground shadow-xs font-medium cursor-pointer"
               : "text-muted-foreground border-border/60"
@@ -240,7 +240,7 @@ export function EditorHeader({
           type="button"
           size="sm"
           onClick={onOpenPublish}
-          className={`h-8 gap-1.5 text-xs font-medium ${
+          className={`h-8 gap-1.5 text-xs font-medium active:scale-[0.98] transition-all ${
             status === "published"
               ? "bg-emerald-600 hover:bg-emerald-700 text-white"
               : "bg-foreground text-background hover:bg-foreground/90"

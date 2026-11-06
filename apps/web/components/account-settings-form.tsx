@@ -125,7 +125,7 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
   return (
     <div className="flex flex-col gap-6 max-w-4xl">
       {/* ================= 1. PROFILE & EMAIL VERIFICATION ================= */}
-      <Card className="border-border/80 shadow-xs">
+      <Card className="panel-highlight border-border/80 bg-card shadow-xs">
         <CardHeader>
           <CardTitle className="text-lg font-semibold tracking-tight flex items-center gap-2">
             <Shield className="size-4 text-muted-foreground" />
@@ -205,7 +205,7 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
       </Card>
 
       {/* ================= 2. CONNECTED ACCOUNTS (ACCOUNT LINKING) ================= */}
-      <Card className="border-border/80 shadow-xs">
+      <Card className="panel-highlight border-border/80 bg-card shadow-xs">
         <CardHeader>
           <CardTitle className="text-lg font-semibold tracking-tight flex items-center gap-2">
             <Link2 className="size-4 text-muted-foreground" />
@@ -348,7 +348,7 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
       </Card>
 
       {/* ================= 3. SESSION MANAGEMENT ================= */}
-      <Card className="border-border/80 shadow-xs">
+      <Card className="panel-highlight border-border/80 bg-card shadow-xs">
         <CardHeader>
           <CardTitle className="text-lg font-semibold tracking-tight flex items-center gap-2">
             <Laptop className="size-4 text-muted-foreground" />

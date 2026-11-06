@@ -111,7 +111,7 @@ export function SiteHeader({
         <Button
           size="sm"
           onClick={onOpenCreateForm}
-          className="h-8 gap-1.5 rounded-lg text-xs font-medium px-3 shadow-xs"
+          className="h-8 gap-1.5 rounded-lg text-xs font-medium px-3 shadow-xs active:scale-[0.98] transition-all"
         >
           <Plus className="size-3.5" />
           <span className="hidden sm:inline">New Form</span>

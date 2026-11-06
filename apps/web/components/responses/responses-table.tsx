@@ -104,7 +104,7 @@ export function ResponsesTable({
 
   if (isLoading) {
     return (
-      <Card className="border-border/60 bg-card/75 shadow-2xs">
+      <Card className="panel-highlight border-border/80 bg-card shadow-2xs">
         <CardContent className="p-0">
           <div className="p-4 space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -124,7 +124,7 @@ export function ResponsesTable({
 
   if (items.length === 0) {
     return (
-      <Card className="border-border/60 bg-card/75 shadow-2xs">
+      <Card className="panel-highlight border-border/80 bg-card shadow-2xs">
         <CardContent className="flex flex-col items-center justify-center py-16 px-4 text-center">
           <div className="size-12 rounded-full bg-muted/40 flex items-center justify-center text-muted-foreground mb-3">
             <Inbox className="size-6" />
@@ -142,7 +142,7 @@ export function ResponsesTable({
   const endRecord = Math.min(page * limit, totalCount);
 
   return (
-    <Card className="border-border/60 bg-card/75 shadow-2xs">
+    <Card className="panel-highlight border-border/80 bg-card shadow-2xs">
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <Table>

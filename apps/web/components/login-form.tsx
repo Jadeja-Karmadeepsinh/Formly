@@ -230,7 +230,7 @@ export function LoginForm({
       {view === "forgot" ? (
         <ForgotPasswordForm onBackToSignIn={() => setView("signin")} />
       ) : (
-        <Card className="border-border/80 bg-card/95 shadow-xs backdrop-blur-xs">
+        <Card className="rounded-xl border border-border/80 bg-card panel-highlight shadow-sm">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-xl font-semibold tracking-tight">
               Welcome back
@@ -444,7 +444,7 @@ export function LoginForm({
                     <Button
                       type="submit"
                       disabled={isAnyPending}
-                      className="w-full font-medium transition-all"
+                      className="w-full h-10 font-medium active:scale-[0.98] transition-all"
                     >
                       {isPending ? (
                         <>

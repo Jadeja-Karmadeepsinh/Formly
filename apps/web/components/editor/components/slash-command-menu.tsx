@@ -362,7 +362,7 @@ export const SlashCommandMenu = React.forwardRef<
   return (
     <div
       ref={ref}
-      className="z-50 w-80 max-h-84 overflow-y-auto rounded-xl border bg-popover/95 p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in-0 zoom-in-95"
+      className="panel-highlight z-50 w-80 max-h-84 overflow-y-auto rounded-xl border border-border/80 bg-popover/95 p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in-0 zoom-in-95"
     >
       {formItems.length > 0 && (
         <div className="mb-2">

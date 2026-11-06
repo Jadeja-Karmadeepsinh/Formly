@@ -94,7 +94,7 @@ export function ForgotPasswordForm({ onBackToSignIn }: ForgotPasswordFormProps) 
   };
 
   return (
-    <Card className="border-border/80 bg-card/95 shadow-xs backdrop-blur-xs">
+    <Card className="rounded-xl border border-border/80 bg-card panel-highlight shadow-sm">
       <CardHeader className="text-center pb-4">
         <CardTitle className="text-xl font-semibold tracking-tight">
           Forgot password?

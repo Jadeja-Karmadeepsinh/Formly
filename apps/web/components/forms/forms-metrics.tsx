@@ -25,7 +25,7 @@ export function FormsMetrics({ forms, isLoading }: FormsMetricsProps) {
   return (
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
       {/* 1. Total Forms */}
-      <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4 transition-all hover:bg-card/90 hover:border-border shadow-2xs">
+      <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card panel-highlight p-4 sm:p-5 transition-all hover:border-foreground/20 shadow-2xs">
         <div className="flex items-center justify-between text-muted-foreground">
           <span className="text-xs font-medium tracking-wide">Total Forms</span>
           <div className="flex size-7 items-center justify-center rounded-lg bg-muted/40 text-muted-foreground">
@@ -54,7 +54,7 @@ export function FormsMetrics({ forms, isLoading }: FormsMetricsProps) {
       </div>
 
       {/* 2. Active Published Forms */}
-      <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4 transition-all hover:bg-card/90 hover:border-border shadow-2xs">
+      <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card panel-highlight p-4 sm:p-5 transition-all hover:border-foreground/20 shadow-2xs">
         <div className="flex items-center justify-between text-muted-foreground">
           <span className="text-xs font-medium tracking-wide">Published</span>
           <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
@@ -91,7 +91,7 @@ export function FormsMetrics({ forms, isLoading }: FormsMetricsProps) {
       </div>
 
       {/* 3. Draft Forms */}
-      <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4 transition-all hover:bg-card/90 hover:border-border shadow-2xs">
+      <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card panel-highlight p-4 sm:p-5 transition-all hover:border-foreground/20 shadow-2xs">
         <div className="flex items-center justify-between text-muted-foreground">
           <span className="text-xs font-medium tracking-wide">Drafts</span>
           <div className="flex size-7 items-center justify-center rounded-lg bg-muted/40 text-muted-foreground">
@@ -120,7 +120,7 @@ export function FormsMetrics({ forms, isLoading }: FormsMetricsProps) {
       </div>
 
       {/* 4. Visibility Breakdown */}
-      <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4 transition-all hover:bg-card/90 hover:border-border shadow-2xs">
+      <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card panel-highlight p-4 sm:p-5 transition-all hover:border-foreground/20 shadow-2xs">
         <div className="flex items-center justify-between text-muted-foreground">
           <span className="text-xs font-medium tracking-wide">Visibility</span>
           <div className="flex size-7 items-center justify-center rounded-lg bg-muted/40 text-muted-foreground">

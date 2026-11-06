@@ -64,7 +64,7 @@ export function AnalyticsChart({ timeSeries, isLoading }: AnalyticsChartProps) {
 
   if (isLoading) {
     return (
-      <Card className="border-border/60 bg-card/75 shadow-2xs">
+      <Card className="panel-highlight border-border/80 bg-card shadow-2xs">
         <CardHeader className="p-4 sm:p-5 pb-3">
           <Skeleton className="h-5 w-48" />
           <Skeleton className="h-3.5 w-64 mt-1" />
@@ -81,7 +81,7 @@ export function AnalyticsChart({ timeSeries, isLoading }: AnalyticsChartProps) {
   const hasData = timeSeries.length > 0 && (totalStarted > 0 || totalCompleted > 0);
 
   return (
-    <Card className="border-border/60 bg-card/75 shadow-2xs">
+    <Card className="panel-highlight border-border/80 bg-card shadow-2xs">
       <CardHeader className="p-4 sm:p-5 pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>

@@ -106,7 +106,7 @@ export function AnalyticsHeader({
             variant="outline"
             size="sm"
             asChild
-            className="h-8 text-xs gap-1.5 border-border/70 shadow-2xs hover:bg-muted font-medium"
+            className="h-8 text-xs gap-1.5 border-border/70 shadow-2xs hover:bg-muted font-medium active:scale-[0.98] transition-all"
           >
             <Link
               href={
@@ -177,7 +177,7 @@ export function AnalyticsHeader({
             size="icon"
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="h-8 w-8 rounded-lg border-border/60 text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
+            className="h-8 w-8 rounded-lg border-border/60 text-muted-foreground hover:text-foreground shrink-0 cursor-pointer active:scale-95 transition-all"
             title="Refresh analytics"
             aria-label="Refresh analytics"
           >
