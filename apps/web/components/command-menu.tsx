@@ -4,13 +4,13 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
-  IconFileText,
-  IconHelp,
-  IconMoon,
-  IconPlus,
-  IconSettings,
-  IconSun,
-} from "@tabler/icons-react";
+  BookOpen,
+  FileText,
+  Moon,
+  Plus,
+  Settings,
+  Sun,
+} from "lucide-react";
 import {
   CommandDialog,
   CommandEmpty,
@@ -48,18 +48,17 @@ export function CommandMenu({
         onOpenChange(!open);
       }
 
-      // Quick create shortcut: press "c" when not in an input
+      // Quick "C" shortcut for create form if no input/textarea is focused
       if (
         e.key.toLowerCase() === "c" &&
-        !open &&
         !e.metaKey &&
         !e.ctrlKey &&
         !e.altKey &&
         document.activeElement?.tagName !== "INPUT" &&
-        document.activeElement?.tagName !== "TEXTAREA" &&
-        !(document.activeElement as HTMLElement)?.isContentEditable
+        document.activeElement?.tagName !== "TEXTAREA"
       ) {
         e.preventDefault();
+        onOpenChange(false);
         onOpenCreateForm?.();
       }
     };
@@ -98,7 +97,7 @@ export function CommandMenu({
             className="gap-2.5 cursor-pointer"
           >
             <div className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <IconPlus className="size-3.5" />
+              <Plus className="size-3.5" />
             </div>
             <span>Create New Form</span>
             <CommandShortcut>C</CommandShortcut>
@@ -114,9 +113,9 @@ export function CommandMenu({
           >
             <div className="flex size-6 items-center justify-center rounded-md bg-muted text-muted-foreground">
               {resolvedTheme === "dark" ? (
-                <IconSun className="size-3.5" />
+                <Sun className="size-3.5" />
               ) : (
-                <IconMoon className="size-3.5" />
+                <Moon className="size-3.5" />
               )}
             </div>
             <span>
@@ -143,7 +142,7 @@ export function CommandMenu({
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="flex size-6 shrink-0 items-center justify-center rounded-md border bg-muted/30">
-                    <IconFileText className="size-3.5 text-muted-foreground" />
+                    <FileText className="size-3.5 text-muted-foreground" />
                   </div>
                   <div className="flex flex-col min-w-0">
                     <span className="font-medium text-foreground truncate text-sm">
@@ -187,7 +186,7 @@ export function CommandMenu({
             className="gap-2.5 cursor-pointer"
           >
             <div className="flex size-6 items-center justify-center rounded-md bg-muted text-muted-foreground">
-              <IconFileText className="size-3.5" />
+              <FileText className="size-3.5" />
             </div>
             <span>Overview & Forms</span>
           </CommandItem>
@@ -201,7 +200,7 @@ export function CommandMenu({
             className="gap-2.5 cursor-pointer"
           >
             <div className="flex size-6 items-center justify-center rounded-md bg-muted text-muted-foreground">
-              <IconSettings className="size-3.5" />
+              <Settings className="size-3.5" />
             </div>
             <span>Account & Security Settings</span>
           </CommandItem>
@@ -215,7 +214,7 @@ export function CommandMenu({
             className="gap-2.5 cursor-pointer"
           >
             <div className="flex size-6 items-center justify-center rounded-md bg-muted text-muted-foreground">
-              <IconHelp className="size-3.5" />
+              <BookOpen className="size-3.5" />
             </div>
             <span>Documentation</span>
           </CommandItem>

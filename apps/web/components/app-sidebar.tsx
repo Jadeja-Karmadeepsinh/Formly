@@ -4,18 +4,18 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
-  IconCommand,
-  IconDotsVertical,
-  IconFileText,
-  IconHelp,
-  IconLayoutDashboard,
-  IconLogout,
-  IconMoon,
-  IconPlus,
-  IconSettings,
-  IconSun,
-  IconWorldCheck,
-} from "@tabler/icons-react";
+  BookOpen,
+  CheckCircle2,
+  Command,
+  FilePenLine,
+  LayoutDashboard,
+  LogOut,
+  Moon,
+  MoreVertical,
+  Plus,
+  Settings,
+  Sun,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 import {
   Sidebar,
@@ -122,7 +122,7 @@ export function AppSidebar({
             className="w-full justify-between h-8.5 rounded-lg text-xs font-medium shadow-xs"
           >
             <span className="flex items-center gap-1.5">
-              <IconPlus className="size-3.5" />
+              <Plus className="size-3.5" />
               <span>New Form</span>
             </span>
             <kbd className="inline-flex h-4 items-center rounded border border-primary-foreground/30 px-1 text-[10px] font-mono opacity-80">
@@ -151,7 +151,7 @@ export function AppSidebar({
                   className="rounded-lg text-xs font-medium"
                 >
                   <Link href="/dashboard">
-                    <IconLayoutDashboard className="size-4 shrink-0" />
+                    <LayoutDashboard className="size-4 shrink-0" />
                     <span>Overview</span>
                   </Link>
                 </SidebarMenuButton>
@@ -170,7 +170,7 @@ export function AppSidebar({
                   className="rounded-lg text-xs font-medium"
                 >
                   <Link href="/dashboard?status=published">
-                    <IconWorldCheck className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                     <span>Published</span>
                   </Link>
                 </SidebarMenuButton>
@@ -189,7 +189,7 @@ export function AppSidebar({
                   className="rounded-lg text-xs font-medium"
                 >
                   <Link href="/dashboard?status=draft">
-                    <IconFileText className="size-4 shrink-0" />
+                    <FilePenLine className="size-4 shrink-0" />
                     <span>Drafts</span>
                   </Link>
                 </SidebarMenuButton>
@@ -220,7 +220,7 @@ export function AppSidebar({
                   className="rounded-lg text-xs font-medium"
                 >
                   <Link href="/dashboard/settings/account">
-                    <IconSettings className="size-4 shrink-0" />
+                    <Settings className="size-4 shrink-0" />
                     <span>Settings</span>
                   </Link>
                 </SidebarMenuButton>
@@ -233,7 +233,7 @@ export function AppSidebar({
                   className="rounded-lg text-xs font-medium"
                 >
                   <Link href="/docs" target="_blank">
-                    <IconHelp className="size-4 shrink-0" />
+                    <BookOpen className="size-4 shrink-0" />
                     <span>Documentation</span>
                   </Link>
                 </SidebarMenuButton>
@@ -243,9 +243,9 @@ export function AppSidebar({
                 <SidebarMenuButton
                   onClick={onOpenCommandPalette}
                   tooltip="Command Palette"
-                  className="rounded-lg text-xs font-medium"
+                  className="rounded-lg text-xs font-medium cursor-pointer"
                 >
-                  <IconCommand className="size-4 shrink-0" />
+                  <Command className="size-4 shrink-0" />
                   <span>Command Menu</span>
                   <kbd className="ml-auto inline-flex h-4 items-center rounded border border-sidebar-border px-1 text-[10px] font-mono text-muted-foreground group-data-[collapsible=icon]:hidden">
                     ⌘K
@@ -270,12 +270,12 @@ export function AppSidebar({
           >
             {mounted && resolvedTheme === "dark" ? (
               <>
-                <IconSun className="size-3.5 text-amber-400" />
+                <Sun className="size-3.5 text-amber-400" />
                 <span className="text-[11px]">Light</span>
               </>
             ) : (
               <>
-                <IconMoon className="size-3.5" />
+                <Moon className="size-3.5 text-muted-foreground" />
                 <span className="text-[11px]">Dark</span>
               </>
             )}
@@ -301,13 +301,13 @@ export function AppSidebar({
                   </Avatar>
                   <div className="grid flex-1 text-left text-xs leading-tight min-w-0 group-data-[collapsible=icon]:hidden">
                     <span className="truncate font-semibold text-foreground">
-                      {user?.name || "Karmadeep"}
+                      {user?.name || "Gemini"}
                     </span>
                     <span className="truncate text-[11px] text-muted-foreground">
                       {user?.email || "Signed In"}
                     </span>
                   </div>
-                  <IconDotsVertical className="ml-auto size-3.5 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+                  <MoreVertical className="ml-auto size-3.5 text-muted-foreground group-data-[collapsible=icon]:hidden" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -319,7 +319,7 @@ export function AppSidebar({
                 <DropdownMenuLabel className="p-2 font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-xs font-semibold leading-none text-foreground truncate">
-                      {user?.name || "Karmadeep"}
+                      {user?.name || "Gemini"}
                     </p>
                     <p className="text-[11px] leading-none text-muted-foreground truncate">
                       {user?.email || ""}
@@ -329,7 +329,7 @@ export function AppSidebar({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild className="gap-2 cursor-pointer text-xs rounded-lg py-1.5">
                   <Link href="/dashboard/settings/account">
-                    <IconSettings className="size-3.5" />
+                    <Settings className="size-3.5" />
                     <span>Account Settings</span>
                   </Link>
                 </DropdownMenuItem>
@@ -339,12 +339,12 @@ export function AppSidebar({
                 >
                   {resolvedTheme === "dark" ? (
                     <>
-                      <IconSun className="size-3.5" />
+                      <Sun className="size-3.5" />
                       <span>Light Theme</span>
                     </>
                   ) : (
                     <>
-                      <IconMoon className="size-3.5" />
+                      <Moon className="size-3.5" />
                       <span>Dark Theme</span>
                     </>
                   )}
@@ -355,7 +355,7 @@ export function AppSidebar({
                   disabled={isLoggingOut}
                   className="gap-2 cursor-pointer text-xs text-destructive focus:text-destructive rounded-lg py-1.5"
                 >
-                  <IconLogout className="size-3.5" />
+                  <LogOut className="size-3.5" />
                   <span>{isLoggingOut ? "Signing out..." : "Sign Out"}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>

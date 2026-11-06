@@ -2,14 +2,14 @@
 
 import * as React from "react";
 import {
-  IconCheck,
-  IconCopy,
-  IconDeviceDesktop,
-  IconDeviceMobile,
-  IconDeviceTablet,
-  IconInbox,
-  IconRefresh,
-} from "@tabler/icons-react";
+  Check,
+  Copy,
+  Inbox,
+  Monitor,
+  RotateCw,
+  Smartphone,
+  Tablet,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Sheet,
@@ -55,15 +55,24 @@ export function FormSubmissionsSheet({
   onOpenChange,
 }: FormSubmissionsSheetProps) {
   const formId = form?.id ?? "";
+  const [selectedSubmissionId, setSelectedSubmissionId] = React.useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = React.useState(false);
 
+  // Real tRPC hooks
   const {
     items: submissions,
     totalCount,
     isLoading: isSubmissionsLoading,
     refetch: refetchSubmissions,
   } = useFormSubmissions(
-    { formId, limit: 50, includeInProgress: true },
-    { enabled: Boolean(formId) && open }
+    {
+      formId,
+      limit: 50,
+      includeInProgress: true,
+    },
+    {
+      enabled: open && Boolean(formId),
+    }
   );
 
   const {
@@ -71,11 +80,8 @@ export function FormSubmissionsSheet({
     isLoading: isStatsLoading,
     refetch: refetchStats,
   } = useFormSubmissionStats(formId, {
-    enabled: Boolean(formId) && open,
+    enabled: open && Boolean(formId),
   });
-
-  const [selectedSubmissionId, setSelectedSubmissionId] = React.useState<string | null>(null);
-  const [copiedLink, setCopiedLink] = React.useState(false);
 
   const handleCopyLink = async () => {
     if (!form?.shareId) return;
@@ -84,37 +90,26 @@ export function FormSubmissionsSheet({
       const url = `${origin}/f/${form.shareId}`;
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
-      toast.success("Public link copied to clipboard");
+      toast.success("Share link copied to clipboard");
       setTimeout(() => setCopiedLink(false), 2000);
     } catch {
       toast.error("Failed to copy link");
     }
   };
 
-  const getDeviceIcon = (device: string | null) => {
-    switch (device) {
-      case "mobile":
-        return <IconDeviceMobile className="size-3.5 text-muted-foreground" title="Mobile" />;
-      case "tablet":
-        return <IconDeviceTablet className="size-3.5 text-muted-foreground" title="Tablet" />;
-      case "desktop":
-      default:
-        return <IconDeviceDesktop className="size-3.5 text-muted-foreground" title="Desktop" />;
-    }
-  };
-
   const formatDuration = (ms: number | null) => {
-    if (ms === null || ms === undefined) return "—";
-    const seconds = Math.round(ms / 1000);
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    const remainingSecs = seconds % 60;
-    return `${minutes}m ${remainingSecs}s`;
+    if (!ms) return "—";
+    const totalSecs = Math.round(ms / 1000);
+    if (totalSecs < 60) return `${totalSecs}s`;
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    return `${mins}m ${secs}s`;
   };
 
-  const formatTimestamp = (date: Date | string | null) => {
-    if (!date) return "—";
-    return new Date(date).toLocaleString(undefined, {
+  const formatTimestamp = (dateStr: string | Date | null) => {
+    if (!dateStr) return "—";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString(undefined, {
       month: "short",
       day: "numeric",
       hour: "2-digit",
@@ -122,31 +117,44 @@ export function FormSubmissionsSheet({
     });
   };
 
+  const getDeviceIcon = (deviceType: string | null) => {
+    switch (deviceType?.toLowerCase()) {
+      case "mobile":
+        return <Smartphone className="size-3.5" />;
+      case "tablet":
+        return <Tablet className="size-3.5" />;
+      default:
+        return <Monitor className="size-3.5" />;
+    }
+  };
+
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-2xl lg:max-w-3xl flex flex-col p-0 gap-0 border-l border-border bg-card"
+          className="w-full sm:max-w-2xl p-0 flex flex-col bg-background/95 backdrop-blur-md border-l border-border/80 shadow-2xl"
         >
           {/* Header */}
-          <SheetHeader className="p-6 border-b border-border/80 bg-background/50">
+          <SheetHeader className="p-4 sm:p-6 border-b border-border/60 bg-muted/10 space-y-3">
             <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <SheetTitle className="text-lg font-semibold tracking-tight text-foreground truncate">
-                    {form?.title || "Form Responses"}
+                  <SheetTitle className="text-base sm:text-lg font-semibold truncate text-foreground">
+                    {form?.title || "Form Submissions"}
                   </SheetTitle>
-                  <Badge
-                    variant={form?.status === "published" ? "default" : "secondary"}
-                    className={
-                      form?.status === "published"
-                        ? "bg-emerald-600 text-white text-[10px] h-4.5"
-                        : "text-[10px] h-4.5"
-                    }
-                  >
-                    {form?.status}
-                  </Badge>
+                  {form?.status && (
+                    <Badge
+                      variant="outline"
+                      className={
+                        form.status === "published"
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px] h-5"
+                          : "text-[10px] h-5"
+                      }
+                    >
+                      {form.status}
+                    </Badge>
+                  )}
                 </div>
                 <SheetDescription className="text-xs text-muted-foreground">
                   View and inspect collected responses and submission analytics.
@@ -164,12 +172,12 @@ export function FormSubmissionsSheet({
                   >
                     {copiedLink ? (
                       <>
-                        <IconCheck className="size-3.5 text-emerald-500" />
+                        <Check className="size-3.5 text-emerald-500" />
                         <span>Copied!</span>
                       </>
                     ) : (
                       <>
-                        <IconCopy className="size-3.5" />
+                        <Copy className="size-3.5" />
                         <span>Copy Link</span>
                       </>
                     )}
@@ -186,7 +194,7 @@ export function FormSubmissionsSheet({
                   }}
                   title="Refresh responses"
                 >
-                  <IconRefresh className="size-4" />
+                  <RotateCw className="size-4" />
                 </Button>
               </div>
             </div>
@@ -248,7 +256,7 @@ export function FormSubmissionsSheet({
             ) : submissions.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground mb-3">
-                  <IconInbox className="size-6" />
+                  <Inbox className="size-6" />
                 </div>
                 <h3 className="text-sm font-semibold text-foreground">
                   No responses yet
@@ -265,7 +273,7 @@ export function FormSubmissionsSheet({
                     onClick={handleCopyLink}
                     className="mt-4 gap-1.5 text-xs rounded-lg"
                   >
-                    <IconCopy className="size-3.5" />
+                    <Copy className="size-3.5" />
                     <span>Copy Share Link</span>
                   </Button>
                 )}
@@ -302,7 +310,7 @@ export function FormSubmissionsSheet({
                             ) : (
                               <Badge
                                 variant="secondary"
-                                className="text-[10px] h-4.5 font-medium text-muted-foreground"
+                                className="text-muted-foreground text-[10px] h-4.5 font-medium"
                               >
                                 Started
                               </Badge>
@@ -370,7 +378,7 @@ function SubmissionAnswerModal({
     enabled: Boolean(submissionId) && open,
   });
 
-  const renderAnswerValue = (value: unknown, _type?: string) => {
+  const renderAnswerValue = (value: unknown, _questionType?: string) => {
     if (value === undefined || value === null) {
       return <span className="text-muted-foreground italic">No answer</span>;
     }

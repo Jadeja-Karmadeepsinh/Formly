@@ -3,12 +3,12 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
-  IconChevronDown,
-  IconChevronUp,
-  IconGlobe,
-  IconLoader,
-  IconLock,
-} from "@tabler/icons-react";
+  ChevronDown,
+  ChevronUp,
+  Globe,
+  Link2,
+  Loader2,
+} from "lucide-react";
 import { useCreateForm } from "~/hooks/api/form";
 import { Button } from "~/components/ui/button";
 import {
@@ -193,13 +193,13 @@ export function CreateFormDialog({
               <SelectContent className="rounded-xl text-xs">
                 <SelectItem value="unlisted" className="cursor-pointer">
                   <div className="flex items-center gap-2">
-                    <IconLock className="size-3.5 text-muted-foreground" />
+                    <Link2 className="size-3.5 text-muted-foreground" />
                     <span>Unlisted (Anyone with link)</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="public" className="cursor-pointer">
                   <div className="flex items-center gap-2">
-                    <IconGlobe className="size-3.5 text-muted-foreground" />
+                    <Globe className="size-3.5 text-muted-foreground" />
                     <span>Public (Discoverable)</span>
                   </div>
                 </SelectItem>
@@ -215,9 +215,9 @@ export function CreateFormDialog({
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-1"
             >
               {showAdvanced ? (
-                <IconChevronUp className="size-3.5" />
+                <ChevronUp className="size-3.5" />
               ) : (
-                <IconChevronDown className="size-3.5" />
+                <ChevronDown className="size-3.5" />
               )}
               <span>{showAdvanced ? "Hide Advanced Settings" : "Advanced Settings"}</span>
             </button>
@@ -291,7 +291,7 @@ export function CreateFormDialog({
             >
               {isPending ? (
                 <>
-                  <IconLoader className="size-3.5 animate-spin" />
+                  <Loader2 className="size-3.5 animate-spin" />
                   <span>Creating...</span>
                 </>
               ) : (

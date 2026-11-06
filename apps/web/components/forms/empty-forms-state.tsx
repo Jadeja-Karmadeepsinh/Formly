@@ -2,12 +2,12 @@
 
 import * as React from "react";
 import {
-  IconArrowRight,
-  IconCalendarEvent,
-  IconMessageCircle,
-  IconPlus,
-  IconStar,
-} from "@tabler/icons-react";
+  ArrowRight,
+  Calendar,
+  MessageSquare,
+  Plus,
+  Star,
+} from "lucide-react";
 import { FormlySymbol } from "~/components/formly-logo";
 import { Button } from "~/components/ui/button";
 
@@ -24,17 +24,17 @@ export function EmptyFormsState({
     {
       title: "Customer Feedback Survey",
       description: "Measure customer satisfaction, rating scales, and feature requests.",
-      icon: IconStar,
+      icon: Star,
     },
     {
       title: "Event RSVP & Registration",
       description: "Gather guest information, attendance headcount, and dietary preferences.",
-      icon: IconCalendarEvent,
+      icon: Calendar,
     },
     {
       title: "Contact & General Inquiry",
       description: "Collect client questions, contact emails, and feedback directly.",
-      icon: IconMessageCircle,
+      icon: MessageSquare,
     },
   ];
 
@@ -58,7 +58,7 @@ export function EmptyFormsState({
         onClick={onCreateForm}
         className="mt-6 gap-2 rounded-xl text-sm font-medium px-5 h-10 shadow-xs"
       >
-        <IconPlus className="size-4" />
+        <Plus className="size-4" />
         <span>Create New Form</span>
         <kbd className="ml-1 inline-flex h-4 select-none items-center rounded border border-primary-foreground/30 px-1 text-[10px] font-mono opacity-80">
           C
@@ -101,9 +101,9 @@ export function EmptyFormsState({
                   </p>
                 </div>
 
-                <div className="mt-3 flex items-center gap-1 text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                  <span>Use starter</span>
-                  <IconArrowRight className="size-3 group-hover:translate-x-0.5 transition-transform" />
+                <div className="mt-3 flex items-center gap-1 text-[11px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
+                  <span>Use template</span>
+                  <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
                 </div>
               </button>
             );
@@ -113,4 +113,3 @@ export function EmptyFormsState({
     </div>
   );
 }
-

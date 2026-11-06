@@ -4,10 +4,10 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  IconChevronRight,
-  IconPlus,
-  IconSearch,
-} from "@tabler/icons-react";
+  ChevronRight,
+  Plus,
+  Search,
+} from "lucide-react";
 import { SidebarTrigger } from "~/components/ui/sidebar";
 import { ThemeToggle } from "~/components/theme-toggle";
 import { Button } from "~/components/ui/button";
@@ -33,7 +33,7 @@ export function SiteHeader({
           >
             Workspace
           </Link>
-          <IconChevronRight className="size-3 text-muted-foreground/60" />
+          <ChevronRight className="size-3 text-muted-foreground/60" />
           <span className="font-medium text-foreground">Settings</span>
         </div>
       );
@@ -42,7 +42,7 @@ export function SiteHeader({
     return (
       <div className="flex items-center gap-1.5 text-xs">
         <span className="text-muted-foreground">Workspace</span>
-        <IconChevronRight className="size-3 text-muted-foreground/60" />
+        <ChevronRight className="size-3 text-muted-foreground/60" />
         <span className="font-medium text-foreground">Overview</span>
       </div>
     );
@@ -68,7 +68,7 @@ export function SiteHeader({
           title="Open Command Palette (⌘K)"
         >
           <span className="flex items-center gap-1.5">
-            <IconSearch className="size-3.5 text-muted-foreground" />
+            <Search className="size-3.5 text-muted-foreground" />
             <span className="hidden sm:inline">Search forms...</span>
             <span className="inline sm:hidden">Search...</span>
           </span>
@@ -83,7 +83,7 @@ export function SiteHeader({
           onClick={onOpenCreateForm}
           className="h-8 gap-1.5 rounded-lg text-xs font-medium px-3 shadow-xs"
         >
-          <IconPlus className="size-3.5" />
+          <Plus className="size-3.5" />
           <span className="hidden sm:inline">New Form</span>
         </Button>
 

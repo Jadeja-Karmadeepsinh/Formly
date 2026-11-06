@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import {
-  IconEdit,
-  IconFileText,
-  IconGlobe,
-  IconWorldCheck,
-} from "@tabler/icons-react";
+  CheckCircle2,
+  FilePenLine,
+  Files,
+  Globe,
+} from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { type FormItem } from "~/hooks/api/form";
 
@@ -28,8 +28,8 @@ export function FormsMetrics({ forms, isLoading }: FormsMetricsProps) {
       <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4 transition-all hover:bg-card/90 hover:border-border shadow-2xs">
         <div className="flex items-center justify-between text-muted-foreground">
           <span className="text-xs font-medium tracking-wide">Total Forms</span>
-          <div className="flex size-6 items-center justify-center rounded-md bg-muted/50 text-muted-foreground">
-            <IconFileText className="size-3.5" />
+          <div className="flex size-7 items-center justify-center rounded-lg bg-muted/40 text-muted-foreground">
+            <Files className="size-3.5" />
           </div>
         </div>
 
@@ -41,7 +41,7 @@ export function FormsMetrics({ forms, isLoading }: FormsMetricsProps) {
               {totalCount}
             </div>
           )}
-          <div className="mt-1 text-[11px] text-muted-foreground truncate">
+          <div className="mt-1 text-xs text-muted-foreground truncate">
             {isLoading ? (
               <Skeleton className="h-3 w-28 mt-0.5" />
             ) : totalCount === 0 ? (
@@ -57,8 +57,8 @@ export function FormsMetrics({ forms, isLoading }: FormsMetricsProps) {
       <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4 transition-all hover:bg-card/90 hover:border-border shadow-2xs">
         <div className="flex items-center justify-between text-muted-foreground">
           <span className="text-xs font-medium tracking-wide">Published</span>
-          <div className="flex size-6 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-            <IconWorldCheck className="size-3.5" />
+          <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="size-3.5" />
           </div>
         </div>
 
@@ -71,16 +71,18 @@ export function FormsMetrics({ forms, isLoading }: FormsMetricsProps) {
                 {publishedCount}
               </span>
               {publishedCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
                   <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Live
                 </span>
               )}
             </div>
           )}
-          <div className="mt-1 text-[11px] text-muted-foreground truncate">
+          <div className="mt-1 text-xs text-muted-foreground truncate">
             {isLoading ? (
               <Skeleton className="h-3 w-24 mt-0.5" />
+            ) : publishedCount === 0 ? (
+              "None published yet"
             ) : (
               "Open for responses"
             )}
@@ -92,8 +94,8 @@ export function FormsMetrics({ forms, isLoading }: FormsMetricsProps) {
       <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4 transition-all hover:bg-card/90 hover:border-border shadow-2xs">
         <div className="flex items-center justify-between text-muted-foreground">
           <span className="text-xs font-medium tracking-wide">Drafts</span>
-          <div className="flex size-6 items-center justify-center rounded-md bg-muted/50 text-muted-foreground">
-            <IconEdit className="size-3.5" />
+          <div className="flex size-7 items-center justify-center rounded-lg bg-muted/40 text-muted-foreground">
+            <FilePenLine className="size-3.5" />
           </div>
         </div>
 
@@ -105,9 +107,11 @@ export function FormsMetrics({ forms, isLoading }: FormsMetricsProps) {
               {draftCount}
             </div>
           )}
-          <div className="mt-1 text-[11px] text-muted-foreground truncate">
+          <div className="mt-1 text-xs text-muted-foreground truncate">
             {isLoading ? (
               <Skeleton className="h-3 w-24 mt-0.5" />
+            ) : draftCount === 0 ? (
+              "No drafts in progress"
             ) : (
               "In preparation"
             )}
@@ -119,8 +123,8 @@ export function FormsMetrics({ forms, isLoading }: FormsMetricsProps) {
       <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4 transition-all hover:bg-card/90 hover:border-border shadow-2xs">
         <div className="flex items-center justify-between text-muted-foreground">
           <span className="text-xs font-medium tracking-wide">Visibility</span>
-          <div className="flex size-6 items-center justify-center rounded-md bg-muted/50 text-muted-foreground">
-            <IconGlobe className="size-3.5" />
+          <div className="flex size-7 items-center justify-center rounded-lg bg-muted/40 text-muted-foreground">
+            <Globe className="size-3.5" />
           </div>
         </div>
 
@@ -128,18 +132,20 @@ export function FormsMetrics({ forms, isLoading }: FormsMetricsProps) {
           {isLoading ? (
             <Skeleton className="h-8 w-20" />
           ) : (
-            <div className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
-              {publicCount}
-              <span className="text-sm font-normal text-muted-foreground ml-1">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+                {publicCount}
+              </span>
+              <span className="text-xs font-normal text-muted-foreground">
                 public
               </span>
             </div>
           )}
-          <div className="mt-1 text-[11px] text-muted-foreground truncate">
+          <div className="mt-1 text-xs text-muted-foreground truncate">
             {isLoading ? (
               <Skeleton className="h-3 w-28 mt-0.5" />
             ) : (
-              `${unlistedCount} unlisted / private`
+              `${unlistedCount} unlisted`
             )}
           </div>
         </div>

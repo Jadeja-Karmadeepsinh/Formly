@@ -3,16 +3,16 @@
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  IconAlertCircle,
-  IconArrowsSort,
-  IconCheck,
-  IconLayoutGrid,
-  IconLayoutList,
-  IconPlus,
-  IconRefresh,
-  IconSearch,
-  IconX,
-} from "@tabler/icons-react";
+  AlertCircle,
+  ArrowUpDown,
+  Check,
+  LayoutGrid,
+  List,
+  Plus,
+  RotateCw,
+  Search,
+  X,
+} from "lucide-react";
 import { type FormItem, useForms } from "~/hooks/api/form";
 import { useMe } from "~/hooks/api/auth";
 import { Button } from "~/components/ui/button";
@@ -143,10 +143,10 @@ export function FormsDashboard() {
       {/* 1. Executive Welcome & Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-2xl sm:text-[28px] font-semibold tracking-tight text-foreground">
             {greeting}
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground font-normal">
             Here is an overview of your forms, response activity, and public links.
           </p>
         </div>
@@ -159,9 +159,9 @@ export function FormsDashboard() {
               setStarterDescription("");
               setIsCreateOpen(true);
             }}
-            className="gap-2 rounded-xl text-xs font-medium px-4 h-9 shadow-xs"
+            className="gap-2 rounded-lg text-xs font-medium px-3.5 h-9 shadow-2xs"
           >
-            <IconPlus className="size-4" />
+            <Plus className="size-4" />
             <span>Create Form</span>
             <kbd className="hidden sm:inline-flex h-4 items-center rounded border border-primary-foreground/30 px-1 text-[10px] font-mono opacity-80">
               C
@@ -212,7 +212,7 @@ export function FormsDashboard() {
           <div className="flex items-center gap-2">
             {/* Search Input */}
             <div className="relative flex-1 sm:w-64">
-              <IconSearch className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground pointer-events-none" />
+              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground pointer-events-none" />
               <Input
                 ref={searchInputRef}
                 placeholder="Filter by title... (/)"
@@ -226,7 +226,7 @@ export function FormsDashboard() {
                   onClick={() => setSearchQuery("")}
                   className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
                 >
-                  <IconX className="size-3.5" />
+                  <X className="size-3.5" />
                 </button>
               )}
             </div>
@@ -240,7 +240,7 @@ export function FormsDashboard() {
                   className="h-8.5 text-xs gap-1.5 rounded-lg border-border/60 text-muted-foreground hover:text-foreground px-2.5"
                   title="Sort forms"
                 >
-                  <IconArrowsSort className="size-3.5" />
+                  <ArrowUpDown className="size-3.5" />
                   <span className="hidden sm:inline">
                     {sortBy === "updated"
                       ? "Recent"
@@ -255,7 +255,7 @@ export function FormsDashboard() {
                   onClick={() => setSortBy("updated")}
                   className="gap-2 cursor-pointer py-1.5"
                 >
-                  {sortBy === "updated" && <IconCheck className="size-3 text-primary" />}
+                  {sortBy === "updated" && <Check className="size-3 text-primary" />}
                   <span className={sortBy === "updated" ? "font-medium" : "pl-5"}>
                     Recently Updated
                   </span>
@@ -264,7 +264,7 @@ export function FormsDashboard() {
                   onClick={() => setSortBy("title")}
                   className="gap-2 cursor-pointer py-1.5"
                 >
-                  {sortBy === "title" && <IconCheck className="size-3 text-primary" />}
+                  {sortBy === "title" && <Check className="size-3 text-primary" />}
                   <span className={sortBy === "title" ? "font-medium" : "pl-5"}>
                     Title (A to Z)
                   </span>
@@ -273,7 +273,7 @@ export function FormsDashboard() {
                   onClick={() => setSortBy("created")}
                   className="gap-2 cursor-pointer py-1.5"
                 >
-                  {sortBy === "created" && <IconCheck className="size-3 text-primary" />}
+                  {sortBy === "created" && <Check className="size-3 text-primary" />}
                   <span className={sortBy === "created" ? "font-medium" : "pl-5"}>
                     Newest Created
                   </span>
@@ -293,7 +293,7 @@ export function FormsDashboard() {
                 }`}
                 title="List View"
               >
-                <IconLayoutList className="size-3.5" />
+                <List className="size-3.5" />
               </button>
               <button
                 type="button"
@@ -305,7 +305,7 @@ export function FormsDashboard() {
                 }`}
                 title="Grid View"
               >
-                <IconLayoutGrid className="size-3.5" />
+                <LayoutGrid className="size-3.5" />
               </button>
             </div>
 
@@ -318,7 +318,7 @@ export function FormsDashboard() {
               className="size-8.5 rounded-lg border-border/60 text-muted-foreground hover:text-foreground"
               title="Refresh forms"
             >
-              <IconRefresh className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
+              <RotateCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
             </Button>
           </div>
         </div>
@@ -349,7 +349,7 @@ export function FormsDashboard() {
         {!isLoading && isError && (
           <div className="p-8 rounded-2xl border border-destructive/20 bg-destructive/5 flex flex-col items-center justify-center gap-3 text-center my-6">
             <div className="rounded-full bg-destructive/10 p-3 text-destructive">
-              <IconAlertCircle className="size-6" />
+              <AlertCircle className="size-6" />
             </div>
             <h3 className="text-sm font-semibold text-foreground">
               Failed to load forms
@@ -363,7 +363,7 @@ export function FormsDashboard() {
               onClick={() => refetch()}
               className="gap-2 mt-2 text-xs rounded-lg"
             >
-              <IconRefresh className="size-3.5" />
+              <RotateCw className="size-3.5" />
               Try Again
             </Button>
           </div>
@@ -387,7 +387,7 @@ export function FormsDashboard() {
         {!isLoading && !isError && forms.length > 0 && filteredForms.length === 0 && (
           <div className="rounded-2xl border border-border/60 bg-card/40 p-12 text-center my-4 space-y-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-muted mx-auto text-muted-foreground">
-              <IconSearch className="size-5" />
+              <Search className="size-5" />
             </div>
             <h3 className="text-sm font-semibold text-foreground">
               No matching forms found
