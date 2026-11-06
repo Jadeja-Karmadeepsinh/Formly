@@ -347,7 +347,7 @@ export function FormsDashboard() {
 
         {/* Error State */}
         {!isLoading && isError && (
-          <div className="p-8 rounded-2xl border border-destructive/20 bg-destructive/5 flex flex-col items-center justify-center gap-3 text-center my-6">
+          <div className="p-8 rounded-xl border border-destructive/20 bg-destructive/5 flex flex-col items-center justify-center gap-3 text-center my-6">
             <div className="rounded-full bg-destructive/10 p-3 text-destructive">
               <AlertCircle className="size-6" />
             </div>
@@ -371,7 +371,7 @@ export function FormsDashboard() {
 
         {/* Empty State: Zero Total Forms */}
         {!isLoading && !isError && forms.length === 0 && (
-          <div className="rounded-2xl border border-border/60 bg-card/40 my-4">
+          <div className="rounded-xl border border-border/60 bg-card/40 my-4">
             <EmptyFormsState
               onCreateForm={() => {
                 setStarterTitle("");
@@ -385,7 +385,7 @@ export function FormsDashboard() {
 
         {/* Empty State: Filter / Search with 0 matches */}
         {!isLoading && !isError && forms.length > 0 && filteredForms.length === 0 && (
-          <div className="rounded-2xl border border-border/60 bg-card/40 p-12 text-center my-4 space-y-3">
+          <div className="rounded-xl border border-border/60 bg-card/40 p-12 text-center my-4 space-y-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-muted mx-auto text-muted-foreground">
               <Search className="size-5" />
             </div>

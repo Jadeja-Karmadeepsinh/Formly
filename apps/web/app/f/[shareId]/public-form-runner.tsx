@@ -175,7 +175,7 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-muted/20 flex flex-col items-center py-12 px-4">
-        <div className="w-full max-w-2xl bg-card border rounded-2xl p-8 space-y-6 shadow-xs">
+        <div className="w-full max-w-2xl bg-card border rounded-xl p-8 space-y-6 shadow-xs">
           <Skeleton className="h-10 w-2/3" />
           <Skeleton className="h-5 w-full" />
           <div className="space-y-6 pt-4">
@@ -191,7 +191,7 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
   if (isError || !form) {
     return (
       <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-full max-w-md bg-card border rounded-2xl p-8 shadow-xs space-y-4">
+        <div className="w-full max-w-md bg-card border rounded-xl p-8 shadow-xs space-y-4">
           <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <IconLock className="size-6" />
           </div>
@@ -210,7 +210,7 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
   if (form.status !== "published") {
     return (
       <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-full max-w-md bg-card border rounded-2xl p-8 shadow-xs space-y-4">
+        <div className="w-full max-w-md bg-card border rounded-xl p-8 shadow-xs space-y-4">
           <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
             <IconClock className="size-6" />
           </div>
@@ -234,7 +234,7 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
 
     return (
       <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center p-4 text-center">
-        <div className="w-full max-w-md bg-card border rounded-2xl p-8 md:p-10 shadow-sm space-y-5 animate-in fade-in zoom-in-95 duration-200">
+        <div className="w-full max-w-md bg-card border rounded-xl p-8 md:p-10 shadow-sm space-y-5 animate-in fade-in zoom-in-95 duration-200">
           <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             <IconCircleCheck className="size-10" />
           </div>
@@ -280,7 +280,7 @@ export function PublicFormRunner({ shareId }: PublicFormRunnerProps) {
 
   return (
     <div className="min-h-screen bg-muted/20 flex flex-col items-center py-10 md:py-16 px-4">
-      <div className="w-full max-w-2xl bg-card border rounded-2xl p-6 sm:p-10 shadow-sm">
+      <div className="w-full max-w-2xl bg-card border rounded-xl p-6 sm:p-10 shadow-sm">
         {/* Form Header */}
         <div className="border-b pb-6 mb-8 space-y-2.5">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">

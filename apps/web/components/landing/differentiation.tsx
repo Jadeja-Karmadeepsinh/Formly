@@ -22,7 +22,7 @@ export function LandingDifferentiation() {
         {/* Side-by-side Architectural Comparison */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 max-w-4xl mx-auto">
           {/* Traditional Form Builders */}
-          <div className="rounded-2xl border border-border/60 bg-muted/20 p-6 sm:p-8 space-y-6">
+          <div className="rounded-xl border border-border/60 bg-muted/20 p-6 sm:p-8 space-y-6">
             <div className="space-y-1 border-b border-border/50 pb-4">
               <span className="text-[11px] font-mono uppercase text-muted-foreground">The Old Way</span>
               <h3 className="text-lg font-bold text-foreground">Traditional Form Builders</h3>
@@ -57,7 +57,7 @@ export function LandingDifferentiation() {
           </div>
 
           {/* The Formly Experience */}
-          <div className="rounded-2xl border-2 border-foreground/80 bg-card p-6 sm:p-8 space-y-6 shadow-md">
+          <div className="rounded-xl border-2 border-foreground/80 bg-card p-6 sm:p-8 space-y-6 shadow-md">
             <div className="space-y-1 border-b border-border/60 pb-4">
               <span className="text-[11px] font-mono uppercase text-foreground font-semibold">The Formly Way</span>
               <h3 className="text-lg font-bold text-foreground">Direct & Document-First</h3>

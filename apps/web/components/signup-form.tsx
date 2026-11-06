@@ -232,7 +232,7 @@ export function SignupForm({
       {(backgroundImage || backgroundElement) && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -inset-8 -z-10 overflow-hidden rounded-3xl opacity-40 transition-opacity duration-300"
+          className="pointer-events-none absolute -inset-8 -z-10 overflow-hidden rounded-xl opacity-40 transition-opacity duration-300"
           style={
             backgroundImage
               ? {

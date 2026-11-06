@@ -58,7 +58,7 @@ export function LandingFAQ() {
         </div>
 
         {/* Accessible FAQ Accordion */}
-        <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-8 shadow-xs">
+        <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-8 shadow-xs">
           <Accordion type="single" collapsible className="w-full">
             {FAQS.map((faq, index) => (
               <AccordionItem key={faq.question} value={`item-${index}`} className="border-border/60">

@@ -34,7 +34,7 @@ export function LandingNavbar() {
         {/* Brand Logo Lockup */}
         <Link
           href="/"
-          className="group flex items-center gap-2.5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
+          className="group flex items-center gap-2.5 transition-transform duration-300 ease-in-out hover:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
           aria-label="Formly homepage"
         >
           <FormlyLogo size={24} />
@@ -49,7 +49,7 @@ export function LandingNavbar() {
             <a
               key={link.href}
               href={link.href}
-              className="transition-colors hover:text-foreground focus-visible:outline-none focus-visible:text-foreground"
+              className="transition-all duration-300 ease-in-out hover:text-foreground hover:underline hover:decoration-2 hover:underline-offset-4 focus-visible:outline-none focus-visible:text-foreground"
             >
               {link.label}
             </a>
@@ -101,21 +101,20 @@ export function LandingNavbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-md px-2 py-1.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                className="py-1 text-muted-foreground transition-colors hover:text-foreground"
               >
                 {link.label}
               </a>
             ))}
-            <div className="my-2 border-t border-border/60 pt-4 flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2 pt-4 border-t border-border">
               <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="outline" className="w-full justify-center">
                   Sign in
                 </Button>
               </Link>
               <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full justify-center gap-1.5">
+                <Button className="w-full justify-center">
                   Get started
-                  <ArrowRight className="size-3.5" />
                 </Button>
               </Link>
             </div>
@@ -125,4 +124,3 @@ export function LandingNavbar() {
     </header>
   );
 }
-

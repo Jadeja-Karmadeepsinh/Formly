@@ -41,7 +41,7 @@ export function EmptyFormsState({
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 sm:px-6 text-center">
       {/* Brand Icon Badge */}
-      <div className="flex size-14 items-center justify-center rounded-2xl bg-foreground text-background shadow-xs mb-4">
+      <div className="flex size-14 items-center justify-center rounded-xl bg-foreground text-background shadow-xs mb-4">
         <FormlySymbol size={28} />
       </div>
 

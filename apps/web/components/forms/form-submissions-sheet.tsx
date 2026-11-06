@@ -412,7 +412,7 @@ function SubmissionAnswerModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg rounded-2xl p-6">
+      <DialogContent className="sm:max-w-lg rounded-xl p-6">
         <DialogHeader className="pb-3 border-b border-border/80">
           <DialogTitle className="text-base font-semibold text-foreground">
             Submission Details

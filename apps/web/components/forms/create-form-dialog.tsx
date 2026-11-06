@@ -129,7 +129,7 @@ export function CreateFormDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
 
-      <DialogContent className="sm:max-w-md rounded-2xl p-6">
+      <DialogContent className="sm:max-w-md rounded-xl p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader className="pb-1">
             <DialogTitle className="text-lg font-semibold tracking-tight text-foreground">

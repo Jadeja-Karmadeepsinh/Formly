@@ -47,7 +47,7 @@ export function LandingHowItWorks() {
           {STEPS.map((item, index) => (
             <div
               key={item.step}
-              className="relative flex flex-col justify-between rounded-2xl border border-border/70 bg-card p-6 sm:p-8 transition-all duration-200 hover:border-foreground/30 hover:shadow-xs"
+              className="relative flex flex-col justify-between rounded-xl border border-border/70 bg-card p-6 sm:p-8 transition-all duration-200 hover:border-foreground/30 hover:shadow-xs"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-border/40 pb-4">

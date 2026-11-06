@@ -167,7 +167,7 @@ export function FormlyBadge({
     sm: "size-7 rounded-md",
     md: "size-8 rounded-lg",
     lg: "size-10 rounded-xl",
-    xl: "size-12 rounded-2xl",
+    xl: "size-12 rounded-xl",
   }[size];
 
   const defaultSymbolSizes = {

@@ -64,7 +64,7 @@ export function LandingProductShowcase() {
         </div>
 
         {/* Showcase Canvas Frame */}
-        <div className="rounded-2xl border border-border/80 bg-card shadow-xl overflow-hidden">
+        <div className="rounded-xl border border-border/80 bg-card shadow-xl overflow-hidden">
           {/* Top Window Bar */}
           <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-4 py-3">
             <div className="flex items-center gap-2 text-xs font-medium">
