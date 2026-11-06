@@ -1,11 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerTRPCClient } from "~/trpc/server";
-import { AppSidebar } from "~/components/app-sidebar";
-import { SiteHeader } from "~/components/site-header";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "~/components/ui/sidebar";
+import { DashboardShell } from "~/components/dashboard-shell";
 import { AccountSettingsForm } from "~/components/account-settings-form";
 
 export const metadata = {
@@ -24,33 +19,21 @@ export default async function AccountSettingsPage() {
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col p-4 md:p-6 lg:p-8">
-          <div className="flex flex-col gap-6">
-            <div className="space-y-0.5">
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                Account & Security
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Manage your credentials, link social logins, and review active sessions.
-              </p>
-            </div>
-
-            <AccountSettingsForm user={user} />
+    <DashboardShell>
+      <div className="flex flex-1 flex-col p-4 sm:p-6 lg:p-8 max-w-5xl w-full mx-auto">
+        <div className="flex flex-col gap-6">
+          <div className="space-y-1">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              Account & Security
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Manage your credentials, link social logins, and review active sessions.
+            </p>
           </div>
+
+          <AccountSettingsForm user={user} />
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </DashboardShell>
   );
 }
-

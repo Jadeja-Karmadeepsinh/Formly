@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, AlertCircle, Link2, Shield, Laptop, LogOut, Check, X } from "lucide-react";
+import { AlertCircle, Link2, Shield, Laptop, LogOut, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
