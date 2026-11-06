@@ -12,6 +12,13 @@ export type SubmissionDetail = RouterOutputs["formSubmissions"]["getSubmissionBy
 export type ListSubmissionsResult = RouterOutputs["formSubmissions"]["listSubmissionsByFormId"];
 export type SubmissionListItem = ListSubmissionsResult["items"][number];
 export type SubmissionStatsResult = RouterOutputs["formSubmissions"]["getSubmissionStatsByFormId"];
+export type AllSubmissionsListItem = RouterOutputs["formSubmissions"]["listAllSubmissions"]["items"][number];
+export type AnalyticsResult = RouterOutputs["formSubmissions"]["getAnalytics"];
+export type FormPerformanceItem = AnalyticsResult["formsPerformance"][number];
+export type BreakdownItem = SubmissionStatsResult["deviceBreakdown"][number];
+export type QuestionInsightsResult = RouterOutputs["formSubmissions"]["getQuestionInsights"];
+export type ExportSubmissionsResult = RouterOutputs["formSubmissions"]["exportSubmissions"];
+
 
 /**
  * Public Hook: Initiates a submission attempt when a respondent opens a public form.
@@ -146,5 +153,142 @@ export function useFormSubmissionStats(formId: string, options?: { enabled?: boo
     isError: query.isError,
     error: query.error,
     refetch: query.refetch,
+  };
+}
+
+
+/**
+ * Creator Hook: Lists all submissions across workspace forms with search, filter, and pagination.
+ */
+export function useAllSubmissions(
+  input: {
+    formId?: string;
+    status?: "all" | "completed" | "in_progress";
+    search?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  },
+  options?: { enabled?: boolean }
+) {
+  const query = trpc.formSubmissions.listAllSubmissions.useQuery(
+    {
+      formId: input.formId,
+      status: input.status ?? "all",
+      search: input.search,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      page: input.page ?? 1,
+      limit: input.limit ?? 20,
+    },
+    {
+      staleTime: 30 * 1000,
+      ...options,
+    }
+  );
+
+  return {
+    data: query.data ?? null,
+    items: query.data?.items ?? [],
+    totalCount: query.data?.totalCount ?? 0,
+    page: query.data?.page ?? 1,
+    limit: query.data?.limit ?? 20,
+    totalPages: query.data?.totalPages ?? 1,
+    hasMore: query.data?.hasMore ?? false,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
+  };
+}
+
+/**
+ * Creator Hook: Fetches aggregated workspace or form analytics including time-series and form rankings.
+ */
+export function useAnalytics(
+  input: {
+    formId?: string;
+    startDate?: string;
+    endDate?: string;
+  },
+  options?: { enabled?: boolean }
+) {
+  const query = trpc.formSubmissions.getAnalytics.useQuery(
+    {
+      formId: input.formId,
+      startDate: input.startDate,
+      endDate: input.endDate,
+    },
+    {
+      staleTime: 60 * 1000,
+      ...options,
+    }
+  );
+
+  return {
+    analytics: query.data ?? null,
+    overview: query.data?.overview ?? null,
+    timeSeries: query.data?.timeSeries ?? [],
+    formsPerformance: query.data?.formsPerformance ?? [],
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
+  };
+}
+
+/**
+ * Creator Hook: Fetches question-level distributions and response statistics for a specific form.
+ */
+export function useQuestionInsights(
+  formId?: string,
+  options?: { enabled?: boolean }
+) {
+  const query = trpc.formSubmissions.getQuestionInsights.useQuery(
+    { formId: formId || "" },
+    {
+      enabled: Boolean(formId) && (options?.enabled ?? true),
+      staleTime: 60 * 1000,
+      ...options,
+    }
+  );
+
+  return {
+    insights: query.data ?? null,
+    questions: query.data?.questions ?? [],
+    totalSubmissions: query.data?.totalSubmissions ?? 0,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
+  };
+}
+
+/**
+ * Creator Hook: Exports submission data formatted for CSV download.
+ */
+export function useExportSubmissions() {
+  const utils = trpc.useUtils();
+
+  const exportData = async (input: {
+    formId?: string;
+    status?: "all" | "completed" | "in_progress";
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    return await utils.client.formSubmissions.exportSubmissions.query({
+      formId: input.formId,
+      status: input.status ?? "completed",
+      startDate: input.startDate,
+      endDate: input.endDate,
+    });
+  };
+
+  return {
+    exportData,
   };
 }

@@ -39,6 +39,36 @@ export function SiteHeader({
       );
     }
 
+    if (pathname.startsWith("/dashboard/analytics")) {
+      return (
+        <div className="flex items-center gap-1.5 text-xs">
+          <Link
+            href="/dashboard"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Workspace
+          </Link>
+          <ChevronRight className="size-3 text-muted-foreground/60" />
+          <span className="font-medium text-foreground">Analytics</span>
+        </div>
+      );
+    }
+
+    if (pathname.startsWith("/dashboard/responses")) {
+      return (
+        <div className="flex items-center gap-1.5 text-xs">
+          <Link
+            href="/dashboard"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Workspace
+          </Link>
+          <ChevronRight className="size-3 text-muted-foreground/60" />
+          <span className="font-medium text-foreground">Responses</span>
+        </div>
+      );
+    }
+
     return (
       <div className="flex items-center gap-1.5 text-xs">
         <span className="text-muted-foreground">Workspace</span>

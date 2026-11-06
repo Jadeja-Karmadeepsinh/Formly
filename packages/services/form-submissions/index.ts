@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import { db } from "@formly/database";
 import {
   formsTable,
@@ -18,11 +18,23 @@ import {
   getSubmissionByIdInputSchema,
   listSubmissionsByFormIdInputSchema,
   getSubmissionStatsByFormIdInputSchema,
+  listAllSubmissionsInputSchema,
+  getAnalyticsInputSchema,
+  getQuestionInsightsInputSchema,
+  exportSubmissionsInputSchema,
   type StartSubmissionInput,
   type CompleteSubmissionInput,
   type GetSubmissionByIdInput,
   type ListSubmissionsByFormIdInput,
   type GetSubmissionStatsByFormIdInput,
+  type ListAllSubmissionsInput,
+  type ListAllSubmissionsResult,
+  type GetAnalyticsInput,
+  type AnalyticsResult,
+  type GetQuestionInsightsInput,
+  type QuestionInsightsResult,
+  type ExportSubmissionsInput,
+  type ExportSubmissionsResult,
   type SubmissionMetadata,
   type StartSubmissionResult,
   type CompleteSubmissionResult,
@@ -825,6 +837,685 @@ export class FormSubmissionService {
       countryBreakdown: countryBreakdown.map((b) => ({ key: String(b.key), count: Number(b.count) })),
     };
   }
+
+  /**
+   * Creator-Facing: Lists all submissions across the user's forms with search, filter, and pagination.
+   */
+  public async listAllSubmissions(
+    rawInput: ListAllSubmissionsInput,
+    userId: string
+  ): Promise<ListAllSubmissionsResult> {
+    const input = listAllSubmissionsInputSchema.parse(rawInput);
+
+    // 1. Get user forms
+    const userForms = await db
+      .select({ id: formsTable.id })
+      .from(formsTable)
+      .where(and(eq(formsTable.createdBy, userId), isNull(formsTable.deletedAt)));
+
+    const formIds = userForms.map((f) => f.id);
+    if (formIds.length === 0) {
+      return {
+        items: [],
+        totalCount: 0,
+        page: input.page,
+        limit: input.limit,
+        totalPages: 1,
+        hasMore: false,
+      };
+    }
+
+    const conditions = [
+      inArray(formSubmissionsTable.formId, formIds),
+    ];
+
+    if (input.formId) {
+      if (!formIds.includes(input.formId)) {
+        throw new Error("Form not found or you do not have permission to view its submissions");
+      }
+      conditions.push(eq(formSubmissionsTable.formId, input.formId));
+    }
+
+    if (input.status === "completed") {
+      conditions.push(isNotNull(formSubmissionsTable.submittedAt));
+    } else if (input.status === "in_progress") {
+      conditions.push(isNull(formSubmissionsTable.submittedAt));
+    }
+
+    if (input.startDate) {
+      conditions.push(gte(formSubmissionsTable.startedAt, new Date(input.startDate)));
+    }
+    if (input.endDate) {
+      conditions.push(lte(formSubmissionsTable.startedAt, new Date(input.endDate)));
+    }
+
+    // Count matching
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(formSubmissionsTable)
+      .innerJoin(formsTable, eq(formSubmissionsTable.formId, formsTable.id))
+      .where(
+        and(
+          ...conditions,
+          input.search
+            ? sql`(${formsTable.title} ILIKE ${'%' + input.search + '%'} OR ${formSubmissionsTable.id}::text ILIKE ${'%' + input.search + '%'})`
+            : undefined
+        )
+      );
+
+    const totalCount = Number(countResult?.count || 0);
+    const offset = (input.page - 1) * input.limit;
+
+    const rows = await db
+      .select({
+        id: formSubmissionsTable.id,
+        formId: formSubmissionsTable.formId,
+        formVersionId: formSubmissionsTable.formVersionId,
+        startedAt: formSubmissionsTable.startedAt,
+        submittedAt: formSubmissionsTable.submittedAt,
+        countryCode: formSubmissionsTable.countryCode,
+        browserName: formSubmissionsTable.browserName,
+        browserVersion: formSubmissionsTable.browserVersion,
+        osName: formSubmissionsTable.osName,
+        osVersion: formSubmissionsTable.osVersion,
+        deviceType: formSubmissionsTable.deviceType,
+        formTitle: formsTable.title,
+        formStatus: formsTable.status,
+        formVisibility: formsTable.visibility,
+        answersCount: count(formAnswersTable.id),
+      })
+      .from(formSubmissionsTable)
+      .innerJoin(formsTable, eq(formSubmissionsTable.formId, formsTable.id))
+      .leftJoin(formAnswersTable, eq(formAnswersTable.submissionId, formSubmissionsTable.id))
+      .where(
+        and(
+          ...conditions,
+          input.search
+            ? sql`(${formsTable.title} ILIKE ${'%' + input.search + '%'} OR ${formSubmissionsTable.id}::text ILIKE ${'%' + input.search + '%'})`
+            : undefined
+        )
+      )
+      .groupBy(formSubmissionsTable.id, formsTable.id)
+      .orderBy(desc(formSubmissionsTable.startedAt), desc(formSubmissionsTable.id))
+      .limit(input.limit)
+      .offset(offset);
+
+    const items = rows.map((r) => {
+      const duration =
+        r.submittedAt && r.startedAt ? r.submittedAt.getTime() - r.startedAt.getTime() : null;
+      return {
+        id: r.id,
+        formId: r.formId,
+        formVersionId: r.formVersionId,
+        startedAt: r.startedAt,
+        submittedAt: r.submittedAt,
+        completionDurationMs: duration !== null && duration >= 0 ? duration : null,
+        countryCode: r.countryCode,
+        browserName: r.browserName,
+        browserVersion: r.browserVersion,
+        osName: r.osName,
+        osVersion: r.osVersion,
+        deviceType: r.deviceType,
+        formTitle: r.formTitle,
+        formStatus: r.formStatus,
+        formVisibility: r.formVisibility,
+        answersCount: Number(r.answersCount || 0),
+      };
+    });
+
+    const totalPages = Math.ceil(totalCount / input.limit) || 1;
+
+    return {
+      items,
+      totalCount,
+      page: input.page,
+      limit: input.limit,
+      totalPages,
+      hasMore: input.page < totalPages,
+    };
+  }
+
+  /**
+   * Creator-Facing: Aggregates workspace or form-specific analytics with time series and performance metrics.
+   */
+  public async getAnalytics(
+    rawInput: GetAnalyticsInput,
+    userId: string
+  ): Promise<AnalyticsResult> {
+    const input = getAnalyticsInputSchema.parse(rawInput);
+
+    // 1. Get user forms
+    const userForms = await db
+      .select({
+        id: formsTable.id,
+        title: formsTable.title,
+        status: formsTable.status,
+        visibility: formsTable.visibility,
+        shareId: formsTable.shareId,
+      })
+      .from(formsTable)
+      .where(and(eq(formsTable.createdBy, userId), isNull(formsTable.deletedAt)));
+
+    const formIds = userForms.map((f) => f.id);
+
+    if (formIds.length === 0 || (input.formId && !formIds.includes(input.formId))) {
+      return {
+        overview: {
+          totalStarted: 0,
+          totalCompleted: 0,
+          totalInProgress: 0,
+          completionRate: 0,
+          averageDurationSeconds: null,
+          deviceBreakdown: [],
+          browserBreakdown: [],
+          osBreakdown: [],
+          countryBreakdown: [],
+        },
+        timeSeries: [],
+        formsPerformance: [],
+      };
+    }
+
+    const targetFormIds = input.formId ? [input.formId] : formIds;
+
+    const baseConditions = [
+      inArray(formSubmissionsTable.formId, targetFormIds),
+    ];
+
+    if (input.startDate) {
+      baseConditions.push(gte(formSubmissionsTable.startedAt, new Date(input.startDate)));
+    }
+    if (input.endDate) {
+      baseConditions.push(lte(formSubmissionsTable.startedAt, new Date(input.endDate)));
+    }
+
+    // A. Aggregate metrics
+    const [aggregates] = await db
+      .select({
+        totalStarted: count(),
+        totalCompleted: sql<number>`count(*) filter (where ${formSubmissionsTable.submittedAt} is not null)`,
+        totalInProgress: sql<number>`count(*) filter (where ${formSubmissionsTable.submittedAt} is null)`,
+        avgDurationSec: sql<number | null>`avg(extract(epoch from (${formSubmissionsTable.submittedAt} - ${formSubmissionsTable.startedAt}))) filter (where ${formSubmissionsTable.submittedAt} is not null)`,
+      })
+      .from(formSubmissionsTable)
+      .where(and(...baseConditions));
+
+    const totalStarted = Number(aggregates?.totalStarted || 0);
+    const totalCompleted = Number(aggregates?.totalCompleted || 0);
+    const totalInProgress = Number(aggregates?.totalInProgress || 0);
+    const completionRate = totalStarted > 0 ? Number((totalCompleted / totalStarted).toFixed(4)) : 0;
+    const avgSec =
+      aggregates && aggregates.avgDurationSec !== null && aggregates.avgDurationSec !== undefined
+        ? Math.round(Number(aggregates.avgDurationSec))
+        : null;
+
+    // B. Breakdowns (completed only)
+    const completedConditions = [...baseConditions, isNotNull(formSubmissionsTable.submittedAt)];
+
+    const [deviceBreakdown, browserBreakdown, osBreakdown, countryBreakdown] = await Promise.all([
+      db
+        .select({
+          key: sql<string>`coalesce(${formSubmissionsTable.deviceType}, 'unknown')`,
+          count: count(),
+        })
+        .from(formSubmissionsTable)
+        .where(and(...completedConditions))
+        .groupBy(sql`coalesce(${formSubmissionsTable.deviceType}, 'unknown')`),
+
+      db
+        .select({
+          key: sql<string>`coalesce(${formSubmissionsTable.browserName}, 'Other')`,
+          count: count(),
+        })
+        .from(formSubmissionsTable)
+        .where(and(...completedConditions))
+        .groupBy(sql`coalesce(${formSubmissionsTable.browserName}, 'Other')`),
+
+      db
+        .select({
+          key: sql<string>`coalesce(${formSubmissionsTable.osName}, 'Other')`,
+          count: count(),
+        })
+        .from(formSubmissionsTable)
+        .where(and(...completedConditions))
+        .groupBy(sql`coalesce(${formSubmissionsTable.osName}, 'Other')`),
+
+      db
+        .select({
+          key: sql<string>`coalesce(${formSubmissionsTable.countryCode}, 'Unknown')`,
+          count: count(),
+        })
+        .from(formSubmissionsTable)
+        .where(and(...completedConditions))
+        .groupBy(sql`coalesce(${formSubmissionsTable.countryCode}, 'Unknown')`),
+    ]);
+
+    // C. Time Series (by day)
+    const timeSeriesRows = await db
+      .select({
+        date: sql<string>`to_char(${formSubmissionsTable.startedAt}, 'YYYY-MM-DD')`,
+        started: count(),
+        completed: sql<number>`count(*) filter (where ${formSubmissionsTable.submittedAt} is not null)`,
+      })
+      .from(formSubmissionsTable)
+      .where(and(...baseConditions))
+      .groupBy(sql`to_char(${formSubmissionsTable.startedAt}, 'YYYY-MM-DD')`)
+      .orderBy(sql`to_char(${formSubmissionsTable.startedAt}, 'YYYY-MM-DD')`);
+
+    // Map existing counts by date string
+    const timeSeriesMap = new Map(timeSeriesRows.map((r) => [String(r.date), r]));
+
+    // Determine target start and end dates to guarantee a continuous timeline
+    const now = new Date();
+    const targetEnd = input.endDate ? new Date(input.endDate) : now;
+    let targetStart: Date;
+
+    const firstRow = timeSeriesRows[0];
+    if (input.startDate) {
+      targetStart = new Date(input.startDate);
+    } else if (firstRow?.date) {
+      const earliestDateStr = String(firstRow.date);
+      const earliest = new Date(earliestDateStr);
+      const sevenDaysAgo = new Date(targetEnd);
+      sevenDaysAgo.setDate(targetEnd.getDate() - 6);
+      targetStart = earliest < sevenDaysAgo ? earliest : sevenDaysAgo;
+    } else {
+      const sevenDaysAgo = new Date(targetEnd);
+      sevenDaysAgo.setDate(targetEnd.getDate() - 6);
+      targetStart = sevenDaysAgo;
+    }
+
+    // Build contiguous daily series so charts always have full readable date baselines
+    const filledTimeSeries: Array<{ date: string; started: number; completed: number }> = [];
+    const curDate = new Date(targetStart);
+    curDate.setUTCHours(0, 0, 0, 0);
+    const endUtc = new Date(targetEnd);
+    endUtc.setUTCHours(23, 59, 59, 999);
+
+    let dayCounter = 0;
+    while (curDate.getTime() <= endUtc.getTime() && dayCounter < 366) {
+      const dateStr = curDate.toISOString().slice(0, 10);
+      const existing = timeSeriesMap.get(dateStr);
+      filledTimeSeries.push({
+        date: dateStr,
+        started: existing ? Number(existing.started) : 0,
+        completed: existing ? Number(existing.completed) : 0,
+      });
+      curDate.setUTCDate(curDate.getUTCDate() + 1);
+      dayCounter++;
+    }
+
+    // D. Performance per form
+    const formStatsRows = await db
+      .select({
+        formId: formSubmissionsTable.formId,
+        totalStarted: count(),
+        totalCompleted: sql<number>`count(*) filter (where ${formSubmissionsTable.submittedAt} is not null)`,
+        avgDurationSec: sql<number | null>`avg(extract(epoch from (${formSubmissionsTable.submittedAt} - ${formSubmissionsTable.startedAt}))) filter (where ${formSubmissionsTable.submittedAt} is not null)`,
+        lastSubmissionAt: sql<Date | null>`max(${formSubmissionsTable.submittedAt})`,
+      })
+      .from(formSubmissionsTable)
+      .where(and(...baseConditions))
+      .groupBy(formSubmissionsTable.formId);
+
+    const formStatsMap = new Map(formStatsRows.map((r) => [r.formId, r]));
+
+    const formsPerformance = userForms
+      .filter((f) => targetFormIds.includes(f.id))
+      .map((f) => {
+        const stats = formStatsMap.get(f.id);
+        const started = Number(stats?.totalStarted || 0);
+        const completed = Number(stats?.totalCompleted || 0);
+        const rate = started > 0 ? Number((completed / started).toFixed(4)) : 0;
+        const avg =
+          stats?.avgDurationSec !== null && stats?.avgDurationSec !== undefined
+            ? Math.round(Number(stats.avgDurationSec))
+            : null;
+
+        return {
+          formId: f.id,
+          title: f.title,
+          status: f.status,
+          visibility: f.visibility,
+          shareId: f.shareId,
+          totalStarted: started,
+          totalCompleted: completed,
+          completionRate: rate,
+          avgDurationSeconds: avg,
+          lastSubmissionAt: stats?.lastSubmissionAt ? new Date(stats.lastSubmissionAt) : null,
+        };
+      })
+      .sort((a, b) => b.totalCompleted - a.totalCompleted);
+
+    return {
+      overview: {
+        totalStarted,
+        totalCompleted,
+        totalInProgress,
+        completionRate,
+        averageDurationSeconds: avgSec,
+        deviceBreakdown: deviceBreakdown.map((b) => ({ key: String(b.key), count: Number(b.count) })),
+        browserBreakdown: browserBreakdown.map((b) => ({ key: String(b.key), count: Number(b.count) })),
+        osBreakdown: osBreakdown.map((b) => ({ key: String(b.key), count: Number(b.count) })),
+        countryBreakdown: countryBreakdown.map((b) => ({ key: String(b.key), count: Number(b.count) })),
+      },
+      timeSeries: filledTimeSeries,
+      formsPerformance,
+    };
+  }
+
+  /**
+   * Creator-Facing: Aggregates question-level distribution and response insights for a specific form.
+   */
+  public async getQuestionInsights(
+    rawInput: GetQuestionInsightsInput,
+    userId: string
+  ): Promise<QuestionInsightsResult> {
+    const input = getQuestionInsightsInputSchema.parse(rawInput);
+
+    // Verify ownership
+    const [form] = await db
+      .select({ id: formsTable.id, title: formsTable.title })
+      .from(formsTable)
+      .where(and(eq(formsTable.id, input.formId), eq(formsTable.createdBy, userId), isNull(formsTable.deletedAt)))
+      .limit(1);
+
+    if (!form) {
+      throw new Error("Form not found or you do not have permission to view question insights");
+    }
+
+    // Get total completed submissions for this form
+    const [totalCompletedRes] = await db
+      .select({ count: count() })
+      .from(formSubmissionsTable)
+      .where(and(eq(formSubmissionsTable.formId, input.formId), isNotNull(formSubmissionsTable.submittedAt)));
+
+    const totalSubmissions = Number(totalCompletedRes?.count || 0);
+
+    // Find all question elements from all versions of this form
+    const questionElements = await db
+      .select({
+        id: formVersionElementsTable.id,
+        label: formVersionElementsTable.label,
+        type: formVersionElementsTable.type,
+        sortOrder: formVersionElementsTable.sortOrder,
+        required: formVersionElementsTable.required,
+        config: formVersionElementsTable.config,
+      })
+      .from(formVersionElementsTable)
+      .innerJoin(formVersionsTable, eq(formVersionElementsTable.formVersionId, formVersionsTable.id))
+      .where(
+        and(
+          eq(formVersionsTable.formId, input.formId),
+          eq(formVersionElementsTable.kind, "question")
+        )
+      )
+      .orderBy(asc(formVersionElementsTable.sortOrder), asc(formVersionElementsTable.createdAt));
+
+    // Deduplicate questions by label and type if present across multiple versions
+    const seenQuestions = new Map<string, typeof questionElements[0]>();
+    for (const q of questionElements) {
+      const key = `${q.label || "Untitled"}_${q.type}`;
+      if (!seenQuestions.has(key)) {
+        seenQuestions.set(key, q);
+      }
+    }
+    const uniqueQuestions = Array.from(seenQuestions.values());
+
+    // Fetch answers for this form
+    const answers = await db
+      .select({
+        id: formAnswersTable.id,
+        formVersionElementId: formAnswersTable.formVersionElementId,
+        value: formAnswersTable.value,
+        submittedAt: formSubmissionsTable.submittedAt,
+        questionLabel: formVersionElementsTable.label,
+        questionType: formVersionElementsTable.type,
+      })
+      .from(formAnswersTable)
+      .innerJoin(formSubmissionsTable, eq(formAnswersTable.submissionId, formSubmissionsTable.id))
+      .innerJoin(formVersionElementsTable, eq(formAnswersTable.formVersionElementId, formVersionElementsTable.id))
+      .where(and(eq(formSubmissionsTable.formId, input.formId), isNotNull(formSubmissionsTable.submittedAt)));
+
+    // Group answers by question key (label + type)
+    const answersByQuestionKey = new Map<string, typeof answers>();
+    for (const ans of answers) {
+      const key = `${ans.questionLabel || "Untitled"}_${ans.questionType}`;
+      const list = answersByQuestionKey.get(key) || [];
+      list.push(ans);
+      answersByQuestionKey.set(key, list);
+    }
+
+    const questionInsights = uniqueQuestions.map((q) => {
+      const key = `${q.label || "Untitled"}_${q.type}`;
+      const qAnswers = answersByQuestionKey.get(key) || [];
+      const totalAnswers = qAnswers.length;
+
+      let distribution: Array<{ optionLabel: string; count: number; percentage: number }> = [];
+      let averageScore: number | null = null;
+      const recentAnswers: Array<{ id: string; value: any; submittedAt: Date }> = [];
+
+      // Choice-based questions
+      if (
+        ["single_select", "multi_select", "dropdown", "checkbox"].includes(q.type)
+      ) {
+        const optionCounts = new Map<string, number>();
+
+        // Prepopulate with configured options if available
+        const config = (q.config || {}) as Record<string, any>;
+        if (Array.isArray(config.options)) {
+          for (const opt of config.options) {
+            const optLabel = typeof opt === "string" ? opt : opt.label || opt.value || String(opt);
+            optionCounts.set(optLabel, 0);
+          }
+        }
+
+        for (const ans of qAnswers) {
+          if (Array.isArray(ans.value)) {
+            for (const val of ans.value) {
+              const strVal = String(val);
+              optionCounts.set(strVal, (optionCounts.get(strVal) || 0) + 1);
+            }
+          } else if (ans.value !== undefined && ans.value !== null) {
+            const strVal = String(ans.value);
+            optionCounts.set(strVal, (optionCounts.get(strVal) || 0) + 1);
+          }
+        }
+
+        distribution = Array.from(optionCounts.entries()).map(([label, cnt]) => ({
+          optionLabel: label,
+          count: cnt,
+          percentage: totalAnswers > 0 ? Number(((cnt / totalAnswers) * 100).toFixed(1)) : 0,
+        }));
+      } else if (q.type === "linear_rating" || q.type === "star_rating" || q.type === "number") {
+        // Rating distribution & average
+        const scoreCounts = new Map<string, number>();
+        let sum = 0;
+        let validNumCount = 0;
+
+        for (const ans of qAnswers) {
+          const num = Number(ans.value);
+          if (!isNaN(num)) {
+            sum += num;
+            validNumCount++;
+            const strNum = String(num);
+            scoreCounts.set(strNum, (scoreCounts.get(strNum) || 0) + 1);
+          }
+        }
+
+        averageScore = validNumCount > 0 ? Number((sum / validNumCount).toFixed(1)) : null;
+
+        distribution = Array.from(scoreCounts.entries())
+          .sort((a, b) => Number(a[0]) - Number(b[0]))
+          .map(([label, cnt]) => ({
+            optionLabel: label,
+            count: cnt,
+            percentage: totalAnswers > 0 ? Number(((cnt / totalAnswers) * 100).toFixed(1)) : 0,
+          }));
+      }
+
+      // Recent text answers (for text / email / any questions)
+      for (const ans of qAnswers.slice(0, 10)) {
+        if (ans.value !== undefined && ans.value !== null) {
+          recentAnswers.push({
+            id: ans.id,
+            value: ans.value,
+            submittedAt: ans.submittedAt ? new Date(ans.submittedAt) : new Date(),
+          });
+        }
+      }
+
+      return {
+        elementId: q.id,
+        label: q.label || "Untitled Question",
+        type: q.type,
+        sortOrder: q.sortOrder,
+        required: q.required,
+        totalAnswers,
+        distribution,
+        averageScore,
+        recentAnswers,
+      };
+    });
+
+    return {
+      formId: form.id,
+      formTitle: form.title,
+      totalSubmissions,
+      questions: questionInsights,
+    };
+  }
+
+  /**
+   * Creator-Facing: Fetches completed submissions formatted for CSV export.
+   */
+  public async exportSubmissions(
+    rawInput: ExportSubmissionsInput,
+    userId: string
+  ): Promise<ExportSubmissionsResult> {
+    const input = exportSubmissionsInputSchema.parse(rawInput);
+
+    const userForms = await db
+      .select({ id: formsTable.id, title: formsTable.title })
+      .from(formsTable)
+      .where(and(eq(formsTable.createdBy, userId), isNull(formsTable.deletedAt)));
+
+    const formIds = userForms.map((f) => f.id);
+    const formTitleMap = new Map(userForms.map((f) => [f.id, f.title]));
+
+    if (formIds.length === 0 || (input.formId && !formIds.includes(input.formId))) {
+      return {
+        columns: ["Submission ID", "Form Title", "Started At", "Submitted At"],
+        rows: [],
+        filename: "submissions-export.csv",
+      };
+    }
+
+    const targetFormIds = input.formId ? [input.formId] : formIds;
+
+    const conditions = [
+      inArray(formSubmissionsTable.formId, targetFormIds),
+    ];
+
+    if (input.status === "completed") {
+      conditions.push(isNotNull(formSubmissionsTable.submittedAt));
+    } else if (input.status === "in_progress") {
+      conditions.push(isNull(formSubmissionsTable.submittedAt));
+    }
+
+    if (input.startDate) {
+      conditions.push(gte(formSubmissionsTable.startedAt, new Date(input.startDate)));
+    }
+    if (input.endDate) {
+      conditions.push(lte(formSubmissionsTable.startedAt, new Date(input.endDate)));
+    }
+
+    const submissions = await db
+      .select()
+      .from(formSubmissionsTable)
+      .where(and(...conditions))
+      .orderBy(desc(formSubmissionsTable.submittedAt));
+
+    const submissionIds = submissions.map((s) => s.id);
+
+    const answers = submissionIds.length > 0
+      ? await db
+          .select({
+            submissionId: formAnswersTable.submissionId,
+            value: formAnswersTable.value,
+            questionLabel: formVersionElementsTable.label,
+            questionType: formVersionElementsTable.type,
+            sortOrder: formVersionElementsTable.sortOrder,
+          })
+          .from(formAnswersTable)
+          .innerJoin(formVersionElementsTable, eq(formAnswersTable.formVersionElementId, formVersionElementsTable.id))
+          .where(inArray(formAnswersTable.submissionId, submissionIds))
+          .orderBy(asc(formVersionElementsTable.sortOrder))
+      : [];
+
+    const questionColumnsSet = new Set<string>();
+    const answersBySubId = new Map<string, Record<string, any>>();
+
+    for (const ans of answers) {
+      const qLabel = ans.questionLabel || "Untitled Question";
+      questionColumnsSet.add(qLabel);
+
+      const record = answersBySubId.get(ans.submissionId) || {};
+      let formattedVal = ans.value;
+      if (Array.isArray(ans.value)) {
+        formattedVal = ans.value.join(", ");
+      } else if (typeof ans.value === "object" && ans.value !== null) {
+        formattedVal = JSON.stringify(ans.value);
+      }
+      record[qLabel] = formattedVal;
+      answersBySubId.set(ans.submissionId, record);
+    }
+
+    const questionColumns = Array.from(questionColumnsSet);
+    const standardColumns = [
+      "Submission ID",
+      "Form Title",
+      "Started At",
+      "Submitted At",
+      "Duration (s)",
+      "Device",
+      "Browser",
+      "OS",
+      "Country",
+    ];
+
+    const allColumns = [...standardColumns, ...questionColumns];
+
+    const rows = submissions.map((s) => {
+      const duration =
+        s.submittedAt && s.startedAt
+          ? Math.round((s.submittedAt.getTime() - s.startedAt.getTime()) / 1000)
+          : null;
+
+      return {
+        submissionId: s.id,
+        formTitle: formTitleMap.get(s.formId) || "Untitled Form",
+        startedAt: s.startedAt,
+        submittedAt: s.submittedAt,
+        durationSeconds: duration !== null && duration >= 0 ? duration : null,
+        deviceType: s.deviceType,
+        browser: s.browserName,
+        os: s.osName,
+        country: s.countryCode,
+        answers: answersBySubId.get(s.id) || {},
+      };
+    });
+
+    const targetTitle = input.formId ? (formTitleMap.get(input.formId) || "form") : "all-forms";
+    const filename = `${targetTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-submissions-${new Date().toISOString().slice(0, 10)}.csv`;
+
+    return {
+      columns: allColumns,
+      rows,
+      filename,
+    };
+  }
+
 }
 
 export default FormSubmissionService;
