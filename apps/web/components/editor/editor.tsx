@@ -665,7 +665,7 @@ export function FormEditor({ formId }: FormEditorProps) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
+    <div className="flex flex-col min-h-screen bg-background text-foreground animate-fade-in-blur">
       {/* Tally-style Header with Undo/Redo, Version History, Manual Save & Publish */}
       <EditorHeader
         formId={formId}

@@ -38,7 +38,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
           onOpenCreateForm={() => setIsCreateOpen(true)}
           onOpenCommandPalette={() => setIsCommandOpen(true)}
         />
-        <div className="flex-1 flex flex-col">{children}</div>
+        <div className="flex-1 flex flex-col animate-fade-in-blur">{children}</div>
       </SidebarInset>
 
       {/* Global Command Menu (⌘K) */}
