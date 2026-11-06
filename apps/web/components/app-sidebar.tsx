@@ -4,10 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
+  BarChart3,
   BookOpen,
   CheckCircle2,
   Command,
   FilePenLine,
+  Inbox,
   LayoutDashboard,
   LogOut,
   Moon,
@@ -82,6 +84,8 @@ export function AppSidebar({
   }, [user?.name]);
 
   const isOverviewActive = pathname === "/dashboard" && !currentStatus;
+  const isResponsesActive = pathname.startsWith("/dashboard/responses");
+  const isAnalyticsActive = pathname.startsWith("/dashboard/analytics");
   const isPublishedActive = pathname === "/dashboard" && currentStatus === "published";
   const isDraftsActive = pathname === "/dashboard" && currentStatus === "draft";
   const isSettingsActive = pathname.startsWith("/dashboard/settings");
@@ -160,6 +164,34 @@ export function AppSidebar({
                     {totalCount}
                   </SidebarMenuBadge>
                 )}
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isResponsesActive}
+                  tooltip="Responses"
+                  className="rounded-lg text-xs font-medium"
+                >
+                  <Link href="/dashboard/responses">
+                    <Inbox className="size-4 shrink-0" />
+                    <span>Responses</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isAnalyticsActive}
+                  tooltip="Analytics"
+                  className="rounded-lg text-xs font-medium"
+                >
+                  <Link href="/dashboard/analytics">
+                    <BarChart3 className="size-4 shrink-0" />
+                    <span>Analytics</span>
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
 
               <SidebarMenuItem>

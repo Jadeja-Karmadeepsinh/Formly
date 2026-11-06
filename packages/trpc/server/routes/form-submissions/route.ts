@@ -13,6 +13,14 @@ import {
   listSubmissionsResultSchema,
   getSubmissionStatsByFormIdInputSchema,
   submissionStatsResultSchema,
+  listAllSubmissionsInputSchema,
+  listAllSubmissionsResultSchema,
+  getAnalyticsInputSchema,
+  analyticsResultSchema,
+  getQuestionInsightsInputSchema,
+  questionInsightsResultSchema,
+  exportSubmissionsInputSchema,
+  exportSubmissionsResultSchema,
   type SubmissionMetadata,
 } from "./model";
 
@@ -272,6 +280,130 @@ export const formSubmissionsRouter = router({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to retrieve submission statistics",
+        });
+      }
+    }),
+
+  /**
+   * Protected: List all submissions across user's forms with search, filter & pagination.
+   */
+  listAllSubmissions: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/listAllSubmissions"),
+        tags: TAGS,
+        protect: true,
+      },
+    })
+    .input(listAllSubmissionsInputSchema)
+    .output(listAllSubmissionsResultSchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        return await formSubmissionService.listAllSubmissions(input, ctx.user.id);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          if (error.message.includes("not found") || error.message.includes("permission")) {
+            throw new TRPCError({ code: "NOT_FOUND", message: error.message });
+          }
+          throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to list submissions",
+        });
+      }
+    }),
+
+  /**
+   * Protected: Get analytics overview, time series, and forms performance.
+   */
+  getAnalytics: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/getAnalytics"),
+        tags: TAGS,
+        protect: true,
+      },
+    })
+    .input(getAnalyticsInputSchema)
+    .output(analyticsResultSchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        return await formSubmissionService.getAnalytics(input, ctx.user.id);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          if (error.message.includes("not found") || error.message.includes("permission")) {
+            throw new TRPCError({ code: "NOT_FOUND", message: error.message });
+          }
+          throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to calculate analytics",
+        });
+      }
+    }),
+
+  /**
+   * Protected: Get question-level distribution insights for a form.
+   */
+  getQuestionInsights: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/getQuestionInsights"),
+        tags: TAGS,
+        protect: true,
+      },
+    })
+    .input(getQuestionInsightsInputSchema)
+    .output(questionInsightsResultSchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        return await formSubmissionService.getQuestionInsights(input, ctx.user.id);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          if (error.message.includes("not found") || error.message.includes("permission")) {
+            throw new TRPCError({ code: "NOT_FOUND", message: error.message });
+          }
+          throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to calculate question insights",
+        });
+      }
+    }),
+
+  /**
+   * Protected: Export submissions data for CSV download.
+   */
+  exportSubmissions: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/exportSubmissions"),
+        tags: TAGS,
+        protect: true,
+      },
+    })
+    .input(exportSubmissionsInputSchema)
+    .output(exportSubmissionsResultSchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        return await formSubmissionService.exportSubmissions(input, ctx.user.id);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          if (error.message.includes("not found") || error.message.includes("permission")) {
+            throw new TRPCError({ code: "NOT_FOUND", message: error.message });
+          }
+          throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to export submissions",
         });
       }
     }),
