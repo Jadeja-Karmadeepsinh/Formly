@@ -1,30 +1,33 @@
-"use client";
-
 import * as React from "react";
 import { FileText, History, Link2, ShieldCheck } from "lucide-react";
+import { Crosshair } from "./frame";
 
 const PRINCIPLES = [
   {
     icon: FileText,
-    title: "Document-first editing",
+    num: "01",
+    title: "Document-First Editing",
     description:
       "Write forms as naturally as a notes document. Type slash commands to insert questions without opening disconnected sidebars.",
   },
   {
     icon: History,
-    title: "Snapshot-safe versioning",
+    num: "02",
+    title: "Snapshot-Safe Versioning",
     description:
-      "Every save captures a frozen version snapshot. You can freely edit questions without ever corrupting or mismatching older answers.",
+      "Every save captures a frozen version snapshot. You can freely edit questions without ever corrupting older answers.",
   },
   {
     icon: Link2,
-    title: "Instant public sharing",
+    num: "03",
+    title: "Instant Public Sharing",
     description:
-      "Publish in one click with a clean, short 16-character link that renders effortlessly on mobile, tablet, and desktop devices.",
+      "Publish in one click with a clean, short 16-character link that renders effortlessly on mobile, tablet, and desktop.",
   },
   {
     icon: ShieldCheck,
-    title: "Strict response integrity",
+    num: "04",
+    title: "Strict Response Integrity",
     description:
       "Answers are permanently locked to the exact version snapshot respondents saw, backed by a relational PostgreSQL database.",
   },
@@ -32,44 +35,39 @@ const PRINCIPLES = [
 
 export function LandingPhilosophy() {
   return (
-    <section className="border-y border-border/50 bg-muted/20 py-16 sm:py-24">
-      <div className="container mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center space-y-3 mb-12 sm:mb-16">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Product Philosophy
-          </p>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground text-balance">
-            Everything you need to ask better questions.
-          </h2>
-          <p className="text-sm text-muted-foreground text-pretty leading-relaxed">
-            Formly is engineered on four foundational principles designed to eliminate the friction, clutter, and fragility of traditional form builders.
-          </p>
-        </div>
+    <div className="relative w-full border-b border-border/80 bg-muted/10">
+      <Crosshair position="top-left" />
+      <Crosshair position="top-right" />
 
-        {/* 4 Architectural Pillars Grid */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {PRINCIPLES.map((principle) => {
-            const Icon = principle.icon;
-            return (
-              <div
-                key={principle.title}
-                className="group relative rounded-xl border border-border/60 bg-card p-6 transition-all duration-200 hover:border-foreground/30 hover:shadow-xs"
-              >
-                <div className="mb-4 inline-flex size-9 items-center justify-center rounded-lg border border-border/80 bg-muted/50 text-foreground transition-colors group-hover:bg-foreground group-hover:text-background">
-                  <Icon className="size-4" />
+      {/* 4 Architectural Pillars Grid with hairlines */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border/80">
+        {PRINCIPLES.map((principle) => {
+          const Icon = principle.icon;
+          return (
+            <div
+              key={principle.title}
+              className="group p-6 sm:p-7 flex flex-col justify-between hover:bg-muted/20 transition-colors"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="size-8 rounded border border-border/80 bg-background flex items-center justify-center text-foreground">
+                    <Icon className="size-3.5" />
+                  </div>
+                  <span className="font-mono text-[10px] text-muted-foreground">
+                    {principle.num}
+                  </span>
                 </div>
-                <h3 className="text-sm font-semibold text-foreground tracking-tight mb-2">
+                <h3 className="text-sm font-semibold text-foreground tracking-tight mb-1.5">
                   {principle.title}
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   {principle.description}
                 </p>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
-    </section>
+    </div>
   );
 }
-

@@ -1,97 +1,101 @@
-"use client";
-
 import * as React from "react";
-import { Check, X } from "lucide-react";
+import { SectionHeader, Crosshair } from "./frame";
+import { Check, Minus } from "lucide-react";
+
+const COMPARISON_ROWS = [
+  {
+    feature: "Editor Paradigm",
+    formly: "Continuous document-first canvas with inline typing",
+    traditional: "Rigid drag-and-drop trees with nested modal drawers",
+    formlyAdvantage: true,
+  },
+  {
+    feature: "Version Control",
+    formly: "Immutable snapshot freezing on each publish",
+    traditional: "Live edits silently overwrite active schemas",
+    formlyAdvantage: true,
+  },
+  {
+    feature: "Question Insertion",
+    formly: "Keyboard slash command (/) with instant block picker",
+    traditional: "Manual drag from heavy fixed sidebars",
+    formlyAdvantage: true,
+  },
+  {
+    feature: "Respondent Runtime",
+    formly: "Lightweight, privacy-first, sub-100ms load time",
+    traditional: "Heavy scripts, third-party cookies, intrusive loaders",
+    formlyAdvantage: true,
+  },
+  {
+    feature: "Data Integrity",
+    formly: "Submissions cryptographically pinned to form version",
+    traditional: "Historic answers risk orphan states on schema change",
+    formlyAdvantage: true,
+  },
+  {
+    feature: "Dark & Light Mode",
+    formly: "Native theme support designed into every component",
+    traditional: "Light theme only or requires custom CSS overrides",
+    formlyAdvantage: true,
+  },
+];
 
 export function LandingDifferentiation() {
   return (
-    <section className="py-20 sm:py-28 lg:py-32">
-      <div className="container mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center space-y-3 mb-16 sm:mb-20">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Design Philosophy
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground text-balance">
-            Forms shouldn&apos;t feel like software configuration.
-          </h2>
-          <p className="text-sm sm:text-base text-muted-foreground text-pretty leading-relaxed">
-            Most form tools treat questions like database schemas hidden inside popups and nested menus. Formly treats forms as clear documents.
-          </p>
-        </div>
+    <div id="comparison" className="relative w-full">
+      <Crosshair position="top-left" />
+      <Crosshair position="top-right" />
 
-        {/* Side-by-side Architectural Comparison */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 max-w-4xl mx-auto">
-          {/* Traditional Form Builders */}
-          <div className="rounded-xl border border-border/60 bg-muted/20 p-6 sm:p-8 space-y-6">
-            <div className="space-y-1 border-b border-border/50 pb-4">
-              <span className="text-[11px] font-mono uppercase text-muted-foreground">The Old Way</span>
-              <h3 className="text-lg font-bold text-foreground">Traditional Form Builders</h3>
-            </div>
-
-            <ul className="space-y-4 text-xs sm:text-sm text-muted-foreground">
-              <li className="flex items-start gap-3">
-                <div className="size-5 rounded-full bg-destructive/10 text-destructive flex items-center justify-center shrink-0 mt-0.5">
-                  <X className="size-3 stroke-[2.5]" />
-                </div>
-                <span>Clunky drag-and-drop sidebars that force constant context switching.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="size-5 rounded-full bg-destructive/10 text-destructive flex items-center justify-center shrink-0 mt-0.5">
-                  <X className="size-3 stroke-[2.5]" />
-                </div>
-                <span>Editing live questions risks breaking or misaligning older historical answers.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="size-5 rounded-full bg-destructive/10 text-destructive flex items-center justify-center shrink-0 mt-0.5">
-                  <X className="size-3 stroke-[2.5]" />
-                </div>
-                <span>Noisy interfaces overloaded with bloated configuration dialogs.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="size-5 rounded-full bg-destructive/10 text-destructive flex items-center justify-center shrink-0 mt-0.5">
-                  <X className="size-3 stroke-[2.5]" />
-                </div>
-                <span>Distracting respondent screens that lead to drop-off and fatigue.</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* The Formly Experience */}
-          <div className="rounded-xl border-2 border-foreground/80 bg-card p-6 sm:p-8 space-y-6 shadow-md">
-            <div className="space-y-1 border-b border-border/60 pb-4">
-              <span className="text-[11px] font-mono uppercase text-foreground font-semibold">The Formly Way</span>
-              <h3 className="text-lg font-bold text-foreground">Direct & Document-First</h3>
-            </div>
-
-            <ul className="space-y-4 text-xs sm:text-sm text-foreground">
-              <li className="flex items-start gap-3">
-                <div className="size-5 rounded-full bg-foreground text-background flex items-center justify-center shrink-0 mt-0.5">
-                  <Check className="size-3 stroke-[2.5]" />
-                </div>
-                <span>Write forms like a clean document with fluid inline slash commands.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="size-5 rounded-full bg-foreground text-background flex items-center justify-center shrink-0 mt-0.5">
-                  <Check className="size-3 stroke-[2.5]" />
-                </div>
-                <span>Immutable version snapshots ensure past submissions are never corrupted.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="size-5 rounded-full bg-foreground text-background flex items-center justify-center shrink-0 mt-0.5">
-                  <Check className="size-3 stroke-[2.5]" />
-                </div>
-                <span>Minimalist workspace with purposeful controls only when needed.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="size-5 rounded-full bg-foreground text-background flex items-center justify-center shrink-0 mt-0.5">
-                  <Check className="size-3 stroke-[2.5]" />
-                </div>
-                <span>Calm, responsive respondent view designed for high completion rates.</span>
-              </li>
-            </ul>
-          </div>
-        </div>
+      {/* Section Header */}
+      <div className="px-4 sm:px-8 py-12 sm:py-16 border-b border-border/80 bg-background">
+        <SectionHeader
+          index="05"
+          eyebrow="Architectural Comparison"
+          title="Why document-first architecture matters."
+          description="A direct, factual comparison between Formly's snapshot document engine and traditional form builders."
+        />
       </div>
-    </section>
+
+      {/* Clean Lined Comparison Table */}
+      <div className="w-full overflow-x-auto border-b border-border/80">
+        <table className="w-full text-left border-collapse min-w-[640px]">
+          <thead>
+            <tr className="border-b border-border/80 bg-muted/20 font-mono text-[11px] text-muted-foreground uppercase">
+              <th className="py-3.5 px-6 font-semibold w-1/3">CAPABILITY</th>
+              <th className="py-3.5 px-6 font-semibold w-1/3 text-foreground bg-muted/30 border-x border-border/80">
+                FORMLY
+              </th>
+              <th className="py-3.5 px-6 font-semibold w-1/3">TRADITIONAL BUILDERS</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/80 text-xs sm:text-sm">
+            {COMPARISON_ROWS.map((row, i) => (
+              <tr key={i} className="hover:bg-muted/15 transition-colors">
+                <td className="py-4 px-6 font-medium text-foreground">
+                  {row.feature}
+                </td>
+                <td className="py-4 px-6 text-foreground bg-muted/10 border-x border-border/80 font-medium">
+                  <div className="flex items-start gap-2.5">
+                    <div className="size-4 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="size-2.5 stroke-[3]" />
+                    </div>
+                    <span>{row.formly}</span>
+                  </div>
+                </td>
+                <td className="py-4 px-6 text-muted-foreground">
+                  <div className="flex items-start gap-2.5">
+                    <div className="size-4 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5 text-muted-foreground">
+                      <Minus className="size-2.5" />
+                    </div>
+                    <span>{row.traditional}</span>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
