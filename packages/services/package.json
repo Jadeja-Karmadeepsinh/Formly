@@ -12,7 +12,9 @@
     "./form": "./form/index.ts",
     "./form/*": "./form/*.ts",
     "./form-field": "./form-field/index.ts",
-    "./form-field/*": "./form-field/*.ts"
+    "./form-field/*": "./form-field/*.ts",
+    "./form-submissions": "./form-submissions/index.ts",
+    "./form-submissions/*": "./form-submissions/*.ts"
   },
   "devDependencies": {
     "@formly/eslint-config": "workspace:*",

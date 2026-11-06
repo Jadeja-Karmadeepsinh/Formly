@@ -51,3 +51,6 @@ export const formAnswersTable = pgTable(
     ),
   ],
 );
+
+export type FormAnswer = typeof formAnswersTable.$inferSelect;
+export type NewFormAnswer = typeof formAnswersTable.$inferInsert;
