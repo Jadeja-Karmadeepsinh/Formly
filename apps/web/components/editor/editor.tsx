@@ -690,7 +690,8 @@ export function FormEditor({ formId }: FormEditorProps) {
       <EditorBubbleMenu editor={editor} />
 
       {/* Document Canvas (Tally-inspired writing width) */}
-      <main className="flex-1 w-full max-w-[700px] mx-auto px-6 sm:px-8 py-10 md:py-16">
+      <div className="flex-1 w-full bg-muted/15 py-8 md:py-12 px-4 flex flex-col items-center justify-start min-h-[calc(100vh-3.5rem)]">
+        <main className="w-full max-w-[760px] bg-card border border-border/80 panel-highlight rounded-2xl shadow-sm p-6 sm:p-10 md:p-12 min-h-[750px] relative transition-all">
         {/* Editable Form Title */}
         <input
           type="text"
@@ -733,7 +734,71 @@ export function FormEditor({ formId }: FormEditorProps) {
           />
           <EditorContent editor={editor} />
         </div>
-      </main>
+          {/* Bottom Quick Question Inserter Bar */}
+          <div className="mt-8 pt-6 border-t border-border/60 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
+            <span className="text-[11px] font-medium text-muted-foreground/80 flex items-center gap-1.5">
+              <span>Press</span>
+              <kbd className="font-mono bg-muted border px-1 py-0.5 rounded text-foreground font-semibold text-[10px]">
+                /
+              </kbd>
+              <span>for blocks</span>
+            </span>
+
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  handleInsertField({
+                    type: "short_text",
+                    label: "Short Text Question",
+                    placeholder: "Type your answer...",
+                  })
+                }
+                className="h-7 text-xs px-2.5 rounded-lg border-border/70 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                + Short Text
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  handleInsertField({
+                    type: "single_select",
+                    label: "Multiple Choice Question",
+                    config: {
+                      options: [
+                        { label: "Option 1", value: "opt_1" },
+                        { label: "Option 2", value: "opt_2" },
+                      ],
+                    },
+                  })
+                }
+                className="h-7 text-xs px-2.5 rounded-lg border-border/70 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                + Multiple Choice
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  handleInsertField({
+                    type: "star_rating",
+                    label: "Rating Question",
+                    config: { max: 5 },
+                  })
+                }
+                className="h-7 text-xs px-2.5 rounded-lg border-border/70 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                + Star Rating
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
 
       {/* Contextual Properties Inspector (Slide-over Sheet) */}
       <PropertiesPanel

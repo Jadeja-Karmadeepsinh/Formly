@@ -668,10 +668,10 @@ function FormFieldNodeView({
     <NodeViewWrapper
       onClick={() => handleSelectField()}
       data-type="form-field"
-      className={`my-3 py-2.5 px-3 sm:px-4 rounded-xl transition-all duration-150 relative group/field ${
+      className={`panel-highlight my-3 py-2.5 px-3 sm:px-4 rounded-xl border transition-all duration-150 relative group/field ${
         selected
-          ? "bg-accent/35 ring-1 ring-primary/40 shadow-2xs"
-          : "hover:bg-accent/15"
+          ? "bg-accent/35 border-primary/40 ring-1 ring-primary/30 shadow-2xs"
+          : "border-border/40 hover:border-border hover:bg-accent/15"
       }`}
     >
       {/* Field Header / Question Title Row */}

@@ -37,7 +37,7 @@ export function FormsPerformanceTable({
 }: FormsPerformanceTableProps) {
   if (formsPerformance.length === 0) {
     return (
-      <Card className="border-border/60 bg-card/75 shadow-2xs">
+      <Card className="panel-highlight border-border/80 bg-card shadow-2xs">
         <CardContent className="p-8 text-center text-xs text-muted-foreground">
           No forms created in this workspace yet.
         </CardContent>
@@ -65,7 +65,7 @@ export function FormsPerformanceTable({
   };
 
   return (
-    <Card className="border-border/60 bg-card/75 shadow-2xs">
+    <Card className="panel-highlight border-border/80 bg-card shadow-2xs">
       <CardHeader className="p-4 sm:p-5 pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>

@@ -110,7 +110,7 @@ export function AppSidebar({
                     Formly
                   </span>
                   <span className="text-[11px] text-muted-foreground mt-0.5">
-                    Workspace
+                    Personal Studio
                   </span>
                 </div>
               </Link>
@@ -123,7 +123,7 @@ export function AppSidebar({
           <Button
             size="sm"
             onClick={onOpenCreateForm}
-            className="w-full justify-between h-8.5 rounded-lg text-xs font-medium shadow-xs"
+            className="w-full justify-between h-8.5 rounded-lg text-xs font-medium shadow-xs active:scale-[0.98] transition-all"
           >
             <span className="flex items-center gap-1.5">
               <Plus className="size-3.5" />
@@ -235,6 +235,43 @@ export function AppSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {forms && forms.length > 0 && (
+          <SidebarGroup className="p-0">
+            <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider flex items-center justify-between">
+              <span>Recent Forms</span>
+              <span className="text-[10px] font-mono text-muted-foreground/60">{forms.length}</span>
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-0.5">
+                {forms.slice(0, 4).map((f) => {
+                  const isFormActive = pathname === `/dashboard/forms/${f.id}`;
+                  return (
+                    <SidebarMenuItem key={f.id}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isFormActive}
+                        tooltip={f.title}
+                        className="rounded-lg text-xs font-normal h-7.5"
+                      >
+                        <Link href={`/dashboard/forms/${f.id}`} className="flex items-center gap-2">
+                          <span
+                            className={`size-1.5 rounded-full shrink-0 ${
+                              f.status === "published"
+                                ? "bg-emerald-500"
+                                : "bg-muted-foreground/40"
+                            }`}
+                          />
+                          <span className="truncate">{f.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
         <SidebarSeparator className="my-2 mx-1" />
 
         {/* Preferences & Help */}
@@ -291,6 +328,20 @@ export function AppSidebar({
 
       {/* 3. Footer: Theme Toggle & User Menu */}
       <SidebarFooter className="p-2 border-t border-sidebar-border gap-1.5">
+        {/* Workspace Capacity Meter */}
+        <div className="mx-1 mb-1 px-2.5 py-2 rounded-lg bg-muted/25 border border-sidebar-border/60 text-xs space-y-1.5 group-data-[collapsible=icon]:hidden">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span className="font-medium text-foreground">Workspace Plan</span>
+            <span className="font-mono text-[10px]">{totalCount} / 10 Forms</span>
+          </div>
+          <div className="w-full h-1 bg-muted/60 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-foreground rounded-full transition-all duration-500"
+              style={{ width: `${Math.min((totalCount / 10) * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+
         {/* Subtle Theme Toggle Row */}
         <div className="flex items-center justify-between px-2 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
           <span className="text-[11px]">Theme</span>

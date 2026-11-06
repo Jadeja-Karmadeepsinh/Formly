@@ -23,130 +23,112 @@ export function FormsMetrics({ forms, isLoading }: FormsMetricsProps) {
   const unlistedCount = forms.filter((f) => f.visibility === "unlisted").length;
 
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-      {/* 1. Total Forms */}
-      <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4 transition-all hover:bg-card/90 hover:border-border shadow-2xs">
-        <div className="flex items-center justify-between text-muted-foreground">
-          <span className="text-xs font-medium tracking-wide">Total Forms</span>
-          <div className="flex size-7 items-center justify-center rounded-lg bg-muted/40 text-muted-foreground">
-            <Files className="size-3.5" />
-          </div>
-        </div>
-
-        <div className="mt-3">
-          {isLoading ? (
-            <Skeleton className="h-8 w-16" />
-          ) : (
-            <div className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
-              {totalCount}
+    <div className="panel-highlight rounded-xl border border-border/80 bg-card shadow-xs overflow-hidden">
+      <div className="grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border/60">
+        {/* Cell 1: Forms Directory */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-muted-foreground mb-3">
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Directory</span>
+            <div className="flex size-7 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
+              <Files className="size-3.5" />
             </div>
-          )}
-          <div className="mt-1 text-xs text-muted-foreground truncate">
+          </div>
+          <div>
             {isLoading ? (
-              <Skeleton className="h-3 w-28 mt-0.5" />
-            ) : totalCount === 0 ? (
-              "No forms created yet"
+              <Skeleton className="h-8 w-16" />
             ) : (
-              `${publishedCount} published · ${draftCount} draft`
+              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums font-mono">
+                {totalCount}
+              </div>
             )}
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Active Published Forms */}
-      <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4 transition-all hover:bg-card/90 hover:border-border shadow-2xs">
-        <div className="flex items-center justify-between text-muted-foreground">
-          <span className="text-xs font-medium tracking-wide">Published</span>
-          <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-            <CheckCircle2 className="size-3.5" />
-          </div>
-        </div>
-
-        <div className="mt-3">
-          {isLoading ? (
-            <Skeleton className="h-8 w-16" />
-          ) : (
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
-                {publishedCount}
-              </span>
-              {publishedCount > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Live
+            <div className="mt-1 text-xs text-muted-foreground">
+              {isLoading ? (
+                <Skeleton className="h-3 w-28 mt-0.5" />
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <span className="text-foreground font-medium">{publishedCount}</span> published · <span className="text-foreground font-medium">{draftCount}</span> drafts
                 </span>
               )}
             </div>
-          )}
-          <div className="mt-1 text-xs text-muted-foreground truncate">
-            {isLoading ? (
-              <Skeleton className="h-3 w-24 mt-0.5" />
-            ) : publishedCount === 0 ? (
-              "None published yet"
-            ) : (
-              "Open for responses"
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Draft Forms */}
-      <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4 transition-all hover:bg-card/90 hover:border-border shadow-2xs">
-        <div className="flex items-center justify-between text-muted-foreground">
-          <span className="text-xs font-medium tracking-wide">Drafts</span>
-          <div className="flex size-7 items-center justify-center rounded-lg bg-muted/40 text-muted-foreground">
-            <FilePenLine className="size-3.5" />
           </div>
         </div>
 
-        <div className="mt-3">
-          {isLoading ? (
-            <Skeleton className="h-8 w-16" />
-          ) : (
-            <div className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
-              {draftCount}
+        {/* Cell 2: Live Published */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-muted-foreground mb-3">
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Live Status</span>
+            <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="size-3.5" />
             </div>
-          )}
-          <div className="mt-1 text-xs text-muted-foreground truncate">
+          </div>
+          <div>
             {isLoading ? (
-              <Skeleton className="h-3 w-24 mt-0.5" />
-            ) : draftCount === 0 ? (
-              "No drafts in progress"
+              <Skeleton className="h-8 w-16" />
             ) : (
-              "In preparation"
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums font-mono">
+                  {publishedCount}
+                </span>
+                {publishedCount > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Live
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Offline</span>
+                )}
+              </div>
             )}
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Visibility Breakdown */}
-      <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-card/60 p-4 transition-all hover:bg-card/90 hover:border-border shadow-2xs">
-        <div className="flex items-center justify-between text-muted-foreground">
-          <span className="text-xs font-medium tracking-wide">Visibility</span>
-          <div className="flex size-7 items-center justify-center rounded-lg bg-muted/40 text-muted-foreground">
-            <Globe className="size-3.5" />
-          </div>
-        </div>
-
-        <div className="mt-3">
-          {isLoading ? (
-            <Skeleton className="h-8 w-20" />
-          ) : (
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
-                {publicCount}
-              </span>
-              <span className="text-xs font-normal text-muted-foreground">
-                public
-              </span>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {publishedCount > 0 ? "Accepting responses" : "No live forms published"}
             </div>
-          )}
-          <div className="mt-1 text-xs text-muted-foreground truncate">
+          </div>
+        </div>
+
+        {/* Cell 3: Visibility Breakdown */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-muted-foreground mb-3">
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Distribution</span>
+            <div className="flex size-7 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
+              <Globe className="size-3.5" />
+            </div>
+          </div>
+          <div>
             {isLoading ? (
-              <Skeleton className="h-3 w-28 mt-0.5" />
+              <Skeleton className="h-8 w-20" />
             ) : (
-              `${unlistedCount} unlisted`
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums font-mono">
+                  {publicCount}
+                </span>
+                <span className="text-xs text-muted-foreground">Public</span>
+              </div>
             )}
+            <div className="mt-1 text-xs text-muted-foreground">
+              {isLoading ? <Skeleton className="h-3 w-28 mt-0.5" /> : `${unlistedCount} unlisted private links`}
+            </div>
+          </div>
+        </div>
+
+        {/* Cell 4: Drafts & In-Progress */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-muted-foreground mb-3">
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">In Progress</span>
+            <div className="flex size-7 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
+              <FilePenLine className="size-3.5" />
+            </div>
+          </div>
+          <div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums font-mono">
+                {draftCount}
+              </div>
+            )}
+            <div className="mt-1 text-xs text-muted-foreground">
+              {draftCount > 0 ? "Under preparation in editor" : "All forms published"}
+            </div>
           </div>
         </div>
       </div>

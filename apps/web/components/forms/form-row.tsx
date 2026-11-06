@@ -157,7 +157,7 @@ export function FormRow({
   // ==========================================
   if (viewMode === "grid") {
     return (
-      <div className="group relative flex flex-col justify-between rounded-xl border border-border/60 bg-card p-4 sm:p-5 transition-all hover:border-border hover:shadow-xs hover:bg-card/90">
+      <div className="panel-highlight group relative flex flex-col justify-between rounded-xl border border-border/80 bg-card p-4 sm:p-5 transition-all hover:border-foreground/20 hover:shadow-sm">
         <div>
           {/* Header row: Status + Visibility + Menu */}
           <div className="flex items-center justify-between gap-2 mb-3">
@@ -173,7 +173,7 @@ export function FormRow({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-7 rounded-lg text-muted-foreground hover:text-foreground opacity-80 group-hover:opacity-100"
+                  className="size-7 rounded-lg text-muted-foreground hover:text-foreground opacity-80 group-hover:opacity-100 cursor-pointer"
                 >
                   <MoreVertical className="size-4" />
                   <span className="sr-only">Form menu</span>
@@ -226,7 +226,7 @@ export function FormRow({
             href={`/dashboard/forms/${form.id}`}
             className="block group/title focus-visible:outline-none"
           >
-            <h3 className="font-semibold text-sm text-foreground group-hover/title:text-primary transition-colors line-clamp-1">
+            <h3 className="font-semibold text-sm text-foreground group-hover/title:underline transition-all line-clamp-1">
               {form.title}
             </h3>
             <p className="mt-1 text-xs text-muted-foreground line-clamp-2 min-h-[2rem]">
@@ -290,14 +290,14 @@ export function FormRow({
               variant="outline"
               size="sm"
               onClick={() => onViewSubmissions(form)}
-              className="h-7 text-xs px-2.5 rounded-lg text-muted-foreground hover:text-foreground font-medium"
+              className="h-7 text-xs px-2.5 rounded-lg text-muted-foreground hover:text-foreground font-medium active:scale-[0.98] transition-all cursor-pointer"
             >
               Responses
             </Button>
             <Button
               size="sm"
               asChild
-              className="h-7 text-xs px-2.5 rounded-lg shadow-2xs"
+              className="h-7 text-xs px-2.5 rounded-lg shadow-2xs active:scale-[0.98] transition-all cursor-pointer"
             >
               <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
             </Button>
@@ -308,53 +308,50 @@ export function FormRow({
   }
 
   // ==========================================
-  // List / Table View Mode (Editorial Row)
+  // List / Table View Mode (Engineered Row)
   // ==========================================
   return (
-    <div className="group flex items-center justify-between gap-4 p-3.5 sm:px-4 rounded-xl border border-border/50 bg-card hover:bg-muted/20 hover:border-border transition-all">
-      {/* Title & Info */}
-      <div className="flex items-center gap-3.5 min-w-0 flex-1">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-muted/30 text-muted-foreground group-hover:text-foreground group-hover:border-border transition-colors">
-          <FileText className="size-4" />
-        </div>
+    <div className="group flex items-center justify-between gap-4 p-3.5 sm:px-5 hover:bg-muted/20 transition-colors">
+      {/* 12-Column Desktop Grid */}
+      <div className="flex items-center gap-3.5 min-w-0 flex-1 lg:grid lg:grid-cols-12 lg:gap-4 lg:items-center">
+        {/* Col 1-5: Form Name & Description */}
+        <div className="min-w-0 flex items-center gap-3 lg:col-span-5">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-muted-foreground group-hover:text-foreground group-hover:border-foreground/20 transition-colors">
+            <FileText className="size-4" />
+          </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
             <Link
               href={`/dashboard/forms/${form.id}`}
-              className="font-medium text-sm text-foreground hover:text-primary transition-colors truncate"
+              className="font-medium text-xs sm:text-sm text-foreground hover:underline transition-all truncate block"
             >
               {form.title}
             </Link>
-            {getStatusBadge(form.status)}
-          </div>
-          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-            {form.description ? (
-              <span className="truncate max-w-xs">{form.description}</span>
-            ) : (
-              <span className="italic text-muted-foreground/60">No description</span>
-            )}
-            <span>·</span>
-            <span>Updated {formattedDate}</span>
+            <div className="text-[11px] text-muted-foreground truncate max-w-xs mt-0.5">
+              {form.description || <span className="italic text-muted-foreground/60">No description provided</span>}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Visibility & Link (Desktop / Wide screens) */}
-      <div className="hidden xl:flex items-center gap-4 shrink-0">
-        <div className="w-20">
+        {/* Col 6-7: Status */}
+        <div className="hidden lg:flex items-center lg:col-span-2">
+          {getStatusBadge(form.status)}
+        </div>
+
+        {/* Col 8-9: Visibility */}
+        <div className="hidden lg:flex items-center lg:col-span-2">
           {getVisibilityBadge(form.visibility)}
         </div>
 
-        {/* Share Link for Published or Preview Link for Draft */}
-        <div className="w-44 flex items-center justify-start">
+        {/* Col 10-11: Share Link / Preview */}
+        <div className="hidden lg:flex items-center lg:col-span-2">
           {isPublished && form.shareId ? (
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border/60 bg-muted/20 px-2 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
-                title="Click to copy public link"
+                className="inline-flex h-6.5 items-center gap-1.5 rounded-md border border-border/60 bg-muted/20 px-2 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                title="Copy share link"
               >
                 {copied ? (
                   <>
@@ -372,32 +369,31 @@ export function FormRow({
                 href={`/f/${form.shareId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex size-7 items-center justify-center rounded-md border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                className="inline-flex size-6.5 items-center justify-center rounded-md border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                 title="Open live form in new tab"
               >
-                <ExternalLink className="size-3.5" />
+                <ExternalLink className="size-3" />
               </a>
             </div>
           ) : (
             <Link
               href={`/dashboard/forms/${form.id}/preview`}
-              className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border/40 bg-muted/20 px-2.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-              title="Preview form before publishing"
+              className="inline-flex h-6.5 items-center gap-1.5 rounded-md border border-border/40 bg-muted/20 px-2 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
             >
               <Eye className="size-3 opacity-60" />
-              <span>Preview Draft</span>
+              <span>Preview</span>
             </Link>
           )}
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {/* Col 12: Actions */}
       <div className="flex items-center gap-1.5 shrink-0">
         <Button
           variant="outline"
           size="sm"
           onClick={() => onViewSubmissions(form)}
-          className="hidden lg:inline-flex h-7.5 text-xs px-2.5 rounded-lg text-muted-foreground hover:text-foreground font-medium"
+          className="hidden sm:inline-flex h-7.5 text-xs px-2.5 rounded-lg text-muted-foreground hover:text-foreground font-medium active:scale-[0.98] transition-all cursor-pointer"
         >
           Responses
         </Button>
@@ -405,7 +401,7 @@ export function FormRow({
         <Button
           size="sm"
           asChild
-          className="h-7.5 text-xs px-3 rounded-lg shadow-2xs"
+          className="h-7.5 text-xs px-3 rounded-lg shadow-2xs active:scale-[0.98] transition-all cursor-pointer"
         >
           <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
         </Button>
@@ -415,7 +411,7 @@ export function FormRow({
             <Button
               variant="ghost"
               size="icon"
-              className="size-7.5 rounded-lg text-muted-foreground hover:text-foreground"
+              className="size-7.5 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
             >
               <MoreVertical className="size-4" />
               <span className="sr-only">More options</span>

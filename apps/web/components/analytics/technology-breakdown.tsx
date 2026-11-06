@@ -44,7 +44,7 @@ export function TechnologyBreakdown({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Device Breakdown */}
-        <Card className="border-border/60 bg-card/75 shadow-2xs">
+        <Card className="panel-highlight border-border/80 bg-card shadow-2xs">
           <CardHeader className="p-4 sm:p-5 pb-3">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
               <Monitor className="size-4 text-primary" />
@@ -89,7 +89,7 @@ export function TechnologyBreakdown({
         </Card>
 
         {/* Browser Breakdown */}
-        <Card className="border-border/60 bg-card/75 shadow-2xs">
+        <Card className="panel-highlight border-border/80 bg-card shadow-2xs">
           <CardHeader className="p-4 sm:p-5 pb-3">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
               <Compass className="size-4 text-primary" />
@@ -133,7 +133,7 @@ export function TechnologyBreakdown({
         </Card>
 
         {/* Country Breakdown */}
-        <Card className="border-border/60 bg-card/75 shadow-2xs">
+        <Card className="panel-highlight border-border/80 bg-card shadow-2xs">
           <CardHeader className="p-4 sm:p-5 pb-3">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
               <Globe className="size-4 text-primary" />

@@ -73,7 +73,7 @@ export function QuestionInsightsSection({
   // State 1: No form selected ("All Forms" workspace view) -> Show Form Selector Navigator
   if (!formId) {
     return (
-      <Card className="border-border/60 bg-card/75 shadow-2xs">
+      <Card className="panel-highlight border-border/80 bg-card shadow-2xs">
         <CardHeader className="p-4 sm:p-5 pb-3">
           <div className="flex items-center gap-2">
             <Sparkles className="size-4 text-primary" />
@@ -93,7 +93,7 @@ export function QuestionInsightsSection({
                 key={f.id}
                 type="button"
                 onClick={() => onSelectFormId(f.id)}
-                className="flex items-center justify-between p-3.5 rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/40 hover:border-primary/40 transition-all text-left group cursor-pointer"
+                className="panel-highlight flex items-center justify-between p-3.5 rounded-xl border border-border/70 bg-card hover:bg-muted/30 hover:border-foreground/20 active:scale-[0.98] transition-all text-left group cursor-pointer"
               >
                 <div className="min-w-0 pr-2">
                   <div className="flex items-center gap-2">
@@ -168,7 +168,7 @@ export function QuestionInsightsSection({
             variant="outline"
             size="sm"
             asChild
-            className="h-8 text-xs gap-1.5 border-border/70 hover:bg-muted"
+            className="h-8 text-xs gap-1.5 border-border/70 hover:bg-muted active:scale-[0.98] transition-all"
           >
             <Link href={`/dashboard/responses?formId=${formId}`}>
               <Inbox className="size-3.5 text-muted-foreground" />
@@ -189,7 +189,7 @@ export function QuestionInsightsSection({
       </div>
 
       {questions.length === 0 ? (
-        <Card className="border-border/60 bg-card/75 shadow-2xs">
+        <Card className="panel-highlight border-border/80 bg-card shadow-2xs">
           <CardContent className="p-8 text-center text-xs text-muted-foreground">
             No questions configured in the published version of this form yet.
           </CardContent>
@@ -208,7 +208,7 @@ export function QuestionInsightsSection({
             return (
               <Card
                 key={q.elementId}
-                className="border-border/60 bg-card/75 shadow-2xs transition-all hover:border-border/90 flex flex-col justify-between"
+                className="panel-highlight border-border/80 bg-card shadow-2xs transition-all hover:border-foreground/20 flex flex-col justify-between"
               >
                 <CardHeader className="p-4 sm:p-5 pb-3">
                   <div className="flex items-start justify-between gap-3">
