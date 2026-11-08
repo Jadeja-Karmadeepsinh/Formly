@@ -8,6 +8,7 @@ import {
   Globe,
   Link2,
   Loader2,
+  Plus,
 } from "lucide-react";
 import { useCreateForm } from "~/hooks/api/form";
 import { Button } from "~/components/ui/button";
@@ -65,12 +66,18 @@ export function CreateFormDialog({
   const [showProgressBar, setShowProgressBar] = React.useState(false);
   const [validationError, setValidationError] = React.useState<string | null>(null);
 
+  const titleInputRef = React.useRef<HTMLInputElement>(null);
   const { createFormAsync, isPending } = useCreateForm();
 
   React.useEffect(() => {
     if (open) {
       if (initialTitle) setTitle(initialTitle);
       if (initialDescription) setDescription(initialDescription);
+      // Ensure autofocus is triggered cleanly
+      const timeout = setTimeout(() => {
+        titleInputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timeout);
     }
   }, [open, initialTitle, initialDescription]);
 
@@ -93,11 +100,13 @@ export function CreateFormDialog({
     setOpen(nextOpen);
   };
 
+  const isTitleValid = title.trim().length > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanTitle = title.trim();
     if (!cleanTitle) {
-      setValidationError("Please enter a title for your form");
+      setValidationError("Form title is required");
       return;
     }
 
@@ -129,32 +138,33 @@ export function CreateFormDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
 
-      <DialogContent className="sm:max-w-md rounded-xl p-6">
+      <DialogContent className="sm:max-w-md rounded-2xl p-6 shadow-xl border border-border/80">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <DialogHeader className="pb-1">
+          <DialogHeader className="pb-1 text-left">
             <DialogTitle className="text-lg font-semibold tracking-tight text-foreground">
               Create New Form
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Give your form a name to start building in the editor.
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              Give your form a title to start composing questions in the editor.
             </DialogDescription>
           </DialogHeader>
 
-          {/* Form Title */}
+          {/* Form Title Input (Auto-focused, Required) */}
           <div className="space-y-1.5">
             <Label htmlFor="form-title" className="text-xs font-medium text-foreground">
-              Form Title <span className="text-destructive">*</span>
+              Form Title <span className="text-destructive font-mono">*</span>
             </Label>
             <Input
+              ref={titleInputRef}
               id="form-title"
-              placeholder="e.g. Customer Feedback, Team Standup..."
+              placeholder="e.g. Customer Feedback, Onboarding Survey..."
               value={title}
               onChange={(e) => {
                 setTitle(e.target.value);
                 if (validationError) setValidationError(null);
               }}
               autoFocus
-              className="h-9 text-sm rounded-lg"
+              className="h-9 text-xs rounded-xl border-border/80 bg-card"
             />
             {validationError && (
               <p className="text-[11px] font-medium text-destructive">
@@ -163,22 +173,22 @@ export function CreateFormDialog({
             )}
           </div>
 
-          {/* Form Description */}
+          {/* Form Description Input (Optional) */}
           <div className="space-y-1.5">
             <Label htmlFor="form-description" className="text-xs font-medium text-foreground">
-              Description <span className="text-muted-foreground font-normal">(Optional)</span>
+              Description <span className="text-muted-foreground font-normal text-[11px]">(Optional)</span>
             </Label>
             <Textarea
               id="form-description"
-              placeholder="Brief summary of what this form is collecting..."
+              placeholder="Brief context for your respondents..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="text-xs rounded-lg resize-none"
+              className="text-xs rounded-xl border-border/80 bg-card resize-none"
             />
           </div>
 
-          {/* Visibility */}
+          {/* Visibility Dropdown (Full Width) */}
           <div className="space-y-1.5">
             <Label htmlFor="form-visibility" className="text-xs font-medium text-foreground">
               Access Visibility
@@ -187,20 +197,20 @@ export function CreateFormDialog({
               value={visibility}
               onValueChange={(val: "unlisted" | "public") => setVisibility(val)}
             >
-              <SelectTrigger id="form-visibility" className="h-9 text-xs rounded-lg">
+              <SelectTrigger id="form-visibility" className="w-full h-9 text-xs rounded-xl border-border/80 bg-card justify-between">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="rounded-xl text-xs">
-                <SelectItem value="unlisted" className="cursor-pointer">
+              <SelectContent className="rounded-xl text-xs shadow-md">
+                <SelectItem value="unlisted" className="cursor-pointer py-2">
                   <div className="flex items-center gap-2">
-                    <Link2 className="size-3.5 text-muted-foreground" />
-                    <span>Unlisted (Anyone with link)</span>
+                    <Link2 className="size-3.5 text-muted-foreground shrink-0" />
+                    <span>Unlisted (Anyone with share link)</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="public" className="cursor-pointer">
+                <SelectItem value="public" className="cursor-pointer py-2">
                   <div className="flex items-center gap-2">
-                    <Globe className="size-3.5 text-muted-foreground" />
-                    <span>Public (Discoverable)</span>
+                    <Globe className="size-3.5 text-muted-foreground shrink-0" />
+                    <span>Public (Discoverable & open)</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -219,12 +229,14 @@ export function CreateFormDialog({
               ) : (
                 <ChevronDown className="size-3.5" />
               )}
-              <span>{showAdvanced ? "Hide Advanced Settings" : "Advanced Settings"}</span>
+              <span className="font-medium">
+                {showAdvanced ? "Hide Advanced Settings" : "Advanced Settings"}
+              </span>
             </button>
 
             {showAdvanced && (
-              <div className="mt-2 space-y-3 rounded-xl border border-border/60 bg-muted/20 p-3 text-xs">
-                <div className="grid grid-cols-2 gap-2.5">
+              <div className="mt-2 space-y-3 rounded-xl border border-border/70 bg-muted/20 p-3.5 text-xs">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="max-sub" className="text-[11px] text-muted-foreground">
                       Max Responses
@@ -236,7 +248,7 @@ export function CreateFormDialog({
                       min={1}
                       value={maxSubmissions}
                       onChange={(e) => setMaxSubmissions(e.target.value)}
-                      className="h-8 text-xs rounded-md"
+                      className="h-8.5 text-xs rounded-lg bg-card"
                     />
                   </div>
                   <div className="space-y-1">
@@ -248,24 +260,25 @@ export function CreateFormDialog({
                       placeholder="Submit"
                       value={submitButtonText}
                       onChange={(e) => setSubmitButtonText(e.target.value)}
-                      className="h-8 text-xs rounded-md"
+                      className="h-8.5 text-xs rounded-lg bg-card"
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center justify-between pt-1 border-t border-border/50">
                   <div className="space-y-0.5">
-                    <Label htmlFor="progress-bar" className="text-xs text-foreground cursor-pointer">
+                    <Label htmlFor="progress-bar" className="text-xs text-foreground cursor-pointer font-medium">
                       Show Progress Bar
                     </Label>
                     <p className="text-[10px] text-muted-foreground">
-                      Display completion percentage to respondents
+                      Displays question completion indicator to respondents
                     </p>
                   </div>
                   <Switch
                     id="progress-bar"
                     checked={showProgressBar}
                     onCheckedChange={setShowProgressBar}
+                    className="data-[state=unchecked]:bg-muted/80"
                   />
                 </div>
               </div>
@@ -279,15 +292,15 @@ export function CreateFormDialog({
               size="sm"
               onClick={() => handleOpenChange(false)}
               disabled={isPending}
-              className="rounded-lg text-xs"
+              className="h-8.5 rounded-lg text-xs border-border/70 cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               size="sm"
-              disabled={isPending}
-              className="gap-2 rounded-lg text-xs font-medium shadow-xs"
+              disabled={isPending || !isTitleValid}
+              className="h-8.5 gap-2 rounded-lg text-xs font-medium shadow-xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isPending ? (
                 <>
@@ -295,7 +308,10 @@ export function CreateFormDialog({
                   <span>Creating...</span>
                 </>
               ) : (
-                <span>Create & Open Editor</span>
+                <>
+                  <Plus className="size-3.5" />
+                  <span>Create & Open Editor</span>
+                </>
               )}
             </Button>
           </DialogFooter>
