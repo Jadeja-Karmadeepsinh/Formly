@@ -8,11 +8,11 @@ import {
   Copy,
   ExternalLink,
   Eye,
-  EyeOff,
   FileText,
   Globe,
   Inbox,
   Link2,
+  Lock,
   MoreVertical,
   Pencil,
   Trash2,
@@ -104,12 +104,13 @@ export function FormRow({
     }
   };
 
+  // F-03: Real business model state mapping (Draft is not Unpublished)
   const getVisibilityDisplay = () => {
     if (form.status === "draft") {
       return (
-        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70 font-normal">
-          <EyeOff className="size-3.5 text-muted-foreground/50 shrink-0" />
-          <span>Unpublished</span>
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-normal">
+          <Lock className="size-3 text-muted-foreground/60 shrink-0" />
+          <span>Private</span>
         </span>
       );
     }
@@ -259,10 +260,11 @@ export function FormRow({
                   ) : (
                     <>
                       <Copy className="size-3 opacity-60 shrink-0" />
-                      <span className="truncate whitespace-nowrap">{displayShareUrl}</span>
+                      <span className="truncate">{displayShareUrl}</span>
                     </>
                   )}
                 </button>
+
                 <a
                   href={`/f/${form.shareId}`}
                   target="_blank"
@@ -274,18 +276,18 @@ export function FormRow({
                 </a>
               </div>
             ) : (
-              <span className="inline-flex h-7 items-center px-2.5 rounded-lg border border-dashed border-border/60 bg-muted/10 text-[11px] text-muted-foreground/60 select-none">
-                Unpublished draft
+              <span className="inline-flex h-7 items-center px-2.5 rounded-lg border border-border/60 bg-muted/20 text-[11px] text-muted-foreground/70 select-none font-normal">
+                Not live yet
               </span>
             )}
           </div>
         </div>
 
-        {/* Footer Actions with Full-Width Separator */}
-        <div className="mt-4 pt-3 -mx-4 sm:-mx-5 px-4 sm:px-5 border-t border-border/60 flex items-center justify-between text-xs">
-          <span className="text-[11px] text-muted-foreground/80">
+        {/* Footer actions bar */}
+        <div className="mt-5 pt-3 border-t border-border/60 flex items-center justify-between gap-2">
+          <div className="text-[11px] text-muted-foreground/70">
             Updated {formattedDate}
-          </span>
+          </div>
 
           <div className="flex items-center gap-1.5">
             {isDraft ? (
@@ -293,10 +295,10 @@ export function FormRow({
                 variant="outline"
                 size="sm"
                 asChild
-                className="h-7.5 min-w-[84px] text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs justify-center gap-1.5"
+                className="h-7.5 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80"
               >
-                <Link href={`/dashboard/forms/${form.id}/preview`} title="Preview form">
-                  <Eye className="size-3.5 opacity-70" />
+                <Link href={`/dashboard/forms/${form.id}/preview`}>
+                  <Eye className="size-3 opacity-70" />
                   <span>Preview</span>
                 </Link>
               </Button>
@@ -305,9 +307,9 @@ export function FormRow({
                 variant="outline"
                 size="sm"
                 onClick={() => onViewSubmissions(form)}
-                className="h-7.5 min-w-[84px] text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs justify-center gap-1.5"
+                className="h-7.5 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80"
               >
-                <Inbox className="size-3.5 opacity-70" />
+                <Inbox className="size-3 opacity-70" />
                 <span>Responses</span>
               </Button>
             )}
@@ -316,10 +318,10 @@ export function FormRow({
               variant="outline"
               size="sm"
               asChild
-              className="h-7.5 min-w-[64px] text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs justify-center gap-1.5"
+              className="h-7.5 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80"
             >
               <Link href={`/dashboard/forms/${form.id}`}>
-                <Pencil className="size-3.5 opacity-70" />
+                <Pencil className="size-3 opacity-70" />
                 <span>Edit</span>
               </Link>
             </Button>
@@ -329,15 +331,15 @@ export function FormRow({
     );
   }
 
-  // ==========================================
-  // List / Table View Mode (Exact 12-Col Grid)
-  // ==========================================
+  // =========================================================================
+  // List / Table View Mode (Exact Custom Grid: Guaranteed >=24px separation)
+  // Grid: [Form 2.5fr] [Status 0.9fr] [Visibility 0.9fr] [Share 1.4fr] [Actions 1.8fr]
+  // =========================================================================
   return (
     <div className="group hover:bg-muted/15 transition-colors">
-      {/* Desktop 12-Column Grid (lg and above) */}
-      <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3.5 items-center min-h-[68px]">
-        {/* Col 1-4: Form Name & Metadata (Aligned with leading edge of icon) */}
-        <div className="min-w-0 flex items-center gap-3 col-span-4">
+      <div className="hidden lg:grid grid-cols-[minmax(240px,2.5fr)_minmax(100px,0.9fr)_minmax(100px,0.9fr)_minmax(210px,1.4fr)_minmax(260px,1.8fr)] gap-6 px-6 py-3.5 items-center min-h-[68px]">
+        {/* Col 1: Form Name & Metadata (F-04: Subtitle displays ONLY Updated {date}) */}
+        <div className="min-w-0 flex items-center gap-3">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-muted-foreground group-hover:text-foreground group-hover:border-foreground/20 transition-colors">
             <FileText className="size-4" />
           </div>
@@ -349,32 +351,26 @@ export function FormRow({
             >
               {form.title}
             </Link>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-              <span className="shrink-0 text-muted-foreground/80 font-normal">
+            <div className="text-xs text-muted-foreground mt-0.5 min-w-0 truncate">
+              <span className="text-muted-foreground/80 font-normal">
                 Updated {formattedDate}
               </span>
-              {form.description && (
-                <>
-                  <span className="text-muted-foreground/40 shrink-0">·</span>
-                  <span className="truncate">{form.description}</span>
-                </>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Col 5-6: Status (Left-aligned) */}
-        <div className="flex items-center col-span-2">
+        {/* Col 2: Status (Left-aligned) */}
+        <div className="flex items-center min-w-0">
           {getStatusBadge(form.status)}
         </div>
 
-        {/* Col 7-8: Visibility (Left-aligned) */}
-        <div className="flex items-center col-span-2">
+        {/* Col 3: Visibility (Left-aligned) */}
+        <div className="flex items-center min-w-0">
           {getVisibilityDisplay()}
         </div>
 
-        {/* Col 9-10: Share Link (Shortened relative route /f/..., with space before Actions) */}
-        <div className="flex items-center col-span-2 min-w-0 pr-2">
+        {/* Col 4: Share Link (F-05: Full relative route /f/..., never encroaches on Actions) */}
+        <div className="flex items-center min-w-0 pr-1">
           {isPublished && form.shareId ? (
             <div className="flex items-center gap-1.5 min-w-0">
               <TooltipProvider delayDuration={200}>
@@ -383,7 +379,7 @@ export function FormRow({
                     <button
                       type="button"
                       onClick={handleCopyLink}
-                      className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer max-w-[155px] whitespace-nowrap overflow-hidden text-ellipsis shadow-2xs"
+                      className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer max-w-[170px] whitespace-nowrap overflow-hidden text-ellipsis shadow-2xs"
                     >
                       {copied ? (
                         <>
@@ -415,23 +411,23 @@ export function FormRow({
               </a>
             </div>
           ) : (
-            <span className="inline-flex h-7 items-center px-2.5 rounded-lg border border-dashed border-border/60 bg-muted/10 text-[11px] text-muted-foreground/60 select-none">
-              Unpublished draft
+            <span className="inline-flex h-7 items-center px-2.5 rounded-lg border border-border/60 bg-muted/20 text-[11px] text-muted-foreground/70 select-none font-normal">
+              Not live yet
             </span>
           )}
         </div>
 
-        {/* Col 11-12: Actions (Right-aligned, Stable footprints and unified iconography) */}
-        <div className="flex items-center justify-end gap-2 col-span-2 shrink-0">
+        {/* Col 5: Actions (F-02: Standardized 116px primary action width, right-aligned) */}
+        <div className="flex items-center justify-end gap-2 shrink-0">
           {isDraft ? (
             <Button
               variant="outline"
               size="sm"
               asChild
-              className="h-7.5 min-w-[92px] text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs justify-center gap-1.5"
+              className="h-8 w-[116px] shrink-0 gap-1.5 text-xs rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80 shadow-2xs justify-center"
             >
-              <Link href={`/dashboard/forms/${form.id}/preview`} title="Preview form">
-                <Eye className="size-3.5 opacity-70" />
+              <Link href={`/dashboard/forms/${form.id}/preview`}>
+                <Eye className="size-3.5" />
                 <span>Preview</span>
               </Link>
             </Button>
@@ -440,9 +436,9 @@ export function FormRow({
               variant="outline"
               size="sm"
               onClick={() => onViewSubmissions(form)}
-              className="h-7.5 min-w-[92px] text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs justify-center gap-1.5"
+              className="h-8 w-[116px] shrink-0 gap-1.5 text-xs rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80 shadow-2xs justify-center"
             >
-              <Inbox className="size-3.5 opacity-70" />
+              <Inbox className="size-3.5" />
               <span>Responses</span>
             </Button>
           )}
@@ -450,13 +446,11 @@ export function FormRow({
           <Button
             variant="outline"
             size="sm"
-            asChild
-            className="h-7.5 min-w-[68px] text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs justify-center gap-1.5"
+            onClick={() => onEdit(form)}
+            className="h-8 w-[76px] shrink-0 gap-1.5 text-xs rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80 shadow-2xs justify-center"
           >
-            <Link href={`/dashboard/forms/${form.id}`}>
-              <Pencil className="size-3.5 opacity-70" />
-              <span>Edit</span>
-            </Link>
+            <Pencil className="size-3.5" />
+            <span>Edit</span>
           </Button>
 
           <DropdownMenu>
@@ -464,10 +458,10 @@ export function FormRow({
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-7.5 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+                className="size-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
               >
                 <MoreVertical className="size-4" />
-                <span className="sr-only">More options</span>
+                <span className="sr-only">Form options</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44 rounded-xl text-xs p-1 shadow-md">
@@ -477,22 +471,6 @@ export function FormRow({
                   <span>Open Editor</span>
                 </Link>
               </DropdownMenuItem>
-              {isDraft ? (
-                <DropdownMenuItem asChild className="gap-2 cursor-pointer py-1.5">
-                  <Link href={`/dashboard/forms/${form.id}/preview`}>
-                    <Eye className="size-3.5" />
-                    <span>Preview Form</span>
-                  </Link>
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem
-                  onClick={() => onViewSubmissions(form)}
-                  className="gap-2 cursor-pointer py-1.5"
-                >
-                  <Inbox className="size-3.5" />
-                  <span>View Responses</span>
-                </DropdownMenuItem>
-              )}
               {isPublished && form.shareId && (
                 <DropdownMenuItem
                   onClick={handleCopyLink}
@@ -522,21 +500,21 @@ export function FormRow({
         </div>
       </div>
 
-      {/* Mobile/Tablet Fallback Card Layout (< lg) */}
-      <div className="flex lg:hidden flex-col gap-3 p-4">
+      {/* Mobile & Tablet Compact View (Below lg) */}
+      <div className="flex lg:hidden flex-col p-4 gap-3">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-muted-foreground">
-              <FileText className="size-3.5" />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-muted-foreground">
+              <FileText className="size-4" />
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0">
               <Link
                 href={`/dashboard/forms/${form.id}`}
-                className="font-medium text-sm text-foreground hover:underline truncate block"
+                className="font-medium text-sm text-foreground hover:underline transition-all truncate block"
               >
                 {form.title}
               </Link>
-              <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">
                 Updated {formattedDate}
               </div>
             </div>
@@ -547,10 +525,10 @@ export function FormRow({
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-7 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+                className="size-7 rounded-lg text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
               >
                 <MoreVertical className="size-4" />
-                <span className="sr-only">More options</span>
+                <span className="sr-only">Form menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44 rounded-xl text-xs p-1 shadow-md">
@@ -560,31 +538,6 @@ export function FormRow({
                   <span>Open Editor</span>
                 </Link>
               </DropdownMenuItem>
-              {isDraft ? (
-                <DropdownMenuItem asChild className="gap-2 cursor-pointer py-1.5">
-                  <Link href={`/dashboard/forms/${form.id}/preview`}>
-                    <Eye className="size-3.5" />
-                    <span>Preview Form</span>
-                  </Link>
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem
-                  onClick={() => onViewSubmissions(form)}
-                  className="gap-2 cursor-pointer py-1.5"
-                >
-                  <Inbox className="size-3.5" />
-                  <span>View Responses</span>
-                </DropdownMenuItem>
-              )}
-              {isPublished && form.shareId && (
-                <DropdownMenuItem
-                  onClick={handleCopyLink}
-                  className="gap-2 cursor-pointer py-1.5"
-                >
-                  <Copy className="size-3.5" />
-                  <span>Copy Share Link</span>
-                </DropdownMenuItem>
-              )}
               <DropdownMenuItem
                 onClick={() => onEdit(form)}
                 className="gap-2 cursor-pointer py-1.5"
@@ -604,11 +557,28 @@ export function FormRow({
           </DropdownMenu>
         </div>
 
-        <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/40">
-          <div className="flex items-center gap-2">
-            {getStatusBadge(form.status)}
-            {getVisibilityDisplay()}
-          </div>
+        {/* Status + Visibility row */}
+        <div className="flex items-center gap-3 text-xs">
+          {getStatusBadge(form.status)}
+          {getVisibilityDisplay()}
+        </div>
+
+        {/* Actions row */}
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/50">
+          {isPublished && form.shareId ? (
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground transition-colors cursor-pointer max-w-[180px] truncate"
+            >
+              <Copy className="size-3 opacity-60 shrink-0" />
+              <span className="truncate">{displayShareUrl}</span>
+            </button>
+          ) : (
+            <span className="inline-flex h-7 items-center px-2.5 rounded-lg border border-border/60 bg-muted/20 text-[11px] text-muted-foreground/70 select-none font-normal">
+              Not live yet
+            </span>
+          )}
 
           <div className="flex items-center gap-1.5">
             {isDraft ? (
@@ -616,10 +586,10 @@ export function FormRow({
                 variant="outline"
                 size="sm"
                 asChild
-                className="h-7 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
+                className="h-7.5 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80"
               >
                 <Link href={`/dashboard/forms/${form.id}/preview`}>
-                  <Eye className="size-3 mr-1 opacity-70" />
+                  <Eye className="size-3 opacity-70" />
                   <span>Preview</span>
                 </Link>
               </Button>
@@ -628,9 +598,9 @@ export function FormRow({
                 variant="outline"
                 size="sm"
                 onClick={() => onViewSubmissions(form)}
-                className="h-7 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
+                className="h-7.5 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80"
               >
-                <Inbox className="size-3 mr-1 opacity-70" />
+                <Inbox className="size-3 opacity-70" />
                 <span>Responses</span>
               </Button>
             )}
@@ -639,10 +609,10 @@ export function FormRow({
               variant="outline"
               size="sm"
               asChild
-              className="h-7 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
+              className="h-7.5 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80"
             >
               <Link href={`/dashboard/forms/${form.id}`}>
-                <Pencil className="size-3 mr-1 opacity-70" />
+                <Pencil className="size-3 opacity-70" />
                 <span>Edit</span>
               </Link>
             </Button>

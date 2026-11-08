@@ -80,7 +80,7 @@ export function SiteHeader({
   const shortcutLabel = isMac ? "⌘K" : "Ctrl K";
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b border-border/60 bg-background/80 px-4 backdrop-blur-md transition-colors lg:px-8">
+    <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between border-b border-border/80 bg-background/80 px-4 backdrop-blur-md transition-colors lg:px-8">
       {/* Left: Sidebar trigger + Contextual Breadcrumbs */}
       <div className="flex items-center gap-3">
         <SidebarTrigger className="-ml-1 size-9 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors" />

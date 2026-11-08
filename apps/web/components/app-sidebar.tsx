@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BarChart3,
   BookOpen,
   Command,
   Inbox,
@@ -12,6 +11,7 @@ import {
   LogOut,
   MoreVertical,
   Settings,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -26,10 +26,6 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "~/components/ui/sidebar";
-import { FormlySymbol } from "~/components/formly-logo";
-import { useLogout, useMe } from "~/hooks/api/auth";
-import { useForms } from "~/hooks/api/form";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +34,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
+import { FormlySymbol } from "~/components/formly-logo";
+import { useLogout, useMe } from "~/hooks/api/auth";
+import { useForms } from "~/hooks/api/form";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onOpenCommandPalette?: () => void;
@@ -50,11 +50,12 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const pathname = usePathname();
   const { data: user } = useMe();
-  const { forms } = useForms();
   const { logout, isPending: isLoggingOut } = useLogout();
 
+  // Fetch recent forms for the sidebar quick shelf (limit 5)
+  const { forms } = useForms();
   const recentForms = React.useMemo(() => {
-    return (forms || []).slice(0, 5);
+    return forms.slice(0, 5);
   }, [forms]);
 
   // Dynamic user initials (e.g. Karmadeepsinh Jadeja -> KJ)
@@ -84,13 +85,14 @@ export function AppSidebar({
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-sidebar-border bg-sidebar overflow-x-hidden flex flex-col h-screen"
+      className="border-r border-border/80 bg-sidebar overflow-x-hidden flex flex-col h-svh"
       {...props}
     >
       {/* ========================================================= */}
       {/* Zone A — Fixed Top: Brand & Workspace Identity           */}
+      {/* Exactly 64px (h-16) to align with TopNavbar              */}
       {/* ========================================================= */}
-      <SidebarHeader className="p-3 shrink-0 group-data-[collapsible=icon]:p-2">
+      <SidebarHeader className="h-16 shrink-0 flex items-center justify-between px-3 border-b border-border/80 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="flex items-center justify-between gap-2 px-1.5 py-1 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
@@ -116,25 +118,23 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarSeparator className="mx-2 my-1 shrink-0 group-data-[collapsible=icon]:hidden" />
-
       {/* ========================================================= */}
       {/* Zone B — Scrollable Navigation Region                    */}
       {/* ========================================================= */}
-      <SidebarContent className="px-2 group-data-[collapsible=icon]:px-1 flex-1 overflow-y-auto overflow-x-hidden scrollbar-none">
+      <SidebarContent className="px-2 pt-3 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:pt-3 flex-1 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-none">
         {/* Workspace Primary Navigation */}
         <SidebarGroup className="p-0">
           <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider group-data-[collapsible=icon]:hidden">
             Workspace
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-0.5">
+            <SidebarMenu className="gap-1.5">
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
                   isActive={isOverviewActive}
                   tooltip="Overview"
-                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-8.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
+                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Link href="/dashboard">
                     <LayoutDashboard className="size-4 shrink-0" />
@@ -148,7 +148,7 @@ export function AppSidebar({
                   asChild
                   isActive={isResponsesActive}
                   tooltip="Responses"
-                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-8.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
+                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Link href="/dashboard/responses">
                     <Inbox className="size-4 shrink-0" />
@@ -162,7 +162,7 @@ export function AppSidebar({
                   asChild
                   isActive={isAnalyticsActive}
                   tooltip="Analytics"
-                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-8.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
+                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Link href="/dashboard/analytics">
                     <BarChart3 className="size-4 shrink-0" />
@@ -179,126 +179,113 @@ export function AppSidebar({
           <SidebarGroup className="p-0 mt-3 group-data-[collapsible=icon]:hidden">
             <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider flex items-center justify-between">
               <span>Recent Forms</span>
-              <span className="text-[10px] font-mono text-muted-foreground/70">{recentForms.length}</span>
+              <span className="text-[10px] font-mono tabular-nums opacity-60">
+                {recentForms.length}
+              </span>
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="gap-0.5">
-                <TooltipProvider delayDuration={200}>
-                  {recentForms.map((f) => {
-                    const isFormActive = pathname === `/dashboard/forms/${f.id}`;
-                    return (
-                      <SidebarMenuItem key={f.id}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <SidebarMenuButton
-                              asChild
-                              isActive={isFormActive}
-                              className="rounded-lg text-xs font-normal h-7.5"
+                {recentForms.map((form) => {
+                  const isFormActive = pathname === `/dashboard/forms/${form.id}`;
+                  const isLive = form.status === "published";
+
+                  return (
+                    <SidebarMenuItem key={form.id}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={isFormActive}
+                            className="rounded-lg text-xs font-normal text-muted-foreground hover:text-foreground h-8 px-2"
+                          >
+                            <Link
+                              href={`/dashboard/forms/${form.id}`}
+                              className="flex items-center gap-2 min-w-0"
                             >
-                              <Link
-                                href={`/dashboard/forms/${f.id}`}
-                                className="flex items-center gap-2 min-w-0"
-                              >
-                                <span
-                                  className={`size-1.5 rounded-full shrink-0 ${
-                                    f.status === "published"
-                                      ? "bg-emerald-500"
-                                      : "bg-muted-foreground/40"
-                                  }`}
-                                  aria-label={`Status: ${f.status}`}
-                                />
-                                <span className="truncate flex-1 min-w-0">{f.title}</span>
-                              </Link>
-                            </SidebarMenuButton>
-                          </TooltipTrigger>
-                          <TooltipContent side="right" className="text-xs max-w-xs font-normal">
-                            <p className="font-semibold text-popover-foreground">{f.title}</p>
-                            <p className="text-[11px] text-muted-foreground capitalize mt-0.5">
-                              Status: {f.status} · {f.visibility}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </TooltipProvider>
+                              <span
+                                className={`size-1.5 rounded-full shrink-0 ${
+                                  isLive ? "bg-emerald-500" : "bg-muted-foreground/40"
+                                }`}
+                              />
+                              <span className="truncate">{form.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="right"
+                          align="center"
+                          className="text-xs max-w-xs"
+                        >
+                          <p className="font-semibold text-foreground">{form.title}</p>
+                          <p className="text-[10px] text-muted-foreground capitalize mt-0.5">
+                            Status: {form.status}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
 
-        <SidebarSeparator className="my-2 mx-1 group-data-[collapsible=icon]:hidden" />
+        {/* ========================================================= */}
+        {/* Zone B3 — Consolidated Bottom Utilities (Anchored mt-auto) */}
+        {/* Settings, Documentation, and Command Menu in one group     */}
+        {/* ========================================================= */}
+        <div className="mt-auto shrink-0 pt-2 pb-1">
+          <SidebarSeparator className="my-2 mx-1 border-border/60 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:w-8" />
+          <SidebarGroup className="p-0">
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-1">
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isSettingsActive}
+                    tooltip="Settings"
+                    className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
+                  >
+                    <Link href="/dashboard/settings/account">
+                      <Settings className="size-4 shrink-0" />
+                      <span>Settings</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
-        {/* Preferences Group */}
-        <SidebarGroup className="p-0 group-data-[collapsible=icon]:mt-2">
-          <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider group-data-[collapsible=icon]:hidden">
-            Preferences
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-0.5">
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isSettingsActive}
-                  tooltip="Settings"
-                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-8.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
-                >
-                  <Link href="/dashboard/settings/account">
-                    <Settings className="size-4 shrink-0" />
-                    <span>Settings</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Documentation"
+                    className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
+                  >
+                    <Link href="/docs" target="_blank">
+                      <BookOpen className="size-4 shrink-0" />
+                      <span>Documentation</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
-        {/* Help Group */}
-        <SidebarGroup className="p-0 mt-2 group-data-[collapsible=icon]:mt-0">
-          <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider group-data-[collapsible=icon]:hidden">
-            Help
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-0.5">
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  tooltip="Documentation"
-                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-8.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
-                >
-                  <Link href="/docs" target="_blank">
-                    <BookOpen className="size-4 shrink-0" />
-                    <span>Documentation</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Global Command Menu Entry (No duplicate shortcut badge) */}
-        <SidebarGroup className="p-0 mt-2 group-data-[collapsible=icon]:mt-0">
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-0.5">
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={onOpenCommandPalette}
-                  tooltip="Command Menu"
-                  className="rounded-lg text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground group-data-[collapsible=icon]:size-8.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
-                >
-                  <Command className="size-4 shrink-0" />
-                  <span>Command Menu</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={onOpenCommandPalette}
+                    tooltip="Command Menu"
+                    className="rounded-lg text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
+                  >
+                    <Command className="size-4 shrink-0" />
+                    <span>Command Menu</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </div>
       </SidebarContent>
 
       {/* ========================================================= */}
       {/* Zone C — Fixed Bottom: User Profile Menu                 */}
       {/* ========================================================= */}
-      <SidebarFooter className="p-2 border-t border-sidebar-border shrink-0 bg-sidebar group-data-[collapsible=icon]:p-1.5">
+      <SidebarFooter className="p-2 pb-3 border-t border-border/80 shrink-0 bg-sidebar group-data-[collapsible=icon]:p-1.5 group-data-[collapsible=icon]:pb-3">
         {/* User Card with Dynamic Initials and Clean Single-Line Email */}
         <SidebarMenu>
           <SidebarMenuItem>

@@ -26,10 +26,10 @@ export function middleTruncate(str: string, leadChars = 5, tailChars = 4): strin
 }
 
 /**
- * Returns a clean, shortened display representation of a form's relative route
- * e.g. "/f/2w-ng1…pZ6" (avoids leaking development hostnames like localhost:3000 into the UI)
+ * Returns a clean display representation of a form's relative route
+ * e.g. "/f/Qb5EV719b0X9bv_4" (preserves readable slug without hostname leaks)
  */
 export function formatShareDisplay(shareId: string): string {
   if (!shareId) return "";
-  return `/f/${middleTruncate(shareId, 5, 4)}`;
+  return `/f/${shareId}`;
 }

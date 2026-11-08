@@ -26,7 +26,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { FormsMetrics } from "./forms-metrics";
 import { FormRow } from "./form-row";
-import { FormSubmissionsSheet } from "./form-submissions-sheet";
+import { FormSubmissionsDialog } from "./form-submissions-dialog";
 import { EmptyFormsState } from "./empty-forms-state";
 import { CreateFormDialog } from "./create-form-dialog";
 import { EditFormDialog } from "./edit-form-dialog";
@@ -182,21 +182,23 @@ export function FormsDashboard() {
                   key={status}
                   type="button"
                   onClick={() => setStatusFilter(status)}
-                  className={`inline-flex items-center gap-2 h-8 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors capitalize cursor-pointer shrink-0 ${
+                  className={`inline-flex items-center gap-2 h-8 px-3 rounded-full text-xs font-medium transition-colors capitalize cursor-pointer shrink-0 ${
                     isSelected
-                      ? "bg-card text-foreground shadow-xs font-semibold border border-border/60 dark:bg-muted dark:text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/30 border border-transparent"
+                      ? "bg-background text-foreground shadow-xs font-semibold border border-border/80 dark:bg-card dark:text-foreground dark:border-border/80"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent"
                   }`}
                 >
-                  <span>{status}</span>
-                  <span
-                    className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-mono tabular-nums leading-none transition-colors ${
-                      isSelected
-                        ? "bg-muted text-foreground font-semibold dark:bg-background/80 dark:text-foreground"
-                        : "bg-muted/70 text-muted-foreground"
-                    }`}
-                  >
-                    {count}
+                  <span className="inline-flex items-center justify-center gap-1.5 leading-none">
+                    <span>{status}</span>
+                    <span
+                      className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-mono tabular-nums leading-none transition-colors ${
+                        isSelected
+                          ? "bg-muted text-foreground font-bold dark:bg-muted/80 dark:text-foreground"
+                          : "bg-muted/60 text-muted-foreground"
+                      }`}
+                    >
+                      {count}
+                    </span>
                   </span>
                 </button>
               );
@@ -454,13 +456,13 @@ export function FormsDashboard() {
             </div>
           ) : (
             <div className="panel-highlight rounded-2xl border border-border/80 bg-card overflow-hidden shadow-2xs divide-y divide-border/60">
-              {/* Table Column Header: Clean 12-Column Grid matching rows */}
-              <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/20 border-b border-border/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground select-none">
-                <div className="col-span-4">Form</div>
-                <div className="col-span-2">Status</div>
-                <div className="col-span-2">Visibility</div>
-                <div className="col-span-2">Share Link</div>
-                <div className="col-span-2 text-right">Actions</div>
+              {/* Table Column Header: Matching exact tailored grid */}
+              <div className="hidden lg:grid grid-cols-[minmax(240px,2.5fr)_minmax(100px,0.9fr)_minmax(100px,0.9fr)_minmax(210px,1.4fr)_minmax(260px,1.8fr)] gap-6 px-6 py-3 bg-muted/20 border-b border-border/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground select-none">
+                <div>Form</div>
+                <div>Status</div>
+                <div>Visibility</div>
+                <div>Share Link</div>
+                <div className="text-right">Actions</div>
               </div>
               <div className="divide-y divide-border/50">
                 {filteredForms.map((form) => (
@@ -479,9 +481,9 @@ export function FormsDashboard() {
         )}
       </div>
 
-      {/* 5. Modals & Sheets */}
-      {/* Submissions Slide-out Inspector */}
-      <FormSubmissionsSheet
+      {/* 5. Modals & Dialogs */}
+      {/* Submissions Centered Modal Dialog */}
+      <FormSubmissionsDialog
         form={submissionsForm}
         open={Boolean(submissionsForm)}
         onOpenChange={(open) => {

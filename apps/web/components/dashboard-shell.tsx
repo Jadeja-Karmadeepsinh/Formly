@@ -24,7 +24,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
         {
           "--sidebar-width": "15.5rem",
           "--sidebar-width-icon": "3.5rem",
-          "--header-height": "3.5rem",
+          "--header-height": "4rem",
         } as React.CSSProperties
       }
     >

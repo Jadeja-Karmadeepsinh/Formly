@@ -102,8 +102,8 @@ export function FormsMetrics({
             )}
             <div className="mt-1 text-xs text-muted-foreground">
               {publishedCount > 0
-                ? "Ready for responses"
-                : "No forms published"}
+                ? "Accepting responses"
+                : "No live forms"}
             </div>
           </div>
         </div>
