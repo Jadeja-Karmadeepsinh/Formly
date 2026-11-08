@@ -24,18 +24,16 @@ export function DashboardShell({ children }: DashboardShellProps) {
         {
           "--sidebar-width": "15.5rem",
           "--sidebar-width-icon": "3.5rem",
-          "--header-height": "3.5rem",
+          "--header-height": "4rem",
         } as React.CSSProperties
       }
     >
       <AppSidebar
-        variant="inset"
-        onOpenCreateForm={() => setIsCreateOpen(true)}
+        variant="sidebar"
         onOpenCommandPalette={() => setIsCommandOpen(true)}
       />
-      <SidebarInset className="bg-background min-h-screen flex flex-col">
+      <SidebarInset className="bg-background min-h-screen flex flex-col min-w-0">
         <SiteHeader
-          onOpenCreateForm={() => setIsCreateOpen(true)}
           onOpenCommandPalette={() => setIsCommandOpen(true)}
         />
         <div className="flex-1 flex flex-col">{children}</div>

@@ -2,23 +2,17 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
-  BarChart3,
   BookOpen,
-  CheckCircle2,
   Command,
-  FilePenLine,
   Inbox,
   LayoutDashboard,
   LogOut,
-  Moon,
   MoreVertical,
-  Plus,
   Settings,
-  Sun,
+  BarChart3,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import {
   Sidebar,
   SidebarContent,
@@ -28,15 +22,10 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
 } from "~/components/ui/sidebar";
-import { FormlySymbol } from "~/components/formly-logo";
-import { useLogout, useMe } from "~/hooks/api/auth";
-import { useForms } from "~/hooks/api/form";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,71 +34,81 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { Button } from "~/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
+import { FormlySymbol } from "~/components/formly-logo";
+import { useLogout, useMe } from "~/hooks/api/auth";
+import { useForms } from "~/hooks/api/form";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  onOpenCreateForm?: () => void;
   onOpenCommandPalette?: () => void;
 }
 
 export function AppSidebar({
-  onOpenCreateForm,
   onOpenCommandPalette,
   ...props
 }: AppSidebarProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentStatus = searchParams?.get("status");
-
   const { data: user } = useMe();
-  const { forms } = useForms();
-  const { setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
   const { logout, isPending: isLoggingOut } = useLogout();
 
-  const totalCount = forms?.length ?? 0;
-  const publishedCount = forms?.filter((f) => f.status === "published").length ?? 0;
-  const draftCount = forms?.filter((f) => f.status === "draft").length ?? 0;
+  // Fetch recent forms for the sidebar quick shelf (limit 5)
+  const { forms } = useForms();
+  const recentForms = React.useMemo(() => {
+    return forms.slice(0, 5);
+  }, [forms]);
 
+  // Dynamic user initials (e.g. Karmadeepsinh Jadeja -> KJ)
   const initials = React.useMemo(() => {
-    if (!user?.name) return "U";
-    const parts = user.name.trim().split(/\s+/);
-    if (parts.length >= 2 && parts[0]?.[0] && parts[1]?.[0]) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    const name = user?.fullName || user?.name;
+    if (!name) {
+      if (user?.email) return user.email.slice(0, 2).toUpperCase();
+      return "KJ";
     }
-    return user.name.slice(0, 2).toUpperCase() || "U";
-  }, [user?.name]);
+    const parts = name.trim().split(/\s+/);
+    const first = parts[0];
+    const last = parts[parts.length - 1];
+    if (parts.length >= 2 && first && last && first[0] && last[0]) {
+      return `${first[0]}${last[0]}`.toUpperCase();
+    }
+    if (name.length >= 2) {
+      return name.slice(0, 2).toUpperCase();
+    }
+    return name.toUpperCase() || "KJ";
+  }, [user?.fullName, user?.name, user?.email]);
 
-  const isOverviewActive = pathname === "/dashboard" && !currentStatus;
+  const isOverviewActive = pathname === "/dashboard";
   const isResponsesActive = pathname.startsWith("/dashboard/responses");
   const isAnalyticsActive = pathname.startsWith("/dashboard/analytics");
-  const isPublishedActive = pathname === "/dashboard" && currentStatus === "published";
-  const isDraftsActive = pathname === "/dashboard" && currentStatus === "draft";
   const isSettingsActive = pathname.startsWith("/dashboard/settings");
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar" {...props}>
-      {/* 1. Brand Header */}
-      <SidebarHeader className="p-3">
+    <Sidebar
+      collapsible="icon"
+      className="border-r border-border/80 bg-sidebar overflow-x-hidden flex flex-col h-svh"
+      {...props}
+    >
+      {/* ========================================================= */}
+      {/* Zone A — Fixed Top: Brand & Workspace Identity           */}
+      {/* Exactly 64px (h-16) to align with TopNavbar              */}
+      {/* ========================================================= */}
+      <SidebarHeader className="h-16 shrink-0 flex items-center justify-between px-3 border-b border-border/80 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className="flex items-center justify-between gap-2 px-1.5 py-1">
+            <div className="flex items-center justify-between gap-2 px-1.5 py-1 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
+                className="flex items-center gap-2.5 transition-opacity hover:opacity-85 group-data-[collapsible=icon]:gap-0"
                 title="Formly Dashboard"
               >
-                <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-foreground text-background">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-foreground text-background shadow-xs mx-auto">
                   <FormlySymbol size={16} />
                 </div>
-                <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+                <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
                   <span className="text-sm font-semibold tracking-tight text-foreground leading-none">
                     Formly
                   </span>
-                  <span className="text-[11px] text-muted-foreground mt-0.5">
+                  <span className="text-[11px] text-muted-foreground mt-0.5 truncate">
                     Personal Studio
                   </span>
                 </div>
@@ -117,53 +116,31 @@ export function AppSidebar({
             </div>
           </SidebarMenuItem>
         </SidebarMenu>
-
-        {/* Quick New Form Button */}
-        <div className="pt-2 px-1 group-data-[collapsible=icon]:hidden">
-          <Button
-            size="sm"
-            onClick={onOpenCreateForm}
-            className="w-full justify-between h-8.5 rounded-lg text-xs font-medium shadow-xs active:scale-[0.98] transition-all"
-          >
-            <span className="flex items-center gap-1.5">
-              <Plus className="size-3.5" />
-              <span>New Form</span>
-            </span>
-            <kbd className="inline-flex h-4 items-center rounded border border-primary-foreground/30 px-1 text-[10px] font-mono opacity-80">
-              C
-            </kbd>
-          </Button>
-        </div>
       </SidebarHeader>
 
-      <SidebarSeparator className="mx-2 my-1" />
-
-      {/* 2. Main Navigation Content */}
-      <SidebarContent className="px-2">
-        {/* Workspace Section */}
+      {/* ========================================================= */}
+      {/* Zone B — Scrollable Navigation Region                    */}
+      {/* ========================================================= */}
+      <SidebarContent className="px-2 pt-3 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:pt-3 flex-1 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-none">
+        {/* Workspace Primary Navigation */}
         <SidebarGroup className="p-0">
-          <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider">
+          <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider group-data-[collapsible=icon]:hidden">
             Workspace
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-0.5">
+            <SidebarMenu className="gap-1.5">
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
                   isActive={isOverviewActive}
                   tooltip="Overview"
-                  className="rounded-lg text-xs font-medium"
+                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Link href="/dashboard">
                     <LayoutDashboard className="size-4 shrink-0" />
                     <span>Overview</span>
                   </Link>
                 </SidebarMenuButton>
-                {totalCount > 0 && (
-                  <SidebarMenuBadge className="text-[11px] text-muted-foreground font-mono">
-                    {totalCount}
-                  </SidebarMenuBadge>
-                )}
               </SidebarMenuItem>
 
               <SidebarMenuItem>
@@ -171,7 +148,7 @@ export function AppSidebar({
                   asChild
                   isActive={isResponsesActive}
                   tooltip="Responses"
-                  className="rounded-lg text-xs font-medium"
+                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Link href="/dashboard/responses">
                     <Inbox className="size-4 shrink-0" />
@@ -185,7 +162,7 @@ export function AppSidebar({
                   asChild
                   isActive={isAnalyticsActive}
                   tooltip="Analytics"
-                  className="rounded-lg text-xs font-medium"
+                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Link href="/dashboard/analytics">
                     <BarChart3 className="size-4 shrink-0" />
@@ -193,77 +170,58 @@ export function AppSidebar({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isPublishedActive}
-                  tooltip="Published Forms"
-                  className="rounded-lg text-xs font-medium"
-                >
-                  <Link href="/dashboard?status=published">
-                    <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                    <span>Published</span>
-                  </Link>
-                </SidebarMenuButton>
-                {publishedCount > 0 && (
-                  <SidebarMenuBadge className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">
-                    {publishedCount}
-                  </SidebarMenuBadge>
-                )}
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isDraftsActive}
-                  tooltip="Draft Forms"
-                  className="rounded-lg text-xs font-medium"
-                >
-                  <Link href="/dashboard?status=draft">
-                    <FilePenLine className="size-4 shrink-0" />
-                    <span>Drafts</span>
-                  </Link>
-                </SidebarMenuButton>
-                {draftCount > 0 && (
-                  <SidebarMenuBadge className="text-[11px] text-muted-foreground font-mono">
-                    {draftCount}
-                  </SidebarMenuBadge>
-                )}
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {forms && forms.length > 0 && (
-          <SidebarGroup className="p-0">
+        {/* Recent Forms Shelf (Only visible when sidebar is expanded) */}
+        {recentForms.length > 0 && (
+          <SidebarGroup className="p-0 mt-3 group-data-[collapsible=icon]:hidden">
             <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider flex items-center justify-between">
               <span>Recent Forms</span>
-              <span className="text-[10px] font-mono text-muted-foreground/60">{forms.length}</span>
+              <span className="text-[10px] font-mono tabular-nums opacity-60">
+                {recentForms.length}
+              </span>
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="gap-0.5">
-                {forms.slice(0, 4).map((f) => {
-                  const isFormActive = pathname === `/dashboard/forms/${f.id}`;
+                {recentForms.map((form) => {
+                  const isFormActive = pathname === `/dashboard/forms/${form.id}`;
+                  const isLive = form.status === "published";
+
                   return (
-                    <SidebarMenuItem key={f.id}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={isFormActive}
-                        tooltip={f.title}
-                        className="rounded-lg text-xs font-normal h-7.5"
-                      >
-                        <Link href={`/dashboard/forms/${f.id}`} className="flex items-center gap-2">
-                          <span
-                            className={`size-1.5 rounded-full shrink-0 ${
-                              f.status === "published"
-                                ? "bg-emerald-500"
-                                : "bg-muted-foreground/40"
-                            }`}
-                          />
-                          <span className="truncate">{f.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
+                    <SidebarMenuItem key={form.id}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={isFormActive}
+                            className="rounded-lg text-xs font-normal text-muted-foreground hover:text-foreground h-8 px-2"
+                          >
+                            <Link
+                              href={`/dashboard/forms/${form.id}`}
+                              className="flex items-center gap-2 min-w-0"
+                            >
+                              <span
+                                className={`size-1.5 rounded-full shrink-0 ${
+                                  isLive ? "bg-emerald-500" : "bg-muted-foreground/40"
+                                }`}
+                              />
+                              <span className="truncate">{form.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="right"
+                          align="center"
+                          className="text-xs max-w-xs"
+                        >
+                          <p className="font-semibold text-foreground">{form.title}</p>
+                          <p className="text-[10px] text-muted-foreground capitalize mt-0.5">
+                            Status: {form.status}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
                     </SidebarMenuItem>
                   );
                 })}
@@ -272,122 +230,86 @@ export function AppSidebar({
           </SidebarGroup>
         )}
 
-        <SidebarSeparator className="my-2 mx-1" />
+        {/* ========================================================= */}
+        {/* Zone B3 — Consolidated Bottom Utilities (Anchored mt-auto) */}
+        {/* Settings, Documentation, and Command Menu in one group     */}
+        {/* ========================================================= */}
+        <div className="mt-auto shrink-0 pt-2 pb-1">
+          <SidebarSeparator className="my-2 mx-1 border-border/60 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:w-8" />
+          <SidebarGroup className="p-0">
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-1">
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isSettingsActive}
+                    tooltip="Settings"
+                    className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
+                  >
+                    <Link href="/dashboard/settings/account">
+                      <Settings className="size-4 shrink-0" />
+                      <span>Settings</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
-        {/* Preferences & Help */}
-        <SidebarGroup className="p-0">
-          <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider">
-            Preferences
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-0.5">
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={isSettingsActive}
-                  tooltip="Account & Security"
-                  className="rounded-lg text-xs font-medium"
-                >
-                  <Link href="/dashboard/settings/account">
-                    <Settings className="size-4 shrink-0" />
-                    <span>Settings</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Documentation"
+                    className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
+                  >
+                    <Link href="/docs" target="_blank">
+                      <BookOpen className="size-4 shrink-0" />
+                      <span>Documentation</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  tooltip="Documentation"
-                  className="rounded-lg text-xs font-medium"
-                >
-                  <Link href="/docs" target="_blank">
-                    <BookOpen className="size-4 shrink-0" />
-                    <span>Documentation</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={onOpenCommandPalette}
-                  tooltip="Command Palette"
-                  className="rounded-lg text-xs font-medium cursor-pointer"
-                >
-                  <Command className="size-4 shrink-0" />
-                  <span>Command Menu</span>
-                  <kbd className="ml-auto inline-flex h-4 items-center rounded border border-sidebar-border px-1 text-[10px] font-mono text-muted-foreground group-data-[collapsible=icon]:hidden">
-                    ⌘K
-                  </kbd>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={onOpenCommandPalette}
+                    tooltip="Command Menu"
+                    className="rounded-lg text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
+                  >
+                    <Command className="size-4 shrink-0" />
+                    <span>Command Menu</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </div>
       </SidebarContent>
 
-      {/* 3. Footer: Theme Toggle & User Menu */}
-      <SidebarFooter className="p-2 border-t border-sidebar-border gap-1.5">
-        {/* Workspace Capacity Meter */}
-        <div className="mx-1 mb-1 px-2.5 py-2 rounded-lg bg-muted/25 border border-sidebar-border/60 text-xs space-y-1.5 group-data-[collapsible=icon]:hidden">
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-            <span className="font-medium text-foreground">Workspace Plan</span>
-            <span className="font-mono text-[10px]">{totalCount} / 10 Forms</span>
-          </div>
-          <div className="w-full h-1 bg-muted/60 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-foreground rounded-full transition-all duration-500"
-              style={{ width: `${Math.min((totalCount / 10) * 100, 100)}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Subtle Theme Toggle Row */}
-        <div className="flex items-center justify-between px-2 py-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-          <span className="text-[11px]">Theme</span>
-          <button
-            type="button"
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-            className="flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs text-foreground transition-colors hover:bg-sidebar-accent cursor-pointer"
-            title="Toggle theme"
-          >
-            {mounted && resolvedTheme === "dark" ? (
-              <>
-                <Sun className="size-3.5 text-amber-400" />
-                <span className="text-[11px]">Light</span>
-              </>
-            ) : (
-              <>
-                <Moon className="size-3.5 text-muted-foreground" />
-                <span className="text-[11px]">Dark</span>
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* User Card with Real Data */}
+      {/* ========================================================= */}
+      {/* Zone C — Fixed Bottom: User Profile Menu                 */}
+      {/* ========================================================= */}
+      <SidebarFooter className="p-2 pb-3 border-t border-border/80 shrink-0 bg-sidebar group-data-[collapsible=icon]:p-1.5 group-data-[collapsible=icon]:pb-3">
+        {/* User Card with Dynamic Initials and Clean Single-Line Email */}
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="rounded-lg p-1.5 hover:bg-sidebar-accent transition-colors"
+                  tooltip={user?.name || user?.fullName || "User Account"}
+                  className="rounded-xl p-1.5 hover:bg-sidebar-accent transition-colors cursor-pointer group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Avatar className="size-8 rounded-lg shrink-0 border border-sidebar-border">
                     {user?.image ? (
-                      <AvatarImage src={user.image} alt={user.name ?? "User"} />
+                      <AvatarImage src={user.image} alt={user?.name || user?.fullName || "User"} />
                     ) : null}
-                    <AvatarFallback className="rounded-lg bg-muted text-xs font-semibold">
+                    <AvatarFallback className="rounded-lg bg-muted text-xs font-semibold text-foreground">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-xs leading-tight min-w-0 group-data-[collapsible=icon]:hidden">
                     <span className="truncate font-semibold text-foreground">
-                      {user?.name || "Gemini"}
+                      {user?.name || user?.fullName || "Karmadeepsinh Jadeja"}
                     </span>
-                    <span className="truncate text-[11px] text-muted-foreground">
-                      {user?.email || "Signed In"}
+                    <span className="truncate text-[11px] text-muted-foreground" title={user?.email || ""}>
+                      {user?.email || "karmadeepsinh@example.com"}
                     </span>
                   </div>
                   <MoreVertical className="ml-auto size-3.5 text-muted-foreground group-data-[collapsible=icon]:hidden" />
@@ -402,7 +324,7 @@ export function AppSidebar({
                 <DropdownMenuLabel className="p-2 font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-xs font-semibold leading-none text-foreground truncate">
-                      {user?.name || "Gemini"}
+                      {user?.name || user?.fullName || "Karmadeepsinh Jadeja"}
                     </p>
                     <p className="text-[11px] leading-none text-muted-foreground truncate">
                       {user?.email || ""}
@@ -415,22 +337,6 @@ export function AppSidebar({
                     <Settings className="size-3.5" />
                     <span>Account Settings</span>
                   </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                  className="gap-2 cursor-pointer text-xs rounded-lg py-1.5"
-                >
-                  {resolvedTheme === "dark" ? (
-                    <>
-                      <Sun className="size-3.5" />
-                      <span>Light Theme</span>
-                    </>
-                  ) : (
-                    <>
-                      <Moon className="size-3.5" />
-                      <span>Dark Theme</span>
-                    </>
-                  )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

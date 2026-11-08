@@ -11,11 +11,9 @@ import {
   Plus,
   RotateCw,
   Search,
-  Sparkles,
   X,
 } from "lucide-react";
 import { type FormItem, useForms } from "~/hooks/api/form";
-import { useMe } from "~/hooks/api/auth";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -25,9 +23,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { FormsMetrics } from "./forms-metrics";
 import { FormRow } from "./form-row";
-import { FormSubmissionsSheet } from "./form-submissions-sheet";
+import { FormSubmissionsDialog } from "./form-submissions-dialog";
 import { EmptyFormsState } from "./empty-forms-state";
 import { CreateFormDialog } from "./create-form-dialog";
 import { EditFormDialog } from "./edit-form-dialog";
@@ -38,18 +37,14 @@ export function FormsDashboard() {
   const urlStatus = searchParams?.get("status");
 
   const { forms, isLoading, isError, error, refetch, isFetching } = useForms();
-  const { data: user } = useMe();
 
   const [searchQuery, setSearchQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string>(urlStatus || "all");
-  const [sortBy, setSortBy] = React.useState<"updated" | "title" | "created">("updated");
+  const [sortBy, setSortBy] = React.useState<"updated" | "created" | "title-asc" | "title-desc">("updated");
   const [viewMode, setViewMode] = React.useState<"list" | "grid">("list");
 
   // Dialog & Sheet States
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
-  const [starterTitle, setStarterTitle] = React.useState("");
-  const [starterDescription, setStarterDescription] = React.useState("");
-
   const [submissionsForm, setSubmissionsForm] = React.useState<FormItem | null>(null);
   const [editingForm, setEditingForm] = React.useState<FormItem | null>(null);
   const [deletingForm, setDeletingForm] = React.useState<FormItem | null>(null);
@@ -78,17 +73,6 @@ export function FormsDashboard() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Time-of-day personalized greeting
-  const greeting = React.useMemo(() => {
-    const hour = new Date().getHours();
-    let timeGreet = "Good morning";
-    if (hour >= 12 && hour < 17) timeGreet = "Good afternoon";
-    else if (hour >= 17) timeGreet = "Good evening";
-
-    const name = user?.name ? user.name.trim().split(/\s+/)[0] : "there";
-    return `${timeGreet}, ${name}`;
-  }, [user?.name]);
-
   // Counts for filter pills
   const counts = React.useMemo(() => {
     const total = forms.length;
@@ -114,10 +98,13 @@ export function FormsDashboard() {
       return matchesSearch && matchesStatus;
     });
 
-    // Sorting
+    // Sorting options: recently updated, newest created, title A-Z, title Z-A
     result.sort((a, b) => {
-      if (sortBy === "title") {
+      if (sortBy === "title-asc") {
         return a.title.localeCompare(b.title);
+      }
+      if (sortBy === "title-desc") {
+        return b.title.localeCompare(a.title);
       }
       if (sortBy === "created") {
         const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -133,58 +120,60 @@ export function FormsDashboard() {
     return result;
   }, [forms, searchQuery, statusFilter, sortBy]);
 
-  const handleSelectStarter = (title: string, description: string) => {
-    setStarterTitle(title);
-    setStarterDescription(description);
-    setIsCreateOpen(true);
-  };
+  const sortLabel = React.useMemo(() => {
+    switch (sortBy) {
+      case "updated":
+        return "Recently updated";
+      case "created":
+        return "Recently created";
+      case "title-asc":
+        return "Name: A–Z";
+      case "title-desc":
+        return "Name: Z–A";
+      default:
+        return "Sort";
+    }
+  }, [sortBy]);
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-      {/* 1. Executive Welcome & Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      {/* 1. Page Title & Primary CTA */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-[28px] font-semibold tracking-tight text-foreground">
-              {greeting}
-            </h1>
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-muted text-muted-foreground border border-border/60">
-              Workspace
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground font-normal">
-            Manage your document forms, inspect live responses, and distribute shareable links.
+          <h1 className="text-2xl sm:text-[28px] font-semibold tracking-tight text-foreground">
+            Overview
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground font-normal">
+            Create and manage forms, collect submissions, and monitor activity.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <Button
             size="sm"
-            onClick={() => {
-              setStarterTitle("");
-              setStarterDescription("");
-              setIsCreateOpen(true);
-            }}
-            className="gap-2 rounded-lg text-xs font-medium px-3.5 h-9 shadow-2xs active:scale-[0.98] transition-all cursor-pointer"
+            onClick={() => setIsCreateOpen(true)}
+            className="gap-2 rounded-lg text-xs font-semibold px-4 h-9 shadow-2xs active:scale-[0.98] transition-all cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="size-4" />
-            <span>Create Form</span>
-            <kbd className="hidden sm:inline-flex h-4 items-center rounded border border-primary-foreground/30 px-1 text-[10px] font-mono opacity-80">
-              C
-            </kbd>
+            <span>New form</span>
           </Button>
         </div>
       </div>
 
       {/* 2. Overview Metrics Command Rail */}
-      <FormsMetrics forms={forms} isLoading={isLoading} />
+      <FormsMetrics
+        forms={forms}
+        isLoading={isLoading}
+        onSelectStatus={(status) => setStatusFilter(status)}
+        activeStatus={statusFilter}
+      />
 
-      {/* 3. Forms Workspace Section */}
+      {/* 3. Forms Workspace Directory Section */}
       <div className="space-y-4">
-        {/* Section Header with Controls */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pt-2">
-          {/* Status Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none bg-muted/40 p-1 rounded-xl border border-border/60">
+        {/* Section Controls Toolbar */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pt-1">
+          {/* Status Tabs Segmented Control */}
+          <div className="inline-flex items-center gap-1 p-1 rounded-full bg-muted/40 border border-border/70 overflow-x-auto scrollbar-none">
             {(["all", "published", "draft", "closed", "archived"] as const).map((status) => {
               const count = counts[status];
               const isSelected = statusFilter === status;
@@ -193,47 +182,53 @@ export function FormsDashboard() {
                   key={status}
                   type="button"
                   onClick={() => setStatusFilter(status)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize cursor-pointer shrink-0 ${
+                  className={`inline-flex items-center gap-2 h-8 px-3 rounded-full text-xs font-medium transition-colors capitalize cursor-pointer shrink-0 ${
                     isSelected
-                      ? "bg-background text-foreground shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                      ? "bg-background text-foreground shadow-xs font-semibold border border-border/80 dark:bg-card dark:text-foreground dark:border-border/80"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent"
                   }`}
                 >
-                  <span>{status}</span>
-                  <span
-                    className={`inline-flex items-center justify-center rounded-full px-1.5 text-[10px] tabular-nums font-mono ${
-                      isSelected
-                        ? "bg-muted text-foreground font-medium"
-                        : "bg-muted/60 text-muted-foreground"
-                    }`}
-                  >
-                    {count}
+                  <span className="inline-flex items-center justify-center gap-1.5 leading-none">
+                    <span>{status}</span>
+                    <span
+                      className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-mono tabular-nums leading-none transition-colors ${
+                        isSelected
+                          ? "bg-muted text-foreground font-bold dark:bg-muted/80 dark:text-foreground"
+                          : "bg-muted/60 text-muted-foreground"
+                      }`}
+                    >
+                      {count}
+                    </span>
                   </span>
                 </button>
               );
             })}
           </div>
 
-          {/* Right Controls: Search, Sort & View Mode */}
-          <div className="flex items-center gap-2">
-            {/* Search Input */}
-            <div className="relative flex-1 sm:w-64">
-              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground pointer-events-none" />
+          {/* Right Toolbar Controls (Standardized Height: 36px / h-9) */}
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            {/* Search Input with Dedicated / Shortcut Badge */}
+            <div className="relative flex-1 sm:w-64 min-w-[200px]">
+              <Search className="absolute left-3 top-2.5 size-3.5 text-muted-foreground pointer-events-none" />
               <Input
                 ref={searchInputRef}
-                placeholder="Filter by title... (/)"
+                placeholder="Search forms..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-7 h-8.5 text-xs rounded-lg bg-card/80 border-border/60"
+                className="pl-8.5 pr-8 h-9 text-xs rounded-xl bg-card border-border/80 shadow-2xs"
               />
-              {searchQuery && (
+              {searchQuery ? (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                  className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
                 >
                   <X className="size-3.5" />
                 </button>
+              ) : (
+                <kbd className="absolute right-2.5 top-2.5 pointer-events-none hidden sm:inline-flex h-4 items-center justify-center rounded border border-border/70 bg-muted/40 px-1.5 text-[10px] font-mono text-muted-foreground">
+                  /
+                </kbd>
               )}
             </div>
 
@@ -243,36 +238,23 @@ export function FormsDashboard() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8.5 text-xs gap-1.5 rounded-lg border-border/60 text-muted-foreground hover:text-foreground px-2.5 cursor-pointer"
+                  className="h-9 text-xs gap-1.5 rounded-xl border-border/80 text-muted-foreground hover:text-foreground px-3 cursor-pointer shadow-2xs shrink-0"
                   title="Sort forms"
                 >
                   <ArrowUpDown className="size-3.5" />
-                  <span className="hidden sm:inline">
-                    {sortBy === "updated"
-                      ? "Recent"
-                      : sortBy === "title"
-                      ? "A-Z"
-                      : "Newest"}
+                  <span className="hidden sm:inline font-medium text-foreground">
+                    {sortLabel}
                   </span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-36 text-xs p-1 rounded-xl">
+              <DropdownMenuContent align="end" className="w-44 text-xs p-1 rounded-xl shadow-md">
                 <DropdownMenuItem
                   onClick={() => setSortBy("updated")}
                   className="gap-2 cursor-pointer py-1.5"
                 >
                   {sortBy === "updated" && <Check className="size-3 text-primary" />}
-                  <span className={sortBy === "updated" ? "font-medium" : "pl-5"}>
-                    Recently Updated
-                  </span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSortBy("title")}
-                  className="gap-2 cursor-pointer py-1.5"
-                >
-                  {sortBy === "title" && <Check className="size-3 text-primary" />}
-                  <span className={sortBy === "title" ? "font-medium" : "pl-5"}>
-                    Title (A to Z)
+                  <span className={sortBy === "updated" ? "font-semibold" : "pl-5"}>
+                    Recently updated
                   </span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -280,63 +262,107 @@ export function FormsDashboard() {
                   className="gap-2 cursor-pointer py-1.5"
                 >
                   {sortBy === "created" && <Check className="size-3 text-primary" />}
-                  <span className={sortBy === "created" ? "font-medium" : "pl-5"}>
-                    Newest Created
+                  <span className={sortBy === "created" ? "font-semibold" : "pl-5"}>
+                    Recently created
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSortBy("title-asc")}
+                  className="gap-2 cursor-pointer py-1.5"
+                >
+                  {sortBy === "title-asc" && <Check className="size-3 text-primary" />}
+                  <span className={sortBy === "title-asc" ? "font-semibold" : "pl-5"}>
+                    Name: A–Z
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSortBy("title-desc")}
+                  className="gap-2 cursor-pointer py-1.5"
+                >
+                  {sortBy === "title-desc" && <Check className="size-3 text-primary" />}
+                  <span className={sortBy === "title-desc" ? "font-semibold" : "pl-5"}>
+                    Name: Z–A
                   </span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* View Mode Toggle (List vs Grid) */}
-            <div className="flex items-center rounded-lg border border-border/60 bg-muted/20 p-0.5">
-              <button
-                type="button"
-                onClick={() => setViewMode("list")}
-                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                  viewMode === "list"
-                    ? "bg-background text-foreground shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="List View"
-              >
-                <List className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                  viewMode === "grid"
-                    ? "bg-background text-foreground shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="Grid View"
-              >
-                <LayoutGrid className="size-3.5" />
-              </button>
-            </div>
+            {/* View Mode Segmented Switcher (List vs Grid) */}
+            <TooltipProvider delayDuration={200}>
+              <div className="flex items-center rounded-xl border border-border/80 bg-muted/30 p-0.5 h-9 shadow-2xs shrink-0">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("list")}
+                      className={`h-7.5 w-7.5 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+                        viewMode === "list"
+                          ? "bg-background text-foreground shadow-2xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      aria-label="List view"
+                    >
+                      <List className="size-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    List view
+                  </TooltipContent>
+                </Tooltip>
 
-            {/* Refresh */}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="size-8.5 rounded-lg border-border/60 text-muted-foreground hover:text-foreground cursor-pointer"
-              title="Refresh forms"
-            >
-              <RotateCw className={`size-3.5 ${isFetching ? "animate-spin text-primary" : ""}`} />
-            </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("grid")}
+                      className={`h-7.5 w-7.5 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+                        viewMode === "grid"
+                          ? "bg-background text-foreground shadow-2xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      aria-label="Grid view"
+                    >
+                      <LayoutGrid className="size-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    Grid view
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
+
+            {/* Refresh Button with Tooltip */}
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => refetch()}
+                    disabled={isFetching}
+                    className="size-9 rounded-xl border-border/80 text-muted-foreground hover:text-foreground cursor-pointer shadow-2xs shrink-0"
+                    aria-label="Refresh forms"
+                  >
+                    <RotateCw className={`size-3.5 ${isFetching ? "animate-spin text-primary" : ""}`} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Refresh forms
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 
-        {/* 4. Content Area */}
+        {/* 4. Form Directory Content Area */}
         {/* Loading State */}
         {isLoading && (
           <div className="space-y-3 pt-2">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="flex items-center justify-between p-4 rounded-xl border border-border/40 bg-card/40"
+                className="flex items-center justify-between p-4 rounded-2xl border border-border/60 bg-card/60"
               >
                 <div className="space-y-2">
                   <Skeleton className="h-4.5 w-48" />
@@ -353,7 +379,7 @@ export function FormsDashboard() {
 
         {/* Error State */}
         {!isLoading && isError && (
-          <div className="p-8 rounded-xl border border-destructive/20 bg-destructive/5 flex flex-col items-center justify-center gap-3 text-center my-6">
+          <div className="p-8 rounded-2xl border border-destructive/20 bg-destructive/5 flex flex-col items-center justify-center gap-3 text-center my-6">
             <div className="rounded-full bg-destructive/10 p-3 text-destructive">
               <AlertCircle className="size-6" />
             </div>
@@ -367,7 +393,7 @@ export function FormsDashboard() {
               variant="outline"
               size="sm"
               onClick={() => refetch()}
-              className="gap-2 mt-2 text-xs rounded-lg cursor-pointer"
+              className="gap-2 mt-2 text-xs rounded-xl cursor-pointer border-border/80"
             >
               <RotateCw className="size-3.5" />
               Try Again
@@ -375,23 +401,21 @@ export function FormsDashboard() {
           </div>
         )}
 
-        {/* Empty State: Zero Total Forms */}
+        {/* Empty State: Zero Total Forms in Workspace */}
         {!isLoading && !isError && forms.length === 0 && (
-          <div className="rounded-xl border border-border/60 bg-card/40 my-4">
+          <div className="rounded-2xl border border-border/70 bg-card/60 my-4">
             <EmptyFormsState
-              onCreateForm={() => {
-                setStarterTitle("");
-                setStarterDescription("");
+              onCreateForm={() => setIsCreateOpen(true)}
+              onSelectStarter={() => {
                 setIsCreateOpen(true);
               }}
-              onSelectStarter={handleSelectStarter}
             />
           </div>
         )}
 
         {/* Empty State: Filter / Search with 0 matches */}
         {!isLoading && !isError && forms.length > 0 && filteredForms.length === 0 && (
-          <div className="rounded-xl border border-border/60 bg-card/40 p-12 text-center my-4 space-y-3">
+          <div className="rounded-2xl border border-border/70 bg-card/40 p-12 text-center my-4 space-y-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-muted mx-auto text-muted-foreground">
               <Search className="size-5" />
             </div>
@@ -399,7 +423,7 @@ export function FormsDashboard() {
               No matching forms found
             </h3>
             <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-              No forms match your current search &ldquo;{searchQuery}&rdquo; and filter &ldquo;{statusFilter}&rdquo;.
+              No forms match your current search &ldquo;{searchQuery}&rdquo; and status &ldquo;{statusFilter}&rdquo;.
             </p>
             <Button
               variant="outline"
@@ -408,7 +432,7 @@ export function FormsDashboard() {
                 setSearchQuery("");
                 setStatusFilter("all");
               }}
-              className="text-xs rounded-lg mt-2 cursor-pointer"
+              className="text-xs rounded-xl mt-2 cursor-pointer border-border/70"
             >
               Clear Search & Filters
             </Button>
@@ -431,14 +455,14 @@ export function FormsDashboard() {
               ))}
             </div>
           ) : (
-            <div className="panel-highlight rounded-xl border border-border/80 bg-card overflow-hidden shadow-xs divide-y divide-border/60">
-              {/* Table Column Header */}
-              <div className="hidden lg:grid grid-cols-12 gap-4 px-5 py-2.5 bg-muted/30 border-b border-border/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground select-none">
-                <div className="col-span-5">Form Name & Topic</div>
-                <div className="col-span-2">Status</div>
-                <div className="col-span-2">Visibility</div>
-                <div className="col-span-2">Share Link</div>
-                <div className="col-span-1 text-right">Actions</div>
+            <div className="panel-highlight rounded-2xl border border-border/80 bg-card overflow-hidden shadow-2xs divide-y divide-border/60">
+              {/* Table Column Header: Matching exact tailored grid */}
+              <div className="hidden lg:grid grid-cols-[minmax(240px,2.5fr)_minmax(100px,0.9fr)_minmax(100px,0.9fr)_minmax(210px,1.4fr)_minmax(260px,1.8fr)] gap-6 px-6 py-3 bg-muted/20 border-b border-border/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground select-none">
+                <div>Form</div>
+                <div>Status</div>
+                <div>Visibility</div>
+                <div>Share Link</div>
+                <div className="text-right">Actions</div>
               </div>
               <div className="divide-y divide-border/50">
                 {filteredForms.map((form) => (
@@ -455,76 +479,11 @@ export function FormsDashboard() {
             </div>
           )
         )}
-
-        {/* Curated Templates Quick-Starter Rail */}
-        {!isLoading && !isError && forms.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-border/60 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xs uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <Sparkles className="size-3.5 text-primary" />
-                  <span>Quick Start Templates</span>
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Launch a pre-configured form structure with standard industry questions.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {[
-                {
-                  title: "Customer Feedback",
-                  desc: "CSAT, Net Promoter Score, and qualitative product impressions.",
-                  badge: "Customer Success",
-                },
-                {
-                  title: "Event Registration",
-                  desc: "Attendee names, dietary preferences, and session selection.",
-                  badge: "Operations",
-                },
-                {
-                  title: "Job Application",
-                  desc: "Candidate contact info, experience summary, and portfolio link.",
-                  badge: "Hiring",
-                },
-                {
-                  title: "Contact Inquiries",
-                  desc: "Clean inquiry capture for inbound leads and service requests.",
-                  badge: "Sales & Support",
-                },
-              ].map((template) => (
-                <button
-                  key={template.title}
-                  type="button"
-                  onClick={() => handleSelectStarter(template.title, template.desc)}
-                  className="panel-highlight flex flex-col justify-between p-4 rounded-xl border border-border/70 bg-card hover:bg-muted/20 hover:border-foreground/20 active:scale-[0.98] transition-all text-left cursor-pointer group shadow-2xs"
-                >
-                  <div>
-                    <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block mb-1">
-                      {template.badge}
-                    </span>
-                    <h4 className="font-semibold text-xs text-foreground group-hover:text-primary transition-colors">
-                      {template.title}
-                    </h4>
-                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-                      {template.desc}
-                    </p>
-                  </div>
-                  <div className="mt-3 flex items-center gap-1 text-[11px] font-medium text-foreground group-hover:underline">
-                    <span>Use Template</span>
-                    <Plus className="size-3" />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* 5. Modals & Sheets */}
-      {/* Submissions Slide-out Inspector */}
-      <FormSubmissionsSheet
+      {/* 5. Modals & Dialogs */}
+      {/* Submissions Centered Modal Dialog */}
+      <FormSubmissionsDialog
         form={submissionsForm}
         open={Boolean(submissionsForm)}
         onOpenChange={(open) => {
@@ -554,8 +513,6 @@ export function FormsDashboard() {
       <CreateFormDialog
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
-        initialTitle={starterTitle}
-        initialDescription={starterDescription}
       />
     </div>
   );

@@ -5,16 +5,14 @@ import Link from "next/link";
 import {
   Archive,
   Check,
-  CheckCircle2,
-  Clock,
   Copy,
   ExternalLink,
   Eye,
-  FilePenLine,
   FileText,
   Globe,
   Inbox,
   Link2,
+  Lock,
   MoreVertical,
   Pencil,
   Trash2,
@@ -29,7 +27,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { type FormItem } from "~/hooks/api/form";
+import { formatShareDisplay } from "~/lib/format-utils";
 
 interface FormRowProps {
   form: FormItem;
@@ -48,13 +48,15 @@ export function FormRow({
 }: FormRowProps) {
   const [copied, setCopied] = React.useState(false);
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const fullShareUrl = `${origin}/f/${form.shareId}`;
+  const displayShareUrl = formatShareDisplay(form.shareId);
+
   const handleCopyLink = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const url = `${origin}/f/${form.shareId}`;
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(fullShareUrl);
       setCopied(true);
       toast.success("Share link copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
@@ -67,77 +69,67 @@ export function FormRow({
     switch (status) {
       case "published":
         return (
-          <Badge
-            variant="outline"
-            className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25 gap-1.5 font-medium text-[11px] h-5.5 px-2 hover:bg-emerald-500/15"
-          >
-            <CheckCircle2 className="size-3 text-emerald-500" />
+          <span className="inline-flex items-center gap-1.5 h-5.5 px-2.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            <span className="size-1.5 rounded-full bg-emerald-500" />
             <span>Published</span>
-          </Badge>
+          </span>
         );
       case "draft":
         return (
-          <Badge
-            variant="secondary"
-            className="text-[11px] h-5.5 px-2 font-medium text-muted-foreground bg-muted/60 border border-border/40 gap-1.5"
-          >
-            <FilePenLine className="size-3 text-muted-foreground/80" />
+          <span className="inline-flex items-center gap-1.5 h-5.5 px-2.5 rounded-full text-[11px] font-medium bg-muted/60 text-muted-foreground border border-border/70">
+            <span className="size-1.5 rounded-full bg-muted-foreground/60" />
             <span>Draft</span>
-          </Badge>
+          </span>
         );
       case "closed":
         return (
-          <Badge
-            variant="outline"
-            className="text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10 text-[11px] h-5.5 px-2 font-medium gap-1.5"
-          >
-            <Clock className="size-3" />
+          <span className="inline-flex items-center gap-1.5 h-5.5 px-2.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+            <span className="size-1.5 rounded-full bg-amber-500" />
             <span>Closed</span>
-          </Badge>
+          </span>
         );
       case "archived":
         return (
-          <Badge
-            variant="outline"
-            className="text-muted-foreground border-border/60 bg-muted/20 text-[11px] h-5.5 px-2 font-medium gap-1.5"
-          >
+          <span className="inline-flex items-center gap-1.5 h-5.5 px-2.5 rounded-full text-[11px] font-medium bg-muted/40 text-muted-foreground border border-border/60">
             <Archive className="size-3" />
             <span>Archived</span>
-          </Badge>
+          </span>
         );
       default:
         return (
-          <Badge variant="secondary" className="text-[11px] h-5.5 px-2">
+          <Badge variant="secondary" className="text-[11px] h-5.5 px-2.5">
             {status}
           </Badge>
         );
     }
   };
 
-  const getVisibilityBadge = (visibility: FormItem["visibility"]) => {
-    switch (visibility) {
-      case "public":
-        return (
-          <span
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-normal"
-            title="Public form — Accessible to anyone"
-          >
-            <Globe className="size-3.5 text-muted-foreground/70 shrink-0" />
-            <span>Public</span>
-          </span>
-        );
-      case "unlisted":
-      default:
-        return (
-          <span
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-normal"
-            title="Unlisted form — Anyone with the link can access"
-          >
-            <Link2 className="size-3.5 text-muted-foreground/70 shrink-0" />
-            <span>Unlisted</span>
-          </span>
-        );
+  // F-03: Real business model state mapping (Draft is not Unpublished)
+  const getVisibilityDisplay = () => {
+    if (form.status === "draft") {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-normal">
+          <Lock className="size-3 text-muted-foreground/60 shrink-0" />
+          <span>Private</span>
+        </span>
+      );
     }
+
+    if (form.visibility === "public") {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs text-foreground font-normal">
+          <Globe className="size-3.5 text-muted-foreground shrink-0" />
+          <span>Public</span>
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-normal">
+        <Link2 className="size-3.5 text-muted-foreground/70 shrink-0" />
+        <span>Unlisted</span>
+      </span>
+    );
   };
 
   const formattedDate = React.useMemo(() => {
@@ -151,20 +143,21 @@ export function FormRow({
   }, [form.updatedAt]);
 
   const isPublished = form.status === "published";
+  const isDraft = form.status === "draft";
 
   // ==========================================
   // Grid / Card View Mode
   // ==========================================
   if (viewMode === "grid") {
     return (
-      <div className="panel-highlight group relative flex flex-col justify-between rounded-xl border border-border/80 bg-card p-4 sm:p-5 transition-all hover:border-foreground/20 hover:shadow-sm">
+      <div className="panel-highlight group relative flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 sm:p-5 transition-all hover:border-foreground/20 hover:shadow-xs min-h-[220px]">
         <div>
           {/* Header row: Status + Visibility + Menu */}
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
               {getStatusBadge(form.status)}
               <div className="pl-1">
-                {getVisibilityBadge(form.visibility)}
+                {getVisibilityDisplay()}
               </div>
             </div>
 
@@ -179,21 +172,30 @@ export function FormRow({
                   <span className="sr-only">Form menu</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44 rounded-xl text-xs p-1">
+              <DropdownMenuContent align="end" className="w-44 rounded-xl text-xs p-1 shadow-md">
                 <DropdownMenuItem asChild className="gap-2 cursor-pointer py-1.5">
                   <Link href={`/dashboard/forms/${form.id}`}>
                     <FileText className="size-3.5" />
                     <span>Open Editor</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onViewSubmissions(form)}
-                  className="gap-2 cursor-pointer py-1.5"
-                >
-                  <Inbox className="size-3.5" />
-                  <span>View Responses</span>
-                </DropdownMenuItem>
-                {form.shareId && (
+                {isDraft ? (
+                  <DropdownMenuItem asChild className="gap-2 cursor-pointer py-1.5">
+                    <Link href={`/dashboard/forms/${form.id}/preview`}>
+                      <Eye className="size-3.5" />
+                      <span>Preview Form</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    onClick={() => onViewSubmissions(form)}
+                    className="gap-2 cursor-pointer py-1.5"
+                  >
+                    <Inbox className="size-3.5" />
+                    <span>View Responses</span>
+                  </DropdownMenuItem>
+                )}
+                {isPublished && form.shareId && (
                   <DropdownMenuItem
                     onClick={handleCopyLink}
                     className="gap-2 cursor-pointer py-1.5"
@@ -207,7 +209,7 @@ export function FormRow({
                   className="gap-2 cursor-pointer py-1.5"
                 >
                   <Pencil className="size-3.5" />
-                  <span>Form Settings</span>
+                  <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -229,77 +231,99 @@ export function FormRow({
             <h3 className="font-semibold text-sm text-foreground group-hover/title:underline transition-all line-clamp-1">
               {form.title}
             </h3>
-            <p className="mt-1 text-xs text-muted-foreground line-clamp-2 min-h-[2rem]">
-              {form.description || "No description provided"}
-            </p>
+            {form.description ? (
+              <p className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                {form.description}
+              </p>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground/70">
+                Updated {formattedDate}
+              </p>
+            )}
           </Link>
 
-          {/* Share ID Pill or Preview Pill */}
+          {/* Share Link Row (Relative route for published, structured pill for draft) */}
           <div className="mt-3">
             {isPublished && form.shareId ? (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 w-full">
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="inline-flex h-6.5 items-center gap-1.5 rounded-md border border-border/60 bg-muted/20 px-2 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
-                  title="Click to copy public link"
+                  className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer max-w-[200px]"
+                  title="Click to copy canonical share link"
                 >
                   {copied ? (
                     <>
-                      <Check className="size-3 text-emerald-500" />
-                      <span className="text-emerald-600 dark:text-emerald-400 font-sans">Copied</span>
+                      <Check className="size-3 text-emerald-500 shrink-0" />
+                      <span className="text-emerald-600 dark:text-emerald-400 font-sans font-medium">Copied!</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="size-3 opacity-60" />
-                      <span>{form.shareId}</span>
+                      <Copy className="size-3 opacity-60 shrink-0" />
+                      <span className="truncate">{displayShareUrl}</span>
                     </>
                   )}
                 </button>
+
                 <a
                   href={`/f/${form.shareId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex size-6.5 items-center justify-center rounded-md border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                  className="inline-flex size-7 items-center justify-center rounded-lg border border-border/70 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors shrink-0"
                   title="Open live form in new tab"
                 >
-                  <ExternalLink className="size-3" />
+                  <ExternalLink className="size-3.5" />
                 </a>
               </div>
             ) : (
-              <Link
-                href={`/dashboard/forms/${form.id}/preview`}
-                className="inline-flex h-6.5 items-center gap-1.5 rounded-md border border-border/40 bg-muted/20 px-2 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-                title="Preview form before publishing"
-              >
-                <Eye className="size-3 opacity-60" />
-                <span>Preview Draft</span>
-              </Link>
+              <span className="inline-flex h-7 items-center px-2.5 rounded-lg border border-border/60 bg-muted/20 text-[11px] text-muted-foreground/70 select-none font-normal">
+                Not live yet
+              </span>
             )}
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between text-xs">
-          <span className="text-[11px] text-muted-foreground/80 font-mono">
-            {formattedDate}
-          </span>
+        {/* Footer actions bar */}
+        <div className="mt-5 pt-3 border-t border-border/60 flex items-center justify-between gap-2">
+          <div className="text-[11px] text-muted-foreground/70">
+            Updated {formattedDate}
+          </div>
 
           <div className="flex items-center gap-1.5">
+            {isDraft ? (
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="h-7.5 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80"
+              >
+                <Link href={`/dashboard/forms/${form.id}/preview`}>
+                  <Eye className="size-3 opacity-70" />
+                  <span>Preview</span>
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onViewSubmissions(form)}
+                className="h-7.5 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80"
+              >
+                <Inbox className="size-3 opacity-70" />
+                <span>Responses</span>
+              </Button>
+            )}
+
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onViewSubmissions(form)}
-              className="h-7 text-xs px-2.5 rounded-lg text-muted-foreground hover:text-foreground font-medium active:scale-[0.98] transition-all cursor-pointer"
-            >
-              Responses
-            </Button>
-            <Button
-              size="sm"
               asChild
-              className="h-7 text-xs px-2.5 rounded-lg shadow-2xs active:scale-[0.98] transition-all cursor-pointer"
+              className="h-7.5 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80"
             >
-              <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
+              <Link href={`/dashboard/forms/${form.id}`}>
+                <Pencil className="size-3 opacity-70" />
+                <span>Edit</span>
+              </Link>
             </Button>
           </div>
         </div>
@@ -307,15 +331,15 @@ export function FormRow({
     );
   }
 
-  // ==========================================
-  // List / Table View Mode (Engineered Row)
-  // ==========================================
+  // =========================================================================
+  // List / Table View Mode (Exact Custom Grid: Guaranteed >=24px separation)
+  // Grid: [Form 2.5fr] [Status 0.9fr] [Visibility 0.9fr] [Share 1.4fr] [Actions 1.8fr]
+  // =========================================================================
   return (
-    <div className="group flex items-center justify-between gap-4 p-3.5 sm:px-5 hover:bg-muted/20 transition-colors">
-      {/* 12-Column Desktop Grid */}
-      <div className="flex items-center gap-3.5 min-w-0 flex-1 lg:grid lg:grid-cols-12 lg:gap-4 lg:items-center">
-        {/* Col 1-5: Form Name & Description */}
-        <div className="min-w-0 flex items-center gap-3 lg:col-span-5">
+    <div className="group hover:bg-muted/15 transition-colors">
+      <div className="hidden lg:grid grid-cols-[minmax(240px,2.5fr)_minmax(100px,0.9fr)_minmax(100px,0.9fr)_minmax(210px,1.4fr)_minmax(260px,1.8fr)] gap-6 px-6 py-3.5 items-center min-h-[68px]">
+        {/* Col 1: Form Name & Metadata (F-04: Subtitle displays ONLY Updated {date}) */}
+        <div className="min-w-0 flex items-center gap-3">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-muted-foreground group-hover:text-foreground group-hover:border-foreground/20 transition-colors">
             <FileText className="size-4" />
           </div>
@@ -323,140 +347,277 @@ export function FormRow({
           <div className="min-w-0 flex-1">
             <Link
               href={`/dashboard/forms/${form.id}`}
-              className="font-medium text-xs sm:text-sm text-foreground hover:underline transition-all truncate block"
+              className="font-medium text-sm text-foreground hover:underline transition-all truncate block"
             >
               {form.title}
             </Link>
-            <div className="text-[11px] text-muted-foreground truncate max-w-xs mt-0.5">
-              {form.description || <span className="italic text-muted-foreground/60">No description provided</span>}
+            <div className="text-xs text-muted-foreground mt-0.5 min-w-0 truncate">
+              <span className="text-muted-foreground/80 font-normal">
+                Updated {formattedDate}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Col 6-7: Status */}
-        <div className="hidden lg:flex items-center lg:col-span-2">
+        {/* Col 2: Status (Left-aligned) */}
+        <div className="flex items-center min-w-0">
           {getStatusBadge(form.status)}
         </div>
 
-        {/* Col 8-9: Visibility */}
-        <div className="hidden lg:flex items-center lg:col-span-2">
-          {getVisibilityBadge(form.visibility)}
+        {/* Col 3: Visibility (Left-aligned) */}
+        <div className="flex items-center min-w-0">
+          {getVisibilityDisplay()}
         </div>
 
-        {/* Col 10-11: Share Link / Preview */}
-        <div className="hidden lg:flex items-center lg:col-span-2">
+        {/* Col 4: Share Link (F-05: Full relative route /f/..., never encroaches on Actions) */}
+        <div className="flex items-center min-w-0 pr-1">
           {isPublished && form.shareId ? (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="inline-flex h-6.5 items-center gap-1.5 rounded-md border border-border/60 bg-muted/20 px-2 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
-                title="Copy share link"
-              >
-                {copied ? (
-                  <>
-                    <Check className="size-3 text-emerald-500" />
-                    <span className="text-emerald-600 dark:text-emerald-400 font-sans">Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="size-3 opacity-60" />
-                    <span>{form.shareId}</span>
-                  </>
-                )}
-              </button>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer max-w-[170px] whitespace-nowrap overflow-hidden text-ellipsis shadow-2xs"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="size-3 text-emerald-500 shrink-0" />
+                          <span className="text-emerald-600 dark:text-emerald-400 font-sans font-medium">Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="size-3 opacity-60 shrink-0" />
+                          <span className="truncate">{displayShareUrl}</span>
+                        </>
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs font-mono">
+                    {fullShareUrl} (Click to copy)
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
               <a
                 href={`/f/${form.shareId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex size-6.5 items-center justify-center rounded-md border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                className="inline-flex size-7 items-center justify-center rounded-lg border border-border/70 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors shrink-0 shadow-2xs"
                 title="Open live form in new tab"
               >
-                <ExternalLink className="size-3" />
+                <ExternalLink className="size-3.5" />
               </a>
             </div>
           ) : (
-            <Link
-              href={`/dashboard/forms/${form.id}/preview`}
-              className="inline-flex h-6.5 items-center gap-1.5 rounded-md border border-border/40 bg-muted/20 px-2 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-            >
-              <Eye className="size-3 opacity-60" />
-              <span>Preview</span>
-            </Link>
+            <span className="inline-flex h-7 items-center px-2.5 rounded-lg border border-border/60 bg-muted/20 text-[11px] text-muted-foreground/70 select-none font-normal">
+              Not live yet
+            </span>
           )}
+        </div>
+
+        {/* Col 5: Actions (F-02: Standardized 116px primary action width, right-aligned) */}
+        <div className="flex items-center justify-end gap-2 shrink-0">
+          {isDraft ? (
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="h-8 w-[116px] shrink-0 gap-1.5 text-xs rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80 shadow-2xs justify-center"
+            >
+              <Link href={`/dashboard/forms/${form.id}/preview`}>
+                <Eye className="size-3.5" />
+                <span>Preview</span>
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onViewSubmissions(form)}
+              className="h-8 w-[116px] shrink-0 gap-1.5 text-xs rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80 shadow-2xs justify-center"
+            >
+              <Inbox className="size-3.5" />
+              <span>Responses</span>
+            </Button>
+          )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(form)}
+            className="h-8 w-[76px] shrink-0 gap-1.5 text-xs rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80 shadow-2xs justify-center"
+          >
+            <Pencil className="size-3.5" />
+            <span>Edit</span>
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+              >
+                <MoreVertical className="size-4" />
+                <span className="sr-only">Form options</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 rounded-xl text-xs p-1 shadow-md">
+              <DropdownMenuItem asChild className="gap-2 cursor-pointer py-1.5">
+                <Link href={`/dashboard/forms/${form.id}`}>
+                  <FileText className="size-3.5" />
+                  <span>Open Editor</span>
+                </Link>
+              </DropdownMenuItem>
+              {isPublished && form.shareId && (
+                <DropdownMenuItem
+                  onClick={handleCopyLink}
+                  className="gap-2 cursor-pointer py-1.5"
+                >
+                  <Copy className="size-3.5" />
+                  <span>Copy Share Link</span>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                onClick={() => onEdit(form)}
+                className="gap-2 cursor-pointer py-1.5"
+              >
+                <Pencil className="size-3.5" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onDelete(form)}
+                className="gap-2 text-destructive focus:text-destructive cursor-pointer py-1.5"
+              >
+                <Trash2 className="size-3.5" />
+                <span>Delete Form</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      {/* Col 12: Actions */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onViewSubmissions(form)}
-          className="hidden sm:inline-flex h-7.5 text-xs px-2.5 rounded-lg text-muted-foreground hover:text-foreground font-medium active:scale-[0.98] transition-all cursor-pointer"
-        >
-          Responses
-        </Button>
-
-        <Button
-          size="sm"
-          asChild
-          className="h-7.5 text-xs px-3 rounded-lg shadow-2xs active:scale-[0.98] transition-all cursor-pointer"
-        >
-          <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
-        </Button>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7.5 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              <MoreVertical className="size-4" />
-              <span className="sr-only">More options</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44 rounded-xl text-xs p-1">
-            <DropdownMenuItem asChild className="gap-2 cursor-pointer py-1.5">
-              <Link href={`/dashboard/forms/${form.id}`}>
-                <FileText className="size-3.5" />
-                <span>Open Editor</span>
+      {/* Mobile & Tablet Compact View (Below lg) */}
+      <div className="flex lg:hidden flex-col p-4 gap-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-muted-foreground">
+              <FileText className="size-4" />
+            </div>
+            <div className="min-w-0">
+              <Link
+                href={`/dashboard/forms/${form.id}`}
+                className="font-medium text-sm text-foreground hover:underline transition-all truncate block"
+              >
+                {form.title}
               </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onViewSubmissions(form)}
-              className="gap-2 cursor-pointer py-1.5"
-            >
-              <Inbox className="size-3.5" />
-              <span>View Responses</span>
-            </DropdownMenuItem>
-            {form.shareId && (
+              <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                Updated {formattedDate}
+              </div>
+            </div>
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 rounded-lg text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
+              >
+                <MoreVertical className="size-4" />
+                <span className="sr-only">Form menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 rounded-xl text-xs p-1 shadow-md">
+              <DropdownMenuItem asChild className="gap-2 cursor-pointer py-1.5">
+                <Link href={`/dashboard/forms/${form.id}`}>
+                  <FileText className="size-3.5" />
+                  <span>Open Editor</span>
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={handleCopyLink}
+                onClick={() => onEdit(form)}
                 className="gap-2 cursor-pointer py-1.5"
               >
-                <Copy className="size-3.5" />
-                <span>Copy Share Link</span>
+                <Pencil className="size-3.5" />
+                <span>Settings</span>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onDelete(form)}
+                className="gap-2 text-destructive focus:text-destructive cursor-pointer py-1.5"
+              >
+                <Trash2 className="size-3.5" />
+                <span>Delete Form</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Status + Visibility row */}
+        <div className="flex items-center gap-3 text-xs">
+          {getStatusBadge(form.status)}
+          {getVisibilityDisplay()}
+        </div>
+
+        {/* Actions row */}
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/50">
+          {isPublished && form.shareId ? (
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground transition-colors cursor-pointer max-w-[180px] truncate"
+            >
+              <Copy className="size-3 opacity-60 shrink-0" />
+              <span className="truncate">{displayShareUrl}</span>
+            </button>
+          ) : (
+            <span className="inline-flex h-7 items-center px-2.5 rounded-lg border border-border/60 bg-muted/20 text-[11px] text-muted-foreground/70 select-none font-normal">
+              Not live yet
+            </span>
+          )}
+
+          <div className="flex items-center gap-1.5">
+            {isDraft ? (
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="h-7.5 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80"
+              >
+                <Link href={`/dashboard/forms/${form.id}/preview`}>
+                  <Eye className="size-3 opacity-70" />
+                  <span>Preview</span>
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onViewSubmissions(form)}
+                className="h-7.5 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80"
+              >
+                <Inbox className="size-3 opacity-70" />
+                <span>Responses</span>
+              </Button>
             )}
-            <DropdownMenuItem
-              onClick={() => onEdit(form)}
-              className="gap-2 cursor-pointer py-1.5"
+
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="h-7.5 px-3 text-xs gap-1.5 rounded-lg cursor-pointer bg-background hover:bg-muted text-foreground border-border/80"
             >
-              <Pencil className="size-3.5" />
-              <span>Settings</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => onDelete(form)}
-              className="gap-2 text-destructive focus:text-destructive cursor-pointer py-1.5"
-            >
-              <Trash2 className="size-3.5" />
-              <span>Delete Form</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <Link href={`/dashboard/forms/${form.id}`}>
+                <Pencil className="size-3 opacity-70" />
+                <span>Edit</span>
+              </Link>
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
