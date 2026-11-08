@@ -29,10 +29,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
       }
     >
       <AppSidebar
-        variant="inset"
+        variant="sidebar"
         onOpenCommandPalette={() => setIsCommandOpen(true)}
       />
-      <SidebarInset className="bg-background min-h-screen flex flex-col">
+      <SidebarInset className="bg-background min-h-screen flex flex-col min-w-0">
         <SiteHeader
           onOpenCommandPalette={() => setIsCommandOpen(true)}
         />

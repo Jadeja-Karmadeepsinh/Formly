@@ -31,6 +31,16 @@ export function FormsMetrics({
   const archivedCount = forms.filter((f) => f.status === "archived").length;
   const inactiveCount = closedCount + archivedCount;
 
+  // Dynamic breakdown for Total Forms that accurately reflects all states
+  const totalBreakdown = React.useMemo(() => {
+    const parts: string[] = [];
+    if (publishedCount > 0) parts.push(`${publishedCount} published`);
+    if (draftCount > 0) parts.push(`${draftCount} ${draftCount === 1 ? "draft" : "drafts"}`);
+    if (closedCount > 0) parts.push(`${closedCount} closed`);
+    if (archivedCount > 0) parts.push(`${archivedCount} archived`);
+    return parts.length > 0 ? parts.join(" · ") : "No forms created";
+  }, [publishedCount, draftCount, closedCount, archivedCount]);
+
   return (
     <div className="panel-highlight rounded-2xl border border-border/80 bg-card shadow-2xs overflow-hidden">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border/60">
@@ -53,17 +63,15 @@ export function FormsMetrics({
             {isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums font-mono">
+              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums">
                 {totalCount}
               </div>
             )}
-            <div className="mt-1 text-xs text-muted-foreground">
+            <div className="mt-1 text-xs text-muted-foreground truncate" title={totalBreakdown}>
               {isLoading ? (
                 <Skeleton className="h-3 w-28 mt-0.5" />
               ) : (
-                <span>
-                  {publishedCount} published · {pluralize(draftCount, "draft")}
-                </span>
+                <span>{totalBreakdown}</span>
               )}
             </div>
           </div>
@@ -80,7 +88,7 @@ export function FormsMetrics({
             <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Published
             </span>
-            <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
               <CheckCircle2 className="size-3.5" />
             </div>
           </div>
@@ -88,14 +96,14 @@ export function FormsMetrics({
             {isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums font-mono">
+              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums">
                 {publishedCount}
               </div>
             )}
             <div className="mt-1 text-xs text-muted-foreground">
               {publishedCount > 0
-                ? `${pluralize(publishedCount, "form")} published`
-                : "No published forms"}
+                ? "Ready for responses"
+                : "No forms published"}
             </div>
           </div>
         </div>
@@ -119,14 +127,14 @@ export function FormsMetrics({
             {isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums font-mono">
+              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums">
                 {draftCount}
               </div>
             )}
             <div className="mt-1 text-xs text-muted-foreground">
               {draftCount > 0
-                ? `${pluralize(draftCount, "form")} in progress`
-                : "All forms published"}
+                ? `${pluralize(draftCount, "form")} awaiting publication`
+                : "No drafts in progress"}
             </div>
           </div>
         </div>
@@ -150,7 +158,7 @@ export function FormsMetrics({
             {isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums font-mono">
+              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums">
                 {inactiveCount}
               </div>
             )}

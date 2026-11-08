@@ -173,7 +173,7 @@ export function FormsDashboard() {
         {/* Section Controls Toolbar */}
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pt-1">
           {/* Status Tabs Segmented Control */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none bg-muted/40 p-1 rounded-xl border border-border/70">
+          <div className="inline-flex items-center gap-1 p-1 rounded-full bg-muted/40 border border-border/70 overflow-x-auto scrollbar-none">
             {(["all", "published", "draft", "closed", "archived"] as const).map((status) => {
               const count = counts[status];
               const isSelected = statusFilter === status;
@@ -182,18 +182,18 @@ export function FormsDashboard() {
                   key={status}
                   type="button"
                   onClick={() => setStatusFilter(status)}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize cursor-pointer shrink-0 ${
+                  className={`inline-flex items-center gap-2 h-8 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors capitalize cursor-pointer shrink-0 ${
                     isSelected
-                      ? "bg-background text-foreground shadow-2xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                      ? "bg-card text-foreground shadow-xs font-semibold border border-border/60 dark:bg-muted dark:text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/30 border border-transparent"
                   }`}
                 >
                   <span>{status}</span>
                   <span
-                    className={`inline-flex items-center justify-center min-w-4.5 h-4.5 px-1.5 rounded-full text-[10px] font-mono tabular-nums leading-none ${
+                    className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-mono tabular-nums leading-none transition-colors ${
                       isSelected
-                        ? "bg-muted text-foreground font-semibold"
-                        : "bg-muted/60 text-muted-foreground"
+                        ? "bg-muted text-foreground font-semibold dark:bg-background/80 dark:text-foreground"
+                        : "bg-muted/70 text-muted-foreground"
                     }`}
                   >
                     {count}

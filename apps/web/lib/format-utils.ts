@@ -26,11 +26,10 @@ export function middleTruncate(str: string, leadChars = 5, tailChars = 4): strin
 }
 
 /**
- * Returns a clean, shortened display representation of a form's public URL
- * e.g. "localhost:3000/f/2w-ng1…pZ6" or "formly.app/f/2w-ng1…pZ6"
+ * Returns a clean, shortened display representation of a form's relative route
+ * e.g. "/f/2w-ng1…pZ6" (avoids leaking development hostnames like localhost:3000 into the UI)
  */
 export function formatShareDisplay(shareId: string): string {
   if (!shareId) return "";
-  const host = typeof window !== "undefined" ? window.location.host : "formly.app";
-  return `${host}/f/${middleTruncate(shareId, 5, 4)}`;
+  return `/f/${middleTruncate(shareId, 5, 4)}`;
 }

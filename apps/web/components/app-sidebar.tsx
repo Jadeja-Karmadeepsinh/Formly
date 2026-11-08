@@ -53,7 +53,6 @@ export function AppSidebar({
   const { forms } = useForms();
   const { logout, isPending: isLoggingOut } = useLogout();
 
-  const totalCount = forms?.length ?? 0;
   const recentForms = React.useMemo(() => {
     return (forms || []).slice(0, 5);
   }, [forms]);
@@ -91,16 +90,16 @@ export function AppSidebar({
       {/* ========================================================= */}
       {/* Zone A — Fixed Top: Brand & Workspace Identity           */}
       {/* ========================================================= */}
-      <SidebarHeader className="p-3 shrink-0">
+      <SidebarHeader className="p-3 shrink-0 group-data-[collapsible=icon]:p-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className="flex items-center justify-between gap-2 px-1.5 py-1">
+            <div className="flex items-center justify-between gap-2 px-1.5 py-1 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2.5 transition-opacity hover:opacity-85"
+                className="flex items-center gap-2.5 transition-opacity hover:opacity-85 group-data-[collapsible=icon]:gap-0"
                 title="Formly Dashboard"
               >
-                <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-foreground text-background shadow-xs">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-foreground text-background shadow-xs mx-auto">
                   <FormlySymbol size={16} />
                 </div>
                 <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
@@ -117,15 +116,15 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarSeparator className="mx-2 my-1 shrink-0" />
+      <SidebarSeparator className="mx-2 my-1 shrink-0 group-data-[collapsible=icon]:hidden" />
 
       {/* ========================================================= */}
       {/* Zone B — Scrollable Navigation Region                    */}
       {/* ========================================================= */}
-      <SidebarContent className="px-2 flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
+      <SidebarContent className="px-2 group-data-[collapsible=icon]:px-1 flex-1 overflow-y-auto overflow-x-hidden scrollbar-none">
         {/* Workspace Primary Navigation */}
         <SidebarGroup className="p-0">
-          <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider">
+          <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider group-data-[collapsible=icon]:hidden">
             Workspace
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -135,7 +134,7 @@ export function AppSidebar({
                   asChild
                   isActive={isOverviewActive}
                   tooltip="Overview"
-                  className="rounded-lg text-xs font-medium"
+                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-8.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Link href="/dashboard">
                     <LayoutDashboard className="size-4 shrink-0" />
@@ -149,7 +148,7 @@ export function AppSidebar({
                   asChild
                   isActive={isResponsesActive}
                   tooltip="Responses"
-                  className="rounded-lg text-xs font-medium"
+                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-8.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Link href="/dashboard/responses">
                     <Inbox className="size-4 shrink-0" />
@@ -163,7 +162,7 @@ export function AppSidebar({
                   asChild
                   isActive={isAnalyticsActive}
                   tooltip="Analytics"
-                  className="rounded-lg text-xs font-medium"
+                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-8.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Link href="/dashboard/analytics">
                     <BarChart3 className="size-4 shrink-0" />
@@ -175,16 +174,16 @@ export function AppSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Recent Forms Shelf (Showing up to 5 items, matching count badge) */}
+        {/* Recent Forms Shelf (Only visible when sidebar is expanded) */}
         {recentForms.length > 0 && (
-          <SidebarGroup className="p-0 mt-3">
+          <SidebarGroup className="p-0 mt-3 group-data-[collapsible=icon]:hidden">
             <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider flex items-center justify-between">
               <span>Recent Forms</span>
               <span className="text-[10px] font-mono text-muted-foreground/70">{recentForms.length}</span>
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="gap-0.5">
-                <TooltipProvider delayDuration={300}>
+                <TooltipProvider delayDuration={200}>
                   {recentForms.map((f) => {
                     const isFormActive = pathname === `/dashboard/forms/${f.id}`;
                     return (
@@ -213,7 +212,7 @@ export function AppSidebar({
                             </SidebarMenuButton>
                           </TooltipTrigger>
                           <TooltipContent side="right" className="text-xs max-w-xs font-normal">
-                            <p className="font-semibold text-foreground">{f.title}</p>
+                            <p className="font-semibold text-popover-foreground">{f.title}</p>
                             <p className="text-[11px] text-muted-foreground capitalize mt-0.5">
                               Status: {f.status} · {f.visibility}
                             </p>
@@ -228,11 +227,11 @@ export function AppSidebar({
           </SidebarGroup>
         )}
 
-        <SidebarSeparator className="my-2 mx-1" />
+        <SidebarSeparator className="my-2 mx-1 group-data-[collapsible=icon]:hidden" />
 
         {/* Preferences Group */}
-        <SidebarGroup className="p-0">
-          <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider">
+        <SidebarGroup className="p-0 group-data-[collapsible=icon]:mt-2">
+          <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider group-data-[collapsible=icon]:hidden">
             Preferences
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -242,7 +241,7 @@ export function AppSidebar({
                   asChild
                   isActive={isSettingsActive}
                   tooltip="Settings"
-                  className="rounded-lg text-xs font-medium"
+                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-8.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Link href="/dashboard/settings/account">
                     <Settings className="size-4 shrink-0" />
@@ -255,8 +254,8 @@ export function AppSidebar({
         </SidebarGroup>
 
         {/* Help Group */}
-        <SidebarGroup className="p-0 mt-2">
-          <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider">
+        <SidebarGroup className="p-0 mt-2 group-data-[collapsible=icon]:mt-0">
+          <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider group-data-[collapsible=icon]:hidden">
             Help
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -265,7 +264,7 @@ export function AppSidebar({
                 <SidebarMenuButton
                   asChild
                   tooltip="Documentation"
-                  className="rounded-lg text-xs font-medium"
+                  className="rounded-lg text-xs font-medium group-data-[collapsible=icon]:size-8.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Link href="/docs" target="_blank">
                     <BookOpen className="size-4 shrink-0" />
@@ -278,14 +277,14 @@ export function AppSidebar({
         </SidebarGroup>
 
         {/* Global Command Menu Entry (No duplicate shortcut badge) */}
-        <SidebarGroup className="p-0 mt-2">
+        <SidebarGroup className="p-0 mt-2 group-data-[collapsible=icon]:mt-0">
           <SidebarGroupContent>
             <SidebarMenu className="gap-0.5">
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={onOpenCommandPalette}
-                  tooltip="Open Command Menu"
-                  className="rounded-lg text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground"
+                  tooltip="Command Menu"
+                  className="rounded-lg text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground group-data-[collapsible=icon]:size-8.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Command className="size-4 shrink-0" />
                   <span>Command Menu</span>
@@ -297,26 +296,9 @@ export function AppSidebar({
       </SidebarContent>
 
       {/* ========================================================= */}
-      {/* Zone C — Fixed Bottom: Plan Meter & User Profile         */}
+      {/* Zone C — Fixed Bottom: User Profile Menu                 */}
       {/* ========================================================= */}
-      <SidebarFooter className="p-2.5 border-t border-sidebar-border gap-2 shrink-0 bg-sidebar">
-        {/* Workspace Capacity Meter */}
-        <div className="mx-0.5 px-3 py-2.5 rounded-xl bg-muted/25 border border-sidebar-border/70 text-xs space-y-1.5 group-data-[collapsible=icon]:hidden shadow-2xs">
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-            <span className="font-medium text-foreground">Workspace Plan</span>
-            <span className="font-mono text-[10px] font-medium">{totalCount} / 10 Forms</span>
-          </div>
-          <div className="w-full h-1 bg-muted/70 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-foreground rounded-full transition-all duration-500"
-              style={{ width: `${Math.min((totalCount / 10) * 100, 100)}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Subtle separator between Plan meter and User profile */}
-        <div className="h-px bg-sidebar-border/50 mx-1 group-data-[collapsible=icon]:hidden" />
-
+      <SidebarFooter className="p-2 border-t border-sidebar-border shrink-0 bg-sidebar group-data-[collapsible=icon]:p-1.5">
         {/* User Card with Dynamic Initials and Clean Single-Line Email */}
         <SidebarMenu>
           <SidebarMenuItem>
@@ -324,11 +306,12 @@ export function AppSidebar({
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="rounded-xl p-1.5 hover:bg-sidebar-accent transition-colors cursor-pointer"
+                  tooltip={user?.name || user?.fullName || "User Account"}
+                  className="rounded-xl p-1.5 hover:bg-sidebar-accent transition-colors cursor-pointer group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:mx-auto"
                 >
                   <Avatar className="size-8 rounded-lg shrink-0 border border-sidebar-border">
                     {user?.image ? (
-                      <AvatarImage src={user.image} alt={user.name || user.fullName || "User"} />
+                      <AvatarImage src={user.image} alt={user?.name || user?.fullName || "User"} />
                     ) : null}
                     <AvatarFallback className="rounded-lg bg-muted text-xs font-semibold text-foreground">
                       {initials}

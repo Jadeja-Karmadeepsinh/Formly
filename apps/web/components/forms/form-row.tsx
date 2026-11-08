@@ -8,6 +8,7 @@ import {
   Copy,
   ExternalLink,
   Eye,
+  EyeOff,
   FileText,
   Globe,
   Inbox,
@@ -68,35 +69,35 @@ export function FormRow({
     switch (status) {
       case "published":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center gap-1.5 h-5.5 px-2.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
             <span className="size-1.5 rounded-full bg-emerald-500" />
             <span>Published</span>
           </span>
         );
       case "draft":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border/60">
+          <span className="inline-flex items-center gap-1.5 h-5.5 px-2.5 rounded-full text-[11px] font-medium bg-muted/60 text-muted-foreground border border-border/70">
             <span className="size-1.5 rounded-full bg-muted-foreground/60" />
             <span>Draft</span>
           </span>
         );
       case "closed":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+          <span className="inline-flex items-center gap-1.5 h-5.5 px-2.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
             <span className="size-1.5 rounded-full bg-amber-500" />
             <span>Closed</span>
           </span>
         );
       case "archived":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted/40 text-muted-foreground border border-border/40">
+          <span className="inline-flex items-center gap-1.5 h-5.5 px-2.5 rounded-full text-[11px] font-medium bg-muted/40 text-muted-foreground border border-border/60">
             <Archive className="size-3" />
             <span>Archived</span>
           </span>
         );
       default:
         return (
-          <Badge variant="secondary" className="text-[11px] h-5 px-2">
+          <Badge variant="secondary" className="text-[11px] h-5.5 px-2.5">
             {status}
           </Badge>
         );
@@ -106,8 +107,9 @@ export function FormRow({
   const getVisibilityDisplay = () => {
     if (form.status === "draft") {
       return (
-        <span className="text-xs text-muted-foreground/60 font-mono">
-          —
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70 font-normal">
+          <EyeOff className="size-3.5 text-muted-foreground/50 shrink-0" />
+          <span>Unpublished</span>
         </span>
       );
     }
@@ -239,14 +241,14 @@ export function FormRow({
             )}
           </Link>
 
-          {/* Share Link Row (Only for published forms) */}
+          {/* Share Link Row (Relative route for published, structured pill for draft) */}
           <div className="mt-3">
             {isPublished && form.shareId ? (
               <div className="flex items-center gap-1.5 w-full">
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer max-w-[220px]"
+                  className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer max-w-[200px]"
                   title="Click to copy canonical share link"
                 >
                   {copied ? (
@@ -272,9 +274,9 @@ export function FormRow({
                 </a>
               </div>
             ) : (
-              <div className="text-[11px] text-muted-foreground/60 italic py-1">
-                Not published
-              </div>
+              <span className="inline-flex h-7 items-center px-2.5 rounded-lg border border-dashed border-border/60 bg-muted/10 text-[11px] text-muted-foreground/60 select-none">
+                Unpublished draft
+              </span>
             )}
           </div>
         </div>
@@ -291,10 +293,10 @@ export function FormRow({
                 variant="outline"
                 size="sm"
                 asChild
-                className="h-7.5 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs"
+                className="h-7.5 min-w-[84px] text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs justify-center gap-1.5"
               >
                 <Link href={`/dashboard/forms/${form.id}/preview`} title="Preview form">
-                  <Eye className="size-3.5 mr-1 opacity-70" />
+                  <Eye className="size-3.5 opacity-70" />
                   <span>Preview</span>
                 </Link>
               </Button>
@@ -303,9 +305,10 @@ export function FormRow({
                 variant="outline"
                 size="sm"
                 onClick={() => onViewSubmissions(form)}
-                className="h-7.5 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs"
+                className="h-7.5 min-w-[84px] text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs justify-center gap-1.5"
               >
-                Responses
+                <Inbox className="size-3.5 opacity-70" />
+                <span>Responses</span>
               </Button>
             )}
 
@@ -313,9 +316,12 @@ export function FormRow({
               variant="outline"
               size="sm"
               asChild
-              className="h-7.5 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs"
+              className="h-7.5 min-w-[64px] text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs justify-center gap-1.5"
             >
-              <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
+              <Link href={`/dashboard/forms/${form.id}`}>
+                <Pencil className="size-3.5 opacity-70" />
+                <span>Edit</span>
+              </Link>
             </Button>
           </div>
         </div>
@@ -327,10 +333,10 @@ export function FormRow({
   // List / Table View Mode (Exact 12-Col Grid)
   // ==========================================
   return (
-    <div className="group border-b border-border/50 last:border-b-0 hover:bg-muted/15 transition-colors">
+    <div className="group hover:bg-muted/15 transition-colors">
       {/* Desktop 12-Column Grid (lg and above) */}
       <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3.5 items-center min-h-[68px]">
-        {/* Col 1-4: Form Name & Metadata (Left-aligned) */}
+        {/* Col 1-4: Form Name & Metadata (Aligned with leading edge of icon) */}
         <div className="min-w-0 flex items-center gap-3 col-span-4">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-muted-foreground group-hover:text-foreground group-hover:border-foreground/20 transition-colors">
             <FileText className="size-4" />
@@ -343,7 +349,7 @@ export function FormRow({
             >
               {form.title}
             </Link>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 min-w-0">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
               <span className="shrink-0 text-muted-foreground/80 font-normal">
                 Updated {formattedDate}
               </span>
@@ -367,8 +373,8 @@ export function FormRow({
           {getVisibilityDisplay()}
         </div>
 
-        {/* Col 9-10: Share Link (Canonical URL or Not Published) */}
-        <div className="flex items-center col-span-2 min-w-0">
+        {/* Col 9-10: Share Link (Shortened relative route /f/..., with space before Actions) */}
+        <div className="flex items-center col-span-2 min-w-0 pr-2">
           {isPublished && form.shareId ? (
             <div className="flex items-center gap-1.5 min-w-0">
               <TooltipProvider delayDuration={200}>
@@ -377,7 +383,7 @@ export function FormRow({
                     <button
                       type="button"
                       onClick={handleCopyLink}
-                      className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer max-w-[170px] whitespace-nowrap overflow-hidden text-ellipsis shadow-2xs"
+                      className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer max-w-[155px] whitespace-nowrap overflow-hidden text-ellipsis shadow-2xs"
                     >
                       {copied ? (
                         <>
@@ -409,23 +415,23 @@ export function FormRow({
               </a>
             </div>
           ) : (
-            <span className="text-xs text-muted-foreground/60 italic select-none">
-              Not published
+            <span className="inline-flex h-7 items-center px-2.5 rounded-lg border border-dashed border-border/60 bg-muted/10 text-[11px] text-muted-foreground/60 select-none">
+              Unpublished draft
             </span>
           )}
         </div>
 
-        {/* Col 11-12: Actions (Right-aligned, Quieter Secondary Buttons) */}
-        <div className="flex items-center justify-end gap-1.5 col-span-2 shrink-0">
+        {/* Col 11-12: Actions (Right-aligned, Stable footprints and unified iconography) */}
+        <div className="flex items-center justify-end gap-2 col-span-2 shrink-0">
           {isDraft ? (
             <Button
               variant="outline"
               size="sm"
               asChild
-              className="h-7.5 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs"
+              className="h-7.5 min-w-[92px] text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs justify-center gap-1.5"
             >
               <Link href={`/dashboard/forms/${form.id}/preview`} title="Preview form">
-                <Eye className="size-3.5 mr-1 opacity-70" />
+                <Eye className="size-3.5 opacity-70" />
                 <span>Preview</span>
               </Link>
             </Button>
@@ -434,9 +440,10 @@ export function FormRow({
               variant="outline"
               size="sm"
               onClick={() => onViewSubmissions(form)}
-              className="h-7.5 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs"
+              className="h-7.5 min-w-[92px] text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs justify-center gap-1.5"
             >
-              Responses
+              <Inbox className="size-3.5 opacity-70" />
+              <span>Responses</span>
             </Button>
           )}
 
@@ -444,9 +451,12 @@ export function FormRow({
             variant="outline"
             size="sm"
             asChild
-            className="h-7.5 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs"
+            className="h-7.5 min-w-[68px] text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs justify-center gap-1.5"
           >
-            <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
+            <Link href={`/dashboard/forms/${form.id}`}>
+              <Pencil className="size-3.5 opacity-70" />
+              <span>Edit</span>
+            </Link>
           </Button>
 
           <DropdownMenu>
@@ -526,7 +536,7 @@ export function FormRow({
               >
                 {form.title}
               </Link>
-              <div className="text-[11px] text-muted-foreground mt-0.5">
+              <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
                 Updated {formattedDate}
               </div>
             </div>
@@ -606,7 +616,7 @@ export function FormRow({
                 variant="outline"
                 size="sm"
                 asChild
-                className="h-7 text-xs px-2 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
+                className="h-7 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
               >
                 <Link href={`/dashboard/forms/${form.id}/preview`}>
                   <Eye className="size-3 mr-1 opacity-70" />
@@ -618,9 +628,10 @@ export function FormRow({
                 variant="outline"
                 size="sm"
                 onClick={() => onViewSubmissions(form)}
-                className="h-7 text-xs px-2 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
+                className="h-7 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
               >
-                Responses
+                <Inbox className="size-3 mr-1 opacity-70" />
+                <span>Responses</span>
               </Button>
             )}
 
@@ -630,7 +641,10 @@ export function FormRow({
               asChild
               className="h-7 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
             >
-              <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
+              <Link href={`/dashboard/forms/${form.id}`}>
+                <Pencil className="size-3 mr-1 opacity-70" />
+                <span>Edit</span>
+              </Link>
             </Button>
           </div>
         </div>
