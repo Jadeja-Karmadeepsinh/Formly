@@ -28,6 +28,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { type FormItem } from "~/hooks/api/form";
+import { formatShareDisplay } from "~/lib/format-utils";
 
 interface FormRowProps {
   form: FormItem;
@@ -46,13 +47,15 @@ export function FormRow({
 }: FormRowProps) {
   const [copied, setCopied] = React.useState(false);
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const fullShareUrl = `${origin}/f/${form.shareId}`;
+  const displayShareUrl = formatShareDisplay(form.shareId);
+
   const handleCopyLink = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const url = `${origin}/f/${form.shareId}`;
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(fullShareUrl);
       setCopied(true);
       toast.success("Share link copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
@@ -103,7 +106,7 @@ export function FormRow({
   const getVisibilityDisplay = () => {
     if (form.status === "draft") {
       return (
-        <span className="text-xs text-muted-foreground/50 font-mono">
+        <span className="text-xs text-muted-foreground/60 font-mono">
           —
         </span>
       );
@@ -173,7 +176,14 @@ export function FormRow({
                     <span>Open Editor</span>
                   </Link>
                 </DropdownMenuItem>
-                {!isDraft && (
+                {isDraft ? (
+                  <DropdownMenuItem asChild className="gap-2 cursor-pointer py-1.5">
+                    <Link href={`/dashboard/forms/${form.id}/preview`}>
+                      <Eye className="size-3.5" />
+                      <span>Preview Form</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ) : (
                   <DropdownMenuItem
                     onClick={() => onViewSubmissions(form)}
                     className="gap-2 cursor-pointer py-1.5"
@@ -196,7 +206,7 @@ export function FormRow({
                   className="gap-2 cursor-pointer py-1.5"
                 >
                   <Pencil className="size-3.5" />
-                  <span>Form Settings</span>
+                  <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -223,21 +233,21 @@ export function FormRow({
                 {form.description}
               </p>
             ) : (
-              <p className="mt-1 text-xs text-muted-foreground/50 font-mono">
+              <p className="mt-1 text-xs text-muted-foreground/70">
                 Updated {formattedDate}
               </p>
             )}
           </Link>
 
-          {/* Share ID Pill or Preview Pill */}
+          {/* Share Link Row (Only for published forms) */}
           <div className="mt-3">
             {isPublished && form.shareId ? (
               <div className="flex items-center gap-1.5 w-full">
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer max-w-[200px]"
-                  title="Click to copy public share link"
+                  className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer max-w-[220px]"
+                  title="Click to copy canonical share link"
                 >
                   {copied ? (
                     <>
@@ -247,7 +257,7 @@ export function FormRow({
                   ) : (
                     <>
                       <Copy className="size-3 opacity-60 shrink-0" />
-                      <span className="truncate whitespace-nowrap">{form.shareId}</span>
+                      <span className="truncate whitespace-nowrap">{displayShareUrl}</span>
                     </>
                   )}
                 </button>
@@ -262,40 +272,48 @@ export function FormRow({
                 </a>
               </div>
             ) : (
-              <Link
-                href={`/dashboard/forms/${form.id}/preview`}
-                className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/60 bg-muted/20 px-2.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-                title="Preview form before publishing"
-              >
-                <Eye className="size-3.5 opacity-60" />
-                <span>Preview</span>
-              </Link>
+              <div className="text-[11px] text-muted-foreground/60 italic py-1">
+                Not published
+              </div>
             )}
           </div>
         </div>
 
         {/* Footer Actions with Full-Width Separator */}
         <div className="mt-4 pt-3 -mx-4 sm:-mx-5 px-4 sm:px-5 border-t border-border/60 flex items-center justify-between text-xs">
-          <span className="text-[11px] text-muted-foreground font-mono">
-            {formattedDate}
+          <span className="text-[11px] text-muted-foreground/80">
+            Updated {formattedDate}
           </span>
 
-          <div className="flex items-center gap-2">
-            {!isDraft && (
+          <div className="flex items-center gap-1.5">
+            {isDraft ? (
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="h-7.5 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs"
+              >
+                <Link href={`/dashboard/forms/${form.id}/preview`} title="Preview form">
+                  <Eye className="size-3.5 mr-1 opacity-70" />
+                  <span>Preview</span>
+                </Link>
+              </Button>
+            ) : (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onViewSubmissions(form)}
-                className="h-7.5 text-xs px-2.5 rounded-lg border-border/70 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
+                className="h-7.5 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs"
               >
                 Responses
               </Button>
             )}
+
             <Button
               variant="outline"
               size="sm"
               asChild
-              className="h-7.5 text-xs px-3 rounded-lg border-border/70 text-foreground hover:bg-muted cursor-pointer"
+              className="h-7.5 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs"
             >
               <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
             </Button>
@@ -306,14 +324,14 @@ export function FormRow({
   }
 
   // ==========================================
-  // List / Table View Mode (Matching 12-Col Grid)
+  // List / Table View Mode (Exact 12-Col Grid)
   // ==========================================
   return (
-    <div className="group flex items-center justify-between gap-4 p-3.5 sm:px-6 hover:bg-muted/20 transition-colors min-h-[68px]">
-      {/* 12-Column Desktop Grid Layout */}
-      <div className="flex items-center gap-3.5 min-w-0 flex-1 lg:grid lg:grid-cols-12 lg:gap-4 lg:items-center">
-        {/* Col 1-5: Form Name & Description (Left-aligned) */}
-        <div className="min-w-0 flex items-center gap-3 lg:col-span-5">
+    <div className="group border-b border-border/50 last:border-b-0 hover:bg-muted/15 transition-colors">
+      {/* Desktop 12-Column Grid (lg and above) */}
+      <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3.5 items-center min-h-[68px]">
+        {/* Col 1-4: Form Name & Metadata (Left-aligned) */}
+        <div className="min-w-0 flex items-center gap-3 col-span-4">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-muted-foreground group-hover:text-foreground group-hover:border-foreground/20 transition-colors">
             <FileText className="size-4" />
           </div>
@@ -321,34 +339,36 @@ export function FormRow({
           <div className="min-w-0 flex-1">
             <Link
               href={`/dashboard/forms/${form.id}`}
-              className="font-medium text-xs sm:text-sm text-foreground hover:underline transition-all truncate block"
+              className="font-medium text-sm text-foreground hover:underline transition-all truncate block"
             >
               {form.title}
             </Link>
-            {form.description ? (
-              <div className="text-[11px] text-muted-foreground truncate max-w-xs mt-0.5">
-                {form.description}
-              </div>
-            ) : (
-              <div className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 min-w-0">
+              <span className="shrink-0 text-muted-foreground/80 font-normal">
                 Updated {formattedDate}
-              </div>
-            )}
+              </span>
+              {form.description && (
+                <>
+                  <span className="text-muted-foreground/40 shrink-0">·</span>
+                  <span className="truncate">{form.description}</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Col 6-7: Status (Left-aligned) */}
-        <div className="hidden lg:flex items-center lg:col-span-2">
+        {/* Col 5-6: Status (Left-aligned) */}
+        <div className="flex items-center col-span-2">
           {getStatusBadge(form.status)}
         </div>
 
-        {/* Col 8-9: Visibility (Left-aligned) */}
-        <div className="hidden lg:flex items-center lg:col-span-2">
+        {/* Col 7-8: Visibility (Left-aligned) */}
+        <div className="flex items-center col-span-2">
           {getVisibilityDisplay()}
         </div>
 
-        {/* Col 10-11: Share Link / Preview (No Wrapping!) */}
-        <div className="hidden lg:flex items-center lg:col-span-2 min-w-0">
+        {/* Col 9-10: Share Link (Canonical URL or Not Published) */}
+        <div className="flex items-center col-span-2 min-w-0">
           {isPublished && form.shareId ? (
             <div className="flex items-center gap-1.5 min-w-0">
               <TooltipProvider delayDuration={200}>
@@ -357,7 +377,7 @@ export function FormRow({
                     <button
                       type="button"
                       onClick={handleCopyLink}
-                      className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer max-w-[150px] whitespace-nowrap overflow-hidden text-ellipsis"
+                      className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/70 bg-muted/20 px-2.5 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer max-w-[170px] whitespace-nowrap overflow-hidden text-ellipsis shadow-2xs"
                     >
                       {copied ? (
                         <>
@@ -367,13 +387,13 @@ export function FormRow({
                       ) : (
                         <>
                           <Copy className="size-3 opacity-60 shrink-0" />
-                          <span className="truncate">{form.shareId}</span>
+                          <span className="truncate">{displayShareUrl}</span>
                         </>
                       )}
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs font-mono">
-                    /f/{form.shareId} (Click to copy)
+                    {fullShareUrl} (Click to copy)
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -382,99 +402,238 @@ export function FormRow({
                 href={`/f/${form.shareId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex size-7 items-center justify-center rounded-lg border border-border/70 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors shrink-0"
+                className="inline-flex size-7 items-center justify-center rounded-lg border border-border/70 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors shrink-0 shadow-2xs"
                 title="Open live form in new tab"
               >
                 <ExternalLink className="size-3.5" />
               </a>
             </div>
           ) : (
-            <Link
-              href={`/dashboard/forms/${form.id}/preview`}
-              className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border/60 bg-muted/20 px-2.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors shrink-0"
-            >
-              <Eye className="size-3.5 opacity-60" />
-              <span>Preview</span>
-            </Link>
+            <span className="text-xs text-muted-foreground/60 italic select-none">
+              Not published
+            </span>
           )}
         </div>
-      </div>
 
-      {/* Col 12: Actions (Right-aligned, Quieter Secondary Buttons) */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        {!isDraft && (
+        {/* Col 11-12: Actions (Right-aligned, Quieter Secondary Buttons) */}
+        <div className="flex items-center justify-end gap-1.5 col-span-2 shrink-0">
+          {isDraft ? (
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="h-7.5 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs"
+            >
+              <Link href={`/dashboard/forms/${form.id}/preview`} title="Preview form">
+                <Eye className="size-3.5 mr-1 opacity-70" />
+                <span>Preview</span>
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onViewSubmissions(form)}
+              className="h-7.5 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs"
+            >
+              Responses
+            </Button>
+          )}
+
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onViewSubmissions(form)}
-            className="hidden sm:inline-flex h-7.5 text-xs px-2.5 rounded-lg border-border/70 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
+            asChild
+            className="h-7.5 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium cursor-pointer shadow-2xs"
           >
-            Responses
+            <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
           </Button>
-        )}
 
-        <Button
-          variant="outline"
-          size="sm"
-          asChild
-          className="h-7.5 text-xs px-3 rounded-lg border-border/70 text-foreground hover:bg-muted cursor-pointer"
-        >
-          <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
-        </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7.5 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <MoreVertical className="size-4" />
+                <span className="sr-only">More options</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 rounded-xl text-xs p-1 shadow-md">
+              <DropdownMenuItem asChild className="gap-2 cursor-pointer py-1.5">
+                <Link href={`/dashboard/forms/${form.id}`}>
+                  <FileText className="size-3.5" />
+                  <span>Open Editor</span>
+                </Link>
+              </DropdownMenuItem>
+              {isDraft ? (
+                <DropdownMenuItem asChild className="gap-2 cursor-pointer py-1.5">
+                  <Link href={`/dashboard/forms/${form.id}/preview`}>
+                    <Eye className="size-3.5" />
+                    <span>Preview Form</span>
+                  </Link>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  onClick={() => onViewSubmissions(form)}
+                  className="gap-2 cursor-pointer py-1.5"
+                >
+                  <Inbox className="size-3.5" />
+                  <span>View Responses</span>
+                </DropdownMenuItem>
+              )}
+              {isPublished && form.shareId && (
+                <DropdownMenuItem
+                  onClick={handleCopyLink}
+                  className="gap-2 cursor-pointer py-1.5"
+                >
+                  <Copy className="size-3.5" />
+                  <span>Copy Share Link</span>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                onClick={() => onEdit(form)}
+                className="gap-2 cursor-pointer py-1.5"
+              >
+                <Pencil className="size-3.5" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onDelete(form)}
+                className="gap-2 text-destructive focus:text-destructive cursor-pointer py-1.5"
+              >
+                <Trash2 className="size-3.5" />
+                <span>Delete Form</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7.5 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              <MoreVertical className="size-4" />
-              <span className="sr-only">More options</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44 rounded-xl text-xs p-1 shadow-md">
-            <DropdownMenuItem asChild className="gap-2 cursor-pointer py-1.5">
-              <Link href={`/dashboard/forms/${form.id}`}>
-                <FileText className="size-3.5" />
-                <span>Open Editor</span>
+      {/* Mobile/Tablet Fallback Card Layout (< lg) */}
+      <div className="flex lg:hidden flex-col gap-3 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-muted-foreground">
+              <FileText className="size-3.5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <Link
+                href={`/dashboard/forms/${form.id}`}
+                className="font-medium text-sm text-foreground hover:underline truncate block"
+              >
+                {form.title}
               </Link>
-            </DropdownMenuItem>
-            {!isDraft && (
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                Updated {formattedDate}
+              </div>
+            </div>
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <MoreVertical className="size-4" />
+                <span className="sr-only">More options</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 rounded-xl text-xs p-1 shadow-md">
+              <DropdownMenuItem asChild className="gap-2 cursor-pointer py-1.5">
+                <Link href={`/dashboard/forms/${form.id}`}>
+                  <FileText className="size-3.5" />
+                  <span>Open Editor</span>
+                </Link>
+              </DropdownMenuItem>
+              {isDraft ? (
+                <DropdownMenuItem asChild className="gap-2 cursor-pointer py-1.5">
+                  <Link href={`/dashboard/forms/${form.id}/preview`}>
+                    <Eye className="size-3.5" />
+                    <span>Preview Form</span>
+                  </Link>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  onClick={() => onViewSubmissions(form)}
+                  className="gap-2 cursor-pointer py-1.5"
+                >
+                  <Inbox className="size-3.5" />
+                  <span>View Responses</span>
+                </DropdownMenuItem>
+              )}
+              {isPublished && form.shareId && (
+                <DropdownMenuItem
+                  onClick={handleCopyLink}
+                  className="gap-2 cursor-pointer py-1.5"
+                >
+                  <Copy className="size-3.5" />
+                  <span>Copy Share Link</span>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
+                onClick={() => onEdit(form)}
+                className="gap-2 cursor-pointer py-1.5"
+              >
+                <Pencil className="size-3.5" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onDelete(form)}
+                className="gap-2 text-destructive focus:text-destructive cursor-pointer py-1.5"
+              >
+                <Trash2 className="size-3.5" />
+                <span>Delete Form</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/40">
+          <div className="flex items-center gap-2">
+            {getStatusBadge(form.status)}
+            {getVisibilityDisplay()}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {isDraft ? (
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="h-7 text-xs px-2 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
+              >
+                <Link href={`/dashboard/forms/${form.id}/preview`}>
+                  <Eye className="size-3 mr-1 opacity-70" />
+                  <span>Preview</span>
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => onViewSubmissions(form)}
-                className="gap-2 cursor-pointer py-1.5"
+                className="h-7 text-xs px-2 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
               >
-                <Inbox className="size-3.5" />
-                <span>View Responses</span>
-              </DropdownMenuItem>
+                Responses
+              </Button>
             )}
-            {isPublished && form.shareId && (
-              <DropdownMenuItem
-                onClick={handleCopyLink}
-                className="gap-2 cursor-pointer py-1.5"
-              >
-                <Copy className="size-3.5" />
-                <span>Copy Share Link</span>
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              onClick={() => onEdit(form)}
-              className="gap-2 cursor-pointer py-1.5"
+
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="h-7 text-xs px-2.5 rounded-lg border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground font-medium cursor-pointer"
             >
-              <Pencil className="size-3.5" />
-              <span>Settings</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => onDelete(form)}
-              className="gap-2 text-destructive focus:text-destructive cursor-pointer py-1.5"
-            >
-              <Trash2 className="size-3.5" />
-              <span>Delete Form</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

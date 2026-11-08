@@ -190,7 +190,7 @@ export function FormsDashboard() {
                 >
                   <span>{status}</span>
                   <span
-                    className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.2 text-[10px] tabular-nums font-mono ${
+                    className={`inline-flex items-center justify-center min-w-4.5 h-4.5 px-1.5 rounded-full text-[10px] font-mono tabular-nums leading-none ${
                       isSelected
                         ? "bg-muted text-foreground font-semibold"
                         : "bg-muted/60 text-muted-foreground"
@@ -454,13 +454,13 @@ export function FormsDashboard() {
             </div>
           ) : (
             <div className="panel-highlight rounded-2xl border border-border/80 bg-card overflow-hidden shadow-2xs divide-y divide-border/60">
-              {/* Table Column Header: Clean 12-Column Grid */}
+              {/* Table Column Header: Clean 12-Column Grid matching rows */}
               <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-3 bg-muted/20 border-b border-border/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground select-none">
-                <div className="col-span-5">Form</div>
+                <div className="col-span-4">Form</div>
                 <div className="col-span-2">Status</div>
                 <div className="col-span-2">Visibility</div>
                 <div className="col-span-2">Share Link</div>
-                <div className="col-span-1 text-right">Actions</div>
+                <div className="col-span-2 text-right">Actions</div>
               </div>
               <div className="divide-y divide-border/50">
                 {filteredForms.map((form) => (

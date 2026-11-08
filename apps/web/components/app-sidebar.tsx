@@ -39,10 +39,8 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
-import { isMacPlatform } from "~/lib/format-utils";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  onOpenCreateForm?: () => void;
   onOpenCommandPalette?: () => void;
 }
 
@@ -54,18 +52,19 @@ export function AppSidebar({
   const { data: user } = useMe();
   const { forms } = useForms();
   const { logout, isPending: isLoggingOut } = useLogout();
-  const [isMac, setIsMac] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsMac(isMacPlatform());
-  }, []);
 
   const totalCount = forms?.length ?? 0;
+  const recentForms = React.useMemo(() => {
+    return (forms || []).slice(0, 5);
+  }, [forms]);
 
   // Dynamic user initials (e.g. Karmadeepsinh Jadeja -> KJ)
   const initials = React.useMemo(() => {
     const name = user?.fullName || user?.name;
-    if (!name) return "KJ";
+    if (!name) {
+      if (user?.email) return user.email.slice(0, 2).toUpperCase();
+      return "KJ";
+    }
     const parts = name.trim().split(/\s+/);
     const first = parts[0];
     const last = parts[parts.length - 1];
@@ -76,14 +75,12 @@ export function AppSidebar({
       return name.slice(0, 2).toUpperCase();
     }
     return name.toUpperCase() || "KJ";
-  }, [user?.fullName, user?.name]);
+  }, [user?.fullName, user?.name, user?.email]);
 
   const isOverviewActive = pathname === "/dashboard";
   const isResponsesActive = pathname.startsWith("/dashboard/responses");
   const isAnalyticsActive = pathname.startsWith("/dashboard/analytics");
   const isSettingsActive = pathname.startsWith("/dashboard/settings");
-
-  const shortcutLabel = isMac ? "⌘K" : "Ctrl K";
 
   return (
     <Sidebar
@@ -178,17 +175,17 @@ export function AppSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Recent Forms Shelf (Truncated with accessible tooltips, max 4) */}
-        {forms && forms.length > 0 && (
+        {/* Recent Forms Shelf (Showing up to 5 items, matching count badge) */}
+        {recentForms.length > 0 && (
           <SidebarGroup className="p-0 mt-3">
             <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider flex items-center justify-between">
               <span>Recent Forms</span>
-              <span className="text-[10px] font-mono text-muted-foreground/60">{forms.length}</span>
+              <span className="text-[10px] font-mono text-muted-foreground/70">{recentForms.length}</span>
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="gap-0.5">
                 <TooltipProvider delayDuration={300}>
-                  {forms.slice(0, 4).map((f) => {
+                  {recentForms.map((f) => {
                     const isFormActive = pathname === `/dashboard/forms/${f.id}`;
                     return (
                       <SidebarMenuItem key={f.id}>
@@ -233,7 +230,7 @@ export function AppSidebar({
 
         <SidebarSeparator className="my-2 mx-1" />
 
-        {/* Preferences, Docs & Command Palette */}
+        {/* Preferences Group */}
         <SidebarGroup className="p-0">
           <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider">
             Preferences
@@ -253,7 +250,17 @@ export function AppSidebar({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
+        {/* Help Group */}
+        <SidebarGroup className="p-0 mt-2">
+          <SidebarGroupLabel className="text-[11px] font-medium text-muted-foreground/80 px-2 py-1.5 uppercase tracking-wider">
+            Help
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-0.5">
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -266,18 +273,22 @@ export function AppSidebar({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
+        {/* Global Command Menu Entry (No duplicate shortcut badge) */}
+        <SidebarGroup className="p-0 mt-2">
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-0.5">
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={onOpenCommandPalette}
-                  tooltip="Command Palette"
-                  className="rounded-lg text-xs font-medium cursor-pointer"
+                  tooltip="Open Command Menu"
+                  className="rounded-lg text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground"
                 >
                   <Command className="size-4 shrink-0" />
                   <span>Command Menu</span>
-                  <kbd className="ml-auto inline-flex h-4 items-center rounded border border-sidebar-border px-1 text-[10px] font-mono text-muted-foreground group-data-[collapsible=icon]:hidden">
-                    {shortcutLabel}
-                  </kbd>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -288,20 +299,23 @@ export function AppSidebar({
       {/* ========================================================= */}
       {/* Zone C — Fixed Bottom: Plan Meter & User Profile         */}
       {/* ========================================================= */}
-      <SidebarFooter className="p-2 border-t border-sidebar-border gap-1.5 shrink-0 bg-sidebar">
+      <SidebarFooter className="p-2.5 border-t border-sidebar-border gap-2 shrink-0 bg-sidebar">
         {/* Workspace Capacity Meter */}
-        <div className="mx-1 mb-1 px-2.5 py-2 rounded-lg bg-muted/25 border border-sidebar-border/60 text-xs space-y-1.5 group-data-[collapsible=icon]:hidden">
+        <div className="mx-0.5 px-3 py-2.5 rounded-xl bg-muted/25 border border-sidebar-border/70 text-xs space-y-1.5 group-data-[collapsible=icon]:hidden shadow-2xs">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground">
             <span className="font-medium text-foreground">Workspace Plan</span>
-            <span className="font-mono text-[10px]">{totalCount} / 10 Forms</span>
+            <span className="font-mono text-[10px] font-medium">{totalCount} / 10 Forms</span>
           </div>
-          <div className="w-full h-1 bg-muted/60 rounded-full overflow-hidden">
+          <div className="w-full h-1 bg-muted/70 rounded-full overflow-hidden">
             <div
               className="h-full bg-foreground rounded-full transition-all duration-500"
               style={{ width: `${Math.min((totalCount / 10) * 100, 100)}%` }}
             />
           </div>
         </div>
+
+        {/* Subtle separator between Plan meter and User profile */}
+        <div className="h-px bg-sidebar-border/50 mx-1 group-data-[collapsible=icon]:hidden" />
 
         {/* User Card with Dynamic Initials and Clean Single-Line Email */}
         <SidebarMenu>
@@ -310,11 +324,11 @@ export function AppSidebar({
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="rounded-lg p-1.5 hover:bg-sidebar-accent transition-colors"
+                  className="rounded-xl p-1.5 hover:bg-sidebar-accent transition-colors cursor-pointer"
                 >
                   <Avatar className="size-8 rounded-lg shrink-0 border border-sidebar-border">
                     {user?.image ? (
-                      <AvatarImage src={user.image} alt={user.name ?? "User"} />
+                      <AvatarImage src={user.image} alt={user.name || user.fullName || "User"} />
                     ) : null}
                     <AvatarFallback className="rounded-lg bg-muted text-xs font-semibold text-foreground">
                       {initials}
@@ -322,9 +336,9 @@ export function AppSidebar({
                   </Avatar>
                   <div className="grid flex-1 text-left text-xs leading-tight min-w-0 group-data-[collapsible=icon]:hidden">
                     <span className="truncate font-semibold text-foreground">
-                      {user?.name || "Karmadeepsinh Jadeja"}
+                      {user?.name || user?.fullName || "Karmadeepsinh Jadeja"}
                     </span>
-                    <span className="truncate text-[11px] text-muted-foreground">
+                    <span className="truncate text-[11px] text-muted-foreground" title={user?.email || ""}>
                       {user?.email || "karmadeepsinh@example.com"}
                     </span>
                   </div>
@@ -340,7 +354,7 @@ export function AppSidebar({
                 <DropdownMenuLabel className="p-2 font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-xs font-semibold leading-none text-foreground truncate">
-                      {user?.name || "Karmadeepsinh Jadeja"}
+                      {user?.name || user?.fullName || "Karmadeepsinh Jadeja"}
                     </p>
                     <p className="text-[11px] leading-none text-muted-foreground truncate">
                       {user?.email || ""}

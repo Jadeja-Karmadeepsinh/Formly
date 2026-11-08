@@ -4,7 +4,6 @@ import * as React from "react";
 import {
   Archive,
   CheckCircle2,
-  Clock,
   FilePenLine,
   Files,
 } from "lucide-react";
@@ -30,6 +29,7 @@ export function FormsMetrics({
   const draftCount = forms.filter((f) => f.status === "draft").length;
   const closedCount = forms.filter((f) => f.status === "closed").length;
   const archivedCount = forms.filter((f) => f.status === "archived").length;
+  const inactiveCount = closedCount + archivedCount;
 
   return (
     <div className="panel-highlight rounded-2xl border border-border/80 bg-card shadow-2xs overflow-hidden">
@@ -88,22 +88,14 @@ export function FormsMetrics({
             {isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums font-mono">
-                  {publishedCount}
-                </span>
-                {publishedCount > 0 ? (
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Live
-                  </span>
-                ) : (
-                  <span className="text-xs text-muted-foreground">Offline</span>
-                )}
+              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums font-mono">
+                {publishedCount}
               </div>
             )}
             <div className="mt-1 text-xs text-muted-foreground">
-              {publishedCount > 0 ? "Accepting live responses" : "No live forms published"}
+              {publishedCount > 0
+                ? `${pluralize(publishedCount, "form")} published`
+                : "No published forms"}
             </div>
           </div>
         </div>
@@ -139,7 +131,7 @@ export function FormsMetrics({
           </div>
         </div>
 
-        {/* Cell 4: Closed & Archived */}
+        {/* Cell 4: Inactive (Closed & Archived aggregate) */}
         <div
           onClick={() => onSelectStatus?.(closedCount > 0 ? "closed" : "archived")}
           className={`p-4 sm:p-5 flex flex-col justify-between transition-colors ${
@@ -148,10 +140,10 @@ export function FormsMetrics({
         >
           <div className="flex items-center justify-between text-muted-foreground mb-3">
             <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              Closed & Archived
+              Inactive
             </span>
             <div className="flex size-7 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
-              {closedCount > 0 ? <Clock className="size-3.5" /> : <Archive className="size-3.5" />}
+              <Archive className="size-3.5" />
             </div>
           </div>
           <div>
@@ -159,13 +151,13 @@ export function FormsMetrics({
               <Skeleton className="h-8 w-16" />
             ) : (
               <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground tabular-nums font-mono">
-                {closedCount + archivedCount}
+                {inactiveCount}
               </div>
             )}
             <div className="mt-1 text-xs text-muted-foreground">
-              {closedCount + archivedCount > 0
+              {inactiveCount > 0
                 ? `${closedCount} closed · ${archivedCount} archived`
-                : "No closed or archived forms"}
+                : "0 closed · 0 archived"}
             </div>
           </div>
         </div>

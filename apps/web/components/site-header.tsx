@@ -9,7 +9,6 @@ import { ThemeToggle } from "~/components/theme-toggle";
 import { isMacPlatform } from "~/lib/format-utils";
 
 interface SiteHeaderProps {
-  onOpenCreateForm?: () => void;
   onOpenCommandPalette?: () => void;
 }
 

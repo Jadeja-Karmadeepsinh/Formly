@@ -30,12 +30,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
     >
       <AppSidebar
         variant="inset"
-        onOpenCreateForm={() => setIsCreateOpen(true)}
         onOpenCommandPalette={() => setIsCommandOpen(true)}
       />
       <SidebarInset className="bg-background min-h-screen flex flex-col">
         <SiteHeader
-          onOpenCreateForm={() => setIsCreateOpen(true)}
           onOpenCommandPalette={() => setIsCommandOpen(true)}
         />
         <div className="flex-1 flex flex-col">{children}</div>
